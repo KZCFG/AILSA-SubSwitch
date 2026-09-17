@@ -14,7 +14,7 @@ separate steps.
 - [x] Publish a clean source snapshot to KZCFG/AILSA-SubSwitch; verify remote readback.
 - [x] Enable private vulnerability reporting.
 
-## Binary candidate: 1.0.0 (2026091715)
+## Binary candidate: 1.0.0 (2026091716)
 
 - [x] Direct source build of application and widget on Apple Silicon.
 - [x] Baseline CLT asserting harness: 271 passed, 0 failed across 36 classes.
@@ -22,8 +22,9 @@ separate steps.
       These are not Apple's XCTest runner; files importing Swift Testing are excluded.
 - [x] Verify final ZIP checksum, app and widget signatures, resources and version.
 - [x] Confirm no Sparkle framework, update-feed keys or updater dependency.
-- [x] Install the exact 2026091715 archive and confirm Accounts, Settings → About
-      and Quota Management render with the simplified navigation and correct footer.
+- [x] Install the exact 2026091716 archive and confirm Accounts and Settings → About
+      render with the new A.S.S. icon. Navigation and usage layout were checked in
+      2026091715; this candidate changes icon resources and build metadata only.
 - [ ] Complete the remaining interactive checks in [TEST-CHECKLIST.md](TEST-CHECKLIST.md).
 - [ ] Verify the menu bar icon's visibility on the target display, including any
       menu bar manager configuration. Reopening a window alone is not proof.

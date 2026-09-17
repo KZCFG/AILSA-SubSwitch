@@ -28,7 +28,7 @@ targets:
         # Signing: no team is committed. Local builds are ad-hoc; for Developer ID
         # pass DEVELOPMENT_TEAM / CODESIGN_IDENTITY to scripts (see docs/release-macos.md).
         CODE_SIGN_STYLE: Automatic
-        CURRENT_PROJECT_VERSION: 2026091715
+        CURRENT_PROJECT_VERSION: 2026091716
         MARKETING_VERSION: 1.0.0
         PRODUCT_BUNDLE_IDENTIFIER: com.ailsa.subswitch
   CopoolTests:

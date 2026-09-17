@@ -6,11 +6,13 @@ It is a derivative of Copool, with the upstream MIT notices preserved.
 
 ## This candidate
 
-- Marketing version: **1.0.0**; build **2026091715**.
+- Marketing version: **1.0.0**; build **2026091716**.
 - Manual distribution; no OTA updater, feed, Sparkle framework or automatic download.
 - Settings → About shows the application icon, product name, version, build time,
   “Quota at a glance. Switch accounts in a click.” and “© 2026 KZCFG · MIT”.
 - Duplicate main-page headings are removed; usage actions share the provider row.
+- The app and project-page icon share updated A.S.S. lettering; all macOS icon
+  sizes can be regenerated with `scripts/build_icon.sh`.
 - Application identifier: `com.ailsa.subswitch`; widget: `com.ailsa.subswitch.widgets`.
 - Existing account data paths and credential identifiers are retained.
 - English homepage, installation guide, privacy policy, contribution guidance,
@@ -38,15 +40,17 @@ reporting is enabled.
 The 1.0.0 ZIP and SHA-256 are staged in a GitHub Release draft. Package signatures,
 version/build fields and the absence of updater keys/frameworks were verified.
 After the English account-card labels changed, all 11 account-card regression
-tests passed again. The exact 2026091715 ZIP was installed locally; Accounts,
-Quota Management and Settings → About were inspected in the native app. The
-footer, single About entry and removal of duplicate headings were confirmed.
+tests passed again. The 2026091715 ZIP was installed locally; Accounts, Quota
+Management and Settings → About were inspected in the native app. The footer,
+single About entry and removal of duplicate headings were confirmed. The
+2026091716 icon-only candidate was then installed from its ZIP; the new A.S.S.
+artwork was verified in the About view, and all ten macOS icon variants decoded.
 
 ## Still to validate before calling the binary stable
 
 Use [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md) for current acceptance. Source
 publication does not prove clean-machine installation, menu bar visibility in
-every display setup, widget behavior or durable Keychain authorization. The installed app and packaged candidate now both use build 2026091715; this
+every display setup, widget behavior or durable Keychain authorization. The installed app and packaged candidate now both use build 2026091716; this
 local UI check does not complete the broader acceptance checklist.
 
 The older OTA experiment is deferred and is not shipped in this version.
