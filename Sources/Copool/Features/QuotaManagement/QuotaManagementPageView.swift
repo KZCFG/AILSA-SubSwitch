@@ -46,13 +46,24 @@ struct QuotaManagementPageView: View {
     @Environment(\.openWindow) private var openWindow
     var body: some View {
         GeometryReader { geometry in
+            let narrowToolbar = geometry.size.width < 500
+            let toolbarHeight: CGFloat = narrowToolbar ? 86 : 42
             VStack(alignment: .leading, spacing: 10) {
-                header
-                providerPicker
+                if narrowToolbar {
+                    VStack(alignment: .trailing, spacing: 10) {
+                        providerPicker
+                        header
+                    }
+                } else {
+                    HStack(spacing: 10) {
+                        providerPicker
+                        header.fixedSize(horizontal: true, vertical: false)
+                    }
+                }
                 if let data = model.dashboards[selectedProvider] {
                     QuotaDashboard(
                         data: data,
-                        availableHeight: max(200, geometry.size.height - 114),
+                        availableHeight: max(200, Double(geometry.size.height - toolbarHeight - LayoutRules.pagePadding) - 20 - (loadError == nil ? 0 : 24)),
                         ui: Binding(
                             get: { dashboardStates[selectedProvider] ?? QuotaDashboardUIState() },
                             set: { dashboardStates[selectedProvider] = $0 }))
@@ -70,7 +81,8 @@ struct QuotaManagementPageView: View {
                     Text(error).font(.caption).foregroundStyle(.red).lineLimit(1).help(error)
                 }
             }
-            .padding(.horizontal, LayoutRules.pagePadding).padding(.vertical, 10)
+            .padding(.horizontal, LayoutRules.pagePadding)
+            .padding(.top, LayoutRules.pagePadding).padding(.bottom, 10)
         }
         .task(id: selectedProvider) { await model.loadDashboard(for: selectedProvider) }
         .onAppear {
@@ -88,9 +100,7 @@ struct QuotaManagementPageView: View {
         .appCanvas()
     }
     private var header: some View {
-        HStack {
-                    Text(L10n.tr("tab.quota_management")).font(.title3.bold())
-                    Spacer()
+        HStack(spacing: 8) {
                     if !isStandalone {
                         Button {
                             model.requestExpansion(of: selectedProvider)
@@ -99,17 +109,25 @@ struct QuotaManagementPageView: View {
                             NSApp.activate(ignoringOtherApps: true)
                             #endif
                         } label: {
-                            Image(systemName: "arrow.up.left.and.arrow.down.right").frame(width: 30, height: 28)
-                        }.accessibilityLabel(qtext("展开额度管理", "Open usage window"))
+                            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                .frame(width: 32, height: 34).contentShape(Rectangle())
+                        }.buttonStyle(.plain)
+                            .help(qtext("展开额度管理", "Open usage window"))
+                            .accessibilityLabel(qtext("展开额度管理", "Open usage window"))
                     }
                     if let data = model.dashboards[selectedProvider] {
                         Text(data.scannedAt, style: .time).font(.caption).foregroundStyle(.secondary)
+                            .lineLimit(1).monospacedDigit()
                     }
                     Button { Task { await model.loadDashboard(for: selectedProvider, force: true) } } label: {
-                        Image(systemName: "arrow.clockwise").frame(width: 30, height: 28)
-                    }.disabled(isLoading).accessibilityLabel(qtext("刷新额度", "Refresh usage"))
-                    if isLoading { ProgressView().controlSize(.small) }
-                }.frame(height: 32)
+                        Group {
+                            if isLoading { ProgressView().controlSize(.small) }
+                            else { Image(systemName: "arrow.clockwise") }
+                        }.frame(width: 32, height: 34).contentShape(Rectangle())
+                    }.buttonStyle(.plain).disabled(isLoading)
+                        .help(qtext("刷新额度", "Refresh usage"))
+                        .accessibilityLabel(qtext("刷新额度", "Refresh usage"))
+                }.frame(height: 34)
     }
     private var providerPicker: some View {
         ASSegmentedControl<QuotaManagementProvider>(

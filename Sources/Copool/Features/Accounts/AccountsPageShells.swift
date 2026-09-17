@@ -250,35 +250,8 @@ private struct AccountsMacContentHost: View {
 
 private struct AccountsPageHeader: View {
     @Binding var selectedProvider: AccountProvider
-
-    @Environment(\.colorScheme) private var colorScheme
-
     var body: some View {
-        VStack(alignment: .leading, spacing: AppDesign.Metrics.groupSpacing) {
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text(L10n.tr("tab.accounts"))
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(AppDesign.primaryText(for: colorScheme))
-
-                Spacer(minLength: 0)
-
-                Text(providerTitle)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(AppDesign.mutedText(for: colorScheme))
-            }
-
-            AccountsProviderSwitcher(selection: $selectedProvider)
-        }
-    }
-
-    private var providerTitle: String {
-        switch selectedProvider {
-        case .codex:
-            L10n.tr("accounts.provider.codex")
-        case .antigravity:
-            L10n.tr("accounts.provider.antigravity")
-        case .cursor: "Cursor"
-        }
+        AccountsProviderSwitcher(selection: $selectedProvider)
     }
 }
 

@@ -9,6 +9,7 @@ enum AppVersion {
         guard let raw = Bundle.main.object(forInfoDictionaryKey: "ASSBuildDate") as? String,
               let date = ISO8601DateFormatter().date(from: raw) else { return "—" }
         let formatter = DateFormatter()
+        formatter.locale = L10n.currentLocale
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter.string(from: date)

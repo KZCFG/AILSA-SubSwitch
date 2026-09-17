@@ -24,7 +24,12 @@ investigating them.
 - Small display: cards and controls remain reachable; the bounded model list
   scrolls independently of its headings, summary and chart.
 - Expand Quota Management: separate window opens; closing it preserves the status item.
-- About: correct icon, name, 1.0.0, build time and tagline; no updater controls.
+- About: Settings → About opens the inline page; no top-right information shortcut.
+  Check the icon, name, 1.0.0, build time, tagline and GitHub/feedback/license links.
+  Confirm the footer reads “© 2026 KZCFG · MIT”.
+  Navigating away must preserve the panel; no updater controls are present.
+- The Accounts, Quota Management and Settings pages do not repeat the selected
+  main-tab title. Provider navigation, refresh and expand controls remain usable.
 
 ## Account safety
 

@@ -411,3 +411,6 @@
 "about.version_format" = "版本 %@";
 "about.built_format" = "构建于 %@";
 "about.tagline" = "一眼看额度，一键切账户。";
+
+"about.feedback" = "问题反馈";
+"about.licenses" = "许可与致谢";

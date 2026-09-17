@@ -98,23 +98,6 @@ final class SubSwitchApplicationDelegate: NSObject, NSApplicationDelegate {
     static var makeQuotaContent: (() -> AnyView)?
     static weak var current: SubSwitchApplicationDelegate?
     private var quotaWindow: NSWindow?
-    private var aboutWindow: NSWindow?
-
-    func showAboutWindow() {
-        popover.performClose(nil)
-        if aboutWindow == nil {
-            let window = NSWindow(contentViewController: NSHostingController(
-                rootView: AboutView()))
-            window.title = L10n.tr("about.title")
-            window.styleMask = [.titled, .closable]
-            window.isReleasedWhenClosed = false
-            window.center()
-            aboutWindow = window
-        }
-        aboutWindow?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-    }
-
     func showQuotaWindow() {
         popover.performClose(nil)
         if quotaWindow == nil, let content = Self.makeQuotaContent?() {

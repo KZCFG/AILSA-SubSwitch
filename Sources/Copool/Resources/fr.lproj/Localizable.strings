@@ -385,3 +385,6 @@
 "about.version_format" = "Version %@";
 "about.built_format" = "Built on %@";
 "about.tagline" = "Quota at a glance. Switch accounts in a click.";
+
+"about.feedback" = "Feedback";
+"about.licenses" = "Licenses";

@@ -86,6 +86,13 @@ Cursor amounts come from its usage API when reported. Data Details identifies
 price sources and their verification dates where available. See [Privacy](PRIVACY.md)
 for the inputs read by each provider.
 
+## About AILSA SubSwitch
+
+Choose **Settings → About** from the settings tabs. This opens a page inside
+the panel. It shows
+the app icon, name, version, build time and tagline, with links to GitHub,
+feedback and third-party notices. Version 1.0.0 has no update controls.
+
 ## Troubleshooting
 
 | Symptom | What to check |

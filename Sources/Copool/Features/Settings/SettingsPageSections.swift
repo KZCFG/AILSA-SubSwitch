@@ -17,6 +17,7 @@ enum SettingsPageSection: CaseIterable, Identifiable {
     case quotaDisplay
     case switchBehavior
     case language
+    case about
 
     var id: Self { self }
 
@@ -26,6 +27,7 @@ enum SettingsPageSection: CaseIterable, Identifiable {
         case .quotaDisplay: "settings.group.quota_display"
         case .switchBehavior: "settings.group.switch_behavior"
         case .language: "settings.group.language"
+        case .about: "about.title"
         }
     }
 }
@@ -36,7 +38,6 @@ private struct MacSettingsPageContent: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppDesign.Metrics.sectionSpacing) {
-            SettingsPageHeading()
             SettingsPageSectionPicker(selection: $model.selectedSection)
 
             switch model.selectedSection {
@@ -48,6 +49,8 @@ private struct MacSettingsPageContent: View {
                 SettingsSwitchBehaviorSection(model: model)
             case .language:
                 SettingsLanguageSection(model: model)
+            case .about:
+                AboutView()
             }
 
             Spacer(minLength: 0)
@@ -277,11 +280,6 @@ private struct SettingsQuitFooter: View {
         HStack(spacing: LayoutRules.listRowSpacing) {
             Text(AppVersion.current).font(.caption2).foregroundStyle(.secondary).textSelection(.enabled)
             Spacer(minLength: 0)
-            Button(L10n.tr("about.title")) {
-                SubSwitchApplicationDelegate.current?.showAboutWindow()
-            }
-            .copoolActionButtonStyle()
-
             // Quit is a normal app action, not a destructive one; the red
             // role made it the loudest element on the settings page.
             Button {

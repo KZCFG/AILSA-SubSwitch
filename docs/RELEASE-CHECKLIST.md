@@ -14,18 +14,20 @@ separate steps.
 - [x] Publish a clean source snapshot to KZCFG/AILSA-SubSwitch; verify remote readback.
 - [x] Enable private vulnerability reporting.
 
-## Binary candidate: 1.0.0 (2026091713)
+## Binary candidate: 1.0.0 (2026091715)
 
 - [x] Direct source build of application and widget on Apple Silicon.
-- [x] CLT asserting test harness: 271 passed, 0 failed across 36 classes.
-      This is not Apple's XCTest runner; files importing Swift Testing are excluded.
+- [x] Baseline CLT asserting harness: 271 passed, 0 failed across 36 classes.
+      Settings regression after the About-tab addition: 18 passed, 0 failed.
+      These are not Apple's XCTest runner; files importing Swift Testing are excluded.
 - [x] Verify final ZIP checksum, app and widget signatures, resources and version.
 - [x] Confirm no Sparkle framework, update-feed keys or updater dependency.
-- [ ] Install the exact archive and perform the interactive checks in
-      [TEST-CHECKLIST.md](TEST-CHECKLIST.md).
+- [x] Install the exact 2026091715 archive and confirm Accounts, Settings → About
+      and Quota Management render with the simplified navigation and correct footer.
+- [ ] Complete the remaining interactive checks in [TEST-CHECKLIST.md](TEST-CHECKLIST.md).
 - [ ] Verify the menu bar icon's visibility on the target display, including any
       menu bar manager configuration. Reopening a window alone is not proof.
-- [ ] Confirm manual replacement preserves local account profiles and preferences.
+- [x] Confirm existing account profiles and preferences remain after local replacement.
 - [ ] Attach the tested ZIP and checksum; publish accurate known limitations.
 
 ## Additional coverage still needed
