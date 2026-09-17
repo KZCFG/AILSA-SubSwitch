@@ -1,0 +1,42 @@
+name: Bug report
+description: Report a reproducible issue without sharing private account data.
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: "Do not attach tokens, account exports, emails, cookies, or unredacted logs. For security issues, read SECURITY.md."
+  - type: input
+    id: version
+    attributes:
+      label: ASS version and build
+      description: Find this in Settings → About.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: macOS version and Mac architecture
+    validations:
+      required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Affected area
+      options: [Codex, Antigravity, Cursor, Interface, Packaging, Other]
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized evidence
+      description: Use synthetic data and redact account identifiers.

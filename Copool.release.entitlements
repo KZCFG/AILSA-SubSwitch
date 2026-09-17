@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!-- Template. scripts/release_macos.sh replaces TEAM_ID_PLACEHOLDER with $DEVELOPMENT_TEAM
+     at signing time; no personal Team ID is committed to the repository. -->
+<dict>
+	<key>com.apple.application-identifier</key>
+	<string>TEAM_ID_PLACEHOLDER.com.ailsa.subswitch</string>
+	<key>com.apple.developer.team-identifier</key>
+	<string>TEAM_ID_PLACEHOLDER</string>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>TEAM_ID_PLACEHOLDER.*</string>
+	</array>
+</dict>
+</plist>

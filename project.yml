@@ -1,0 +1,50 @@
+name: Copool
+options:
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: 6.0
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+targets:
+  Copool:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Sources/Copool
+    resources:
+      - path: Sources/Copool/Resources
+    settings:
+      base:
+        PRODUCT_NAME: Copool
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleName: AILSA SubSwitch
+        INFOPLIST_KEY_CFBundleDisplayName: AILSA SubSwitch
+        # Version values below are synced from the repo-root VERSION file by
+        # scripts/sync_version.sh; edit VERSION, not this file.
+        ASS_BUILD_LABEL: 1.0.0
+        INFOPLIST_KEY_LSMinimumSystemVersion: "14.0"
+        INFOPLIST_KEY_LSUIElement: YES
+        # Signing: no team is committed. Local builds are ad-hoc; for Developer ID
+        # pass DEVELOPMENT_TEAM / CODESIGN_IDENTITY to scripts (see docs/release-macos.md).
+        CODE_SIGN_STYLE: Automatic
+        CURRENT_PROJECT_VERSION: 2026091713
+        MARKETING_VERSION: 1.0.0
+        PRODUCT_BUNDLE_IDENTIFIER: com.ailsa.subswitch
+  CopoolTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Tests/CopoolTests
+    dependencies:
+      - target: Copool
+schemes:
+  Copool:
+    build:
+      targets:
+        Copool: all
+        CopoolTests: [test]
+    test:
+      targets:
+        - CopoolTests

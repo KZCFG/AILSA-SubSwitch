@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- application-groups temporarily removed: containermanagerd state for
+	     this app's group containers is wedged system-wide (2026-09-15) and any
+	     group entitlement blocks app launch inside cfprefsd. Restore together
+	     with the widget group after a reboot clears the dead vnode. -->
+</dict>
+</plist>

@@ -1,0 +1,3089 @@
+{
+  "schema": "ailsa.ass.opencodex-runtime-pricing-bindings.v1",
+  "generatedAt": "2026-09-15T01:05:42.811275+00:00",
+  "auditDate": "2026-09-15",
+  "sourceAuditSchemaVersion": 1,
+  "sourceAuditCounts": {
+    "catalog_entries": 37,
+    "unique_catalog_slugs": 37,
+    "entries_with_official_reference": 34,
+    "entries_with_unknown_reference": 3,
+    "conditional_price_eligible": 27,
+    "entries_with_differences_or_unverified_flags": 36
+  },
+  "effectiveOverlayAuditDate": "2026-09-15",
+  "effectiveOverlayRule": "effective = what this bridge/catalog will send or allow; official = vendor API page. Never copy official max into effective without subscription evidence.",
+  "caveat": "API-equivalent USD only; unknown remains unknown; catalog capability and official API references are not proof of bridge runtime limits or actual upstream billing.",
+  "entries": [
+    {
+      "bindingId": "gpt-5.6-sol:openai:gpt-5.6-sol",
+      "provider": "openai",
+      "resolvedModel": "gpt-5.6-sol",
+      "referenceAPIModel": "gpt-5.6-sol",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "gpt-5.6-sol",
+          "url": "https://developers.openai.com/api/docs/models/gpt-5.6-sol",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "oa-price",
+          "url": "https://developers.openai.com/api/docs/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+        },
+        {
+          "id": "oa-fast",
+          "url": "https://developers.openai.com/api/docs/guides/fast-mode",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard-short",
+          "condition": {
+            "input_tokens_lte": 272000
+          },
+          "inputUSDPerMillionTokens": "4",
+          "outputUSDPerMillionTokens": "20",
+          "cacheReadUSDPerMillionTokens": "0.4",
+          "cacheWriteUSDPerMillionTokens": "5",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.6-sol",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.6-sol",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "standard-long",
+          "condition": {
+            "input_tokens_gt": 272000
+          },
+          "inputUSDPerMillionTokens": "8",
+          "outputUSDPerMillionTokens": "30.0",
+          "cacheReadUSDPerMillionTokens": "0.8",
+          "cacheWriteUSDPerMillionTokens": "10",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.6-sol",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.6-sol",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "fast-short",
+          "condition": {
+            "input_tokens_lte": 272000,
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ]
+          },
+          "inputUSDPerMillionTokens": "8",
+          "outputUSDPerMillionTokens": "40",
+          "cacheReadUSDPerMillionTokens": "0.8",
+          "cacheWriteUSDPerMillionTokens": "10",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.6-sol",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.6-sol",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "fast-long",
+          "condition": {
+            "input_tokens_gt": 272000,
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ]
+          },
+          "inputUSDPerMillionTokens": "16",
+          "outputUSDPerMillionTokens": "60.0",
+          "cacheReadUSDPerMillionTokens": "1.6",
+          "cacheWriteUSDPerMillionTokens": "20",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.6-sol",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.6-sol",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_context_differs_from_official_API",
+        "catalog_effort_differs_from_official_API",
+        "catalog_default_differs_from_official_API",
+        "ultra_is_local_delegation_and_wire_mapping_not_independent_native_effort"
+      ],
+      "pricingNotes": {
+        "fast_rate_status": "verified; GPT-5.4/5.5 long-context Fast table is dash, do not extrapolate",
+        "regional_uplift": "Eligible regional processing +10%; GPT-6 Astra Fast unavailable with EU residency",
+        "long_scope": "full session for GPT-5.4/5.5; full request for GPT-5.6/Astra"
+      }
+    },
+    {
+      "bindingId": "gpt-5.6-terra:openai:gpt-5.6-terra",
+      "provider": "openai",
+      "resolvedModel": "gpt-5.6-terra",
+      "referenceAPIModel": "gpt-5.6-terra",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "gpt-5.6-terra",
+          "url": "https://developers.openai.com/api/docs/models/gpt-5.6-terra",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "oa-price",
+          "url": "https://developers.openai.com/api/docs/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+        },
+        {
+          "id": "oa-fast",
+          "url": "https://developers.openai.com/api/docs/guides/fast-mode",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard-short",
+          "condition": {
+            "input_tokens_lte": 272000
+          },
+          "inputUSDPerMillionTokens": "2",
+          "outputUSDPerMillionTokens": "12",
+          "cacheReadUSDPerMillionTokens": "0.2",
+          "cacheWriteUSDPerMillionTokens": "2.5",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.6-terra",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.6-terra",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "standard-long",
+          "condition": {
+            "input_tokens_gt": 272000
+          },
+          "inputUSDPerMillionTokens": "4",
+          "outputUSDPerMillionTokens": "18.0",
+          "cacheReadUSDPerMillionTokens": "0.4",
+          "cacheWriteUSDPerMillionTokens": "5.0",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.6-terra",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.6-terra",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "fast-short",
+          "condition": {
+            "input_tokens_lte": 272000,
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ]
+          },
+          "inputUSDPerMillionTokens": "4",
+          "outputUSDPerMillionTokens": "24",
+          "cacheReadUSDPerMillionTokens": "0.4",
+          "cacheWriteUSDPerMillionTokens": "5.0",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.6-terra",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.6-terra",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "fast-long",
+          "condition": {
+            "input_tokens_gt": 272000,
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ]
+          },
+          "inputUSDPerMillionTokens": "8",
+          "outputUSDPerMillionTokens": "36.0",
+          "cacheReadUSDPerMillionTokens": "0.8",
+          "cacheWriteUSDPerMillionTokens": "10.0",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.6-terra",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.6-terra",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_context_differs_from_official_API",
+        "catalog_effort_differs_from_official_API",
+        "ultra_is_local_delegation_and_wire_mapping_not_independent_native_effort"
+      ],
+      "pricingNotes": {
+        "fast_rate_status": "verified; GPT-5.4/5.5 long-context Fast table is dash, do not extrapolate",
+        "regional_uplift": "Eligible regional processing +10%; GPT-6 Astra Fast unavailable with EU residency",
+        "long_scope": "full session for GPT-5.4/5.5; full request for GPT-5.6/Astra"
+      }
+    },
+    {
+      "bindingId": "gpt-5.6-luna:openai:gpt-5.6-luna",
+      "provider": "openai",
+      "resolvedModel": "gpt-5.6-luna",
+      "referenceAPIModel": "gpt-5.6-luna",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "gpt-5.6-luna",
+          "url": "https://developers.openai.com/api/docs/models/gpt-5.6-luna",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "oa-price",
+          "url": "https://developers.openai.com/api/docs/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+        },
+        {
+          "id": "oa-fast",
+          "url": "https://developers.openai.com/api/docs/guides/fast-mode",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard-short",
+          "condition": {
+            "input_tokens_lte": 272000
+          },
+          "inputUSDPerMillionTokens": "0.2",
+          "outputUSDPerMillionTokens": "1.2",
+          "cacheReadUSDPerMillionTokens": "0.02",
+          "cacheWriteUSDPerMillionTokens": "0.25",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.6-luna",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.6-luna",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "standard-long",
+          "condition": {
+            "input_tokens_gt": 272000
+          },
+          "inputUSDPerMillionTokens": "0.4",
+          "outputUSDPerMillionTokens": "1.80",
+          "cacheReadUSDPerMillionTokens": "0.04",
+          "cacheWriteUSDPerMillionTokens": "0.50",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.6-luna",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.6-luna",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "fast-short",
+          "condition": {
+            "input_tokens_lte": 272000,
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ]
+          },
+          "inputUSDPerMillionTokens": "0.4",
+          "outputUSDPerMillionTokens": "2.4",
+          "cacheReadUSDPerMillionTokens": "0.04",
+          "cacheWriteUSDPerMillionTokens": "0.50",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.6-luna",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.6-luna",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "fast-long",
+          "condition": {
+            "input_tokens_gt": 272000,
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ]
+          },
+          "inputUSDPerMillionTokens": "0.8",
+          "outputUSDPerMillionTokens": "3.60",
+          "cacheReadUSDPerMillionTokens": "0.08",
+          "cacheWriteUSDPerMillionTokens": "1.00",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.6-luna",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.6-luna",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_context_differs_from_official_API",
+        "catalog_effort_differs_from_official_API"
+      ],
+      "pricingNotes": {
+        "fast_rate_status": "verified; GPT-5.4/5.5 long-context Fast table is dash, do not extrapolate",
+        "regional_uplift": "Eligible regional processing +10%; GPT-6 Astra Fast unavailable with EU residency",
+        "long_scope": "full session for GPT-5.4/5.5; full request for GPT-5.6/Astra"
+      }
+    },
+    {
+      "bindingId": "gpt-5.5:openai:gpt-5.5",
+      "provider": "openai",
+      "resolvedModel": "gpt-5.5",
+      "referenceAPIModel": "gpt-5.5",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "gpt-5.5",
+          "url": "https://developers.openai.com/api/docs/models/gpt-5.5",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "oa-price",
+          "url": "https://developers.openai.com/api/docs/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+        },
+        {
+          "id": "oa-fast",
+          "url": "https://developers.openai.com/api/docs/guides/fast-mode",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard-short",
+          "condition": {
+            "input_tokens_lte": 272000
+          },
+          "inputUSDPerMillionTokens": "5",
+          "outputUSDPerMillionTokens": "30",
+          "cacheReadUSDPerMillionTokens": "0.5",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.5",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.5",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "standard-long",
+          "condition": {
+            "input_tokens_gt": 272000
+          },
+          "inputUSDPerMillionTokens": "10",
+          "outputUSDPerMillionTokens": "45.0",
+          "cacheReadUSDPerMillionTokens": "1.0",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.5",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.5",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "fast",
+          "condition": {
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ],
+            "input_tokens_lte": 272000
+          },
+          "inputUSDPerMillionTokens": "12.50",
+          "outputUSDPerMillionTokens": "75",
+          "cacheReadUSDPerMillionTokens": "1.25",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.5",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.5",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_context_differs_from_official_API",
+        "catalog_effort_differs_from_official_API",
+        "ultra_is_local_delegation_and_wire_mapping_not_independent_native_effort"
+      ],
+      "pricingNotes": {
+        "fast_rate_status": "verified; GPT-5.4/5.5 long-context Fast table is dash, do not extrapolate",
+        "regional_uplift": "Eligible regional processing +10%; GPT-6 Astra Fast unavailable with EU residency",
+        "long_scope": "full session for GPT-5.4/5.5; full request for GPT-5.6/Astra"
+      }
+    },
+    {
+      "bindingId": "gpt-5.4:openai:gpt-5.4",
+      "provider": "openai",
+      "resolvedModel": "gpt-5.4",
+      "referenceAPIModel": "gpt-5.4",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "gpt-5.4",
+          "url": "https://developers.openai.com/api/docs/models/gpt-5.4",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "oa-price",
+          "url": "https://developers.openai.com/api/docs/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+        },
+        {
+          "id": "oa-fast",
+          "url": "https://developers.openai.com/api/docs/guides/fast-mode",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard-short",
+          "condition": {
+            "input_tokens_lte": 272000
+          },
+          "inputUSDPerMillionTokens": "2.5",
+          "outputUSDPerMillionTokens": "15",
+          "cacheReadUSDPerMillionTokens": "0.25",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.4",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.4",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "standard-long",
+          "condition": {
+            "input_tokens_gt": 272000
+          },
+          "inputUSDPerMillionTokens": "5.0",
+          "outputUSDPerMillionTokens": "22.5",
+          "cacheReadUSDPerMillionTokens": "0.50",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.4",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.4",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "fast",
+          "condition": {
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ],
+            "input_tokens_lte": 272000
+          },
+          "inputUSDPerMillionTokens": "5",
+          "outputUSDPerMillionTokens": "30",
+          "cacheReadUSDPerMillionTokens": ".50",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.4",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.4",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_context_differs_from_official_API",
+        "catalog_effort_differs_from_official_API",
+        "catalog_default_differs_from_official_API",
+        "ultra_is_local_delegation_and_wire_mapping_not_independent_native_effort"
+      ],
+      "pricingNotes": {
+        "fast_rate_status": "verified; GPT-5.4/5.5 long-context Fast table is dash, do not extrapolate",
+        "regional_uplift": "Eligible regional processing +10%; GPT-6 Astra Fast unavailable with EU residency",
+        "long_scope": "full session for GPT-5.4/5.5; full request for GPT-5.6/Astra"
+      }
+    },
+    {
+      "bindingId": "gpt-5.4-mini:openai:gpt-5.4-mini",
+      "provider": "openai",
+      "resolvedModel": "gpt-5.4-mini",
+      "referenceAPIModel": "gpt-5.4-mini",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "gpt-5.4-mini",
+          "url": "https://developers.openai.com/api/docs/models/gpt-5.4-mini",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "oa-price",
+          "url": "https://developers.openai.com/api/docs/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+        },
+        {
+          "id": "oa-fast",
+          "url": "https://developers.openai.com/api/docs/guides/fast-mode",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard-short",
+          "condition": {
+            "all_contexts": true
+          },
+          "inputUSDPerMillionTokens": "0.75",
+          "outputUSDPerMillionTokens": "4.5",
+          "cacheReadUSDPerMillionTokens": "0.075",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.4-mini",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.4-mini",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "fast",
+          "condition": {
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ],
+            "all_contexts": true
+          },
+          "inputUSDPerMillionTokens": "1.50",
+          "outputUSDPerMillionTokens": "9",
+          "cacheReadUSDPerMillionTokens": ".15",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "verified_vendor_service_tier",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-5.4-mini",
+              "url": "https://developers.openai.com/api/docs/models/gpt-5.4-mini",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_context_differs_from_official_API",
+        "catalog_effort_differs_from_official_API",
+        "catalog_default_differs_from_official_API",
+        "ultra_is_local_delegation_and_wire_mapping_not_independent_native_effort"
+      ],
+      "pricingNotes": {
+        "fast_rate_status": "verified; GPT-5.4/5.5 long-context Fast table is dash, do not extrapolate",
+        "regional_uplift": "Eligible regional processing +10%; GPT-6 Astra Fast unavailable with EU residency",
+        "long_scope": "full session for GPT-5.4/5.5; full request for GPT-5.6/Astra"
+      }
+    },
+    {
+      "bindingId": "gpt-6-astra:openai:gpt-6-astra",
+      "provider": "openai",
+      "resolvedModel": "gpt-6-astra",
+      "referenceAPIModel": "gpt-6-astra",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "gpt-6-astra",
+          "url": "https://developers.openai.com/api/docs/models/gpt-6-astra",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "oa-price",
+          "url": "https://developers.openai.com/api/docs/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+        },
+        {
+          "id": "oa-fast",
+          "url": "https://developers.openai.com/api/docs/guides/fast-mode",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard-short",
+          "condition": {
+            "input_tokens_lte": 272000
+          },
+          "inputUSDPerMillionTokens": "10",
+          "outputUSDPerMillionTokens": "50",
+          "cacheReadUSDPerMillionTokens": "1",
+          "cacheWriteUSDPerMillionTokens": "12.5",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-6-astra",
+              "url": "https://developers.openai.com/api/docs/models/gpt-6-astra",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "standard-long",
+          "condition": {
+            "input_tokens_gt": 272000
+          },
+          "inputUSDPerMillionTokens": "20",
+          "outputUSDPerMillionTokens": "75.0",
+          "cacheReadUSDPerMillionTokens": "2",
+          "cacheWriteUSDPerMillionTokens": "25.0",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-6-astra",
+              "url": "https://developers.openai.com/api/docs/models/gpt-6-astra",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "fast-short",
+          "condition": {
+            "input_tokens_lte": 272000,
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ]
+          },
+          "inputUSDPerMillionTokens": "20",
+          "outputUSDPerMillionTokens": "100",
+          "cacheReadUSDPerMillionTokens": "2",
+          "cacheWriteUSDPerMillionTokens": "25.0",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-6-astra",
+              "url": "https://developers.openai.com/api/docs/models/gpt-6-astra",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "fast-long",
+          "condition": {
+            "input_tokens_gt": 272000,
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ]
+          },
+          "inputUSDPerMillionTokens": "40",
+          "outputUSDPerMillionTokens": "150.0",
+          "cacheReadUSDPerMillionTokens": "4",
+          "cacheWriteUSDPerMillionTokens": "50.0",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "oa-price",
+              "url": "https://developers.openai.com/api/docs/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": "已展开 All models，并切换 Fast mode；金额 USD / 1M tokens"
+            },
+            {
+              "id": "gpt-6-astra",
+              "url": "https://developers.openai.com/api/docs/models/gpt-6-astra",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_context_differs_from_official_API",
+        "catalog_effort_differs_from_official_API",
+        "ultra_is_local_delegation_and_wire_mapping_not_independent_native_effort"
+      ],
+      "pricingNotes": {
+        "fast_rate_status": "verified; GPT-5.4/5.5 long-context Fast table is dash, do not extrapolate",
+        "regional_uplift": "Eligible regional processing +10%; GPT-6 Astra Fast unavailable with EU residency",
+        "long_scope": "full session for GPT-5.4/5.5; full request for GPT-5.6/Astra"
+      }
+    },
+    {
+      "bindingId": "gpt-5.3-codex-spark:openai:gpt-5.3-codex-spark",
+      "provider": "openai",
+      "resolvedModel": "gpt-5.3-codex-spark",
+      "referenceAPIModel": null,
+      "apiEquivalentEligibility": "not_eligible_unknown_identity",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [],
+      "status": "unknown",
+      "rateRules": [],
+      "uncertainty": [
+        "official_identity_or_price_unknown",
+        "ultra_is_local_delegation_and_wire_mapping_not_independent_native_effort"
+      ]
+    },
+    {
+      "bindingId": "combo/ailsa-gemini-3.8-flash:google-antigravity:gemini-3.8-flash",
+      "provider": "google-antigravity",
+      "resolvedModel": "gemini-3.8-flash",
+      "referenceAPIModel": "gemini-3.8-flash",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "gemini-3.8-flash",
+          "url": "https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash?hl=en",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "google-price",
+          "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+          "verifiedOn": "2026-09-15",
+          "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard",
+          "condition": {
+            "through": "2026-12-31",
+            "service_tier": "standard"
+          },
+          "inputUSDPerMillionTokens": "0.75",
+          "outputUSDPerMillionTokens": "3.75",
+          "cacheReadUSDPerMillionTokens": "0.075",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "verified_vendor_service_tier",
+            "provider_effective_timestamp"
+          ],
+          "source": [
+            {
+              "id": "google-price",
+              "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+              "verifiedOn": "2026-09-15",
+              "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+            }
+          ]
+        },
+        {
+          "id": "batch",
+          "condition": {
+            "through": "2026-12-31",
+            "service_tier": "batch"
+          },
+          "inputUSDPerMillionTokens": "0.375",
+          "outputUSDPerMillionTokens": "1.875",
+          "cacheReadUSDPerMillionTokens": "0.0375",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "verified_vendor_service_tier",
+            "provider_effective_timestamp"
+          ],
+          "source": [
+            {
+              "id": "google-price",
+              "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+              "verifiedOn": "2026-09-15",
+              "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+            }
+          ]
+        },
+        {
+          "id": "flex",
+          "condition": {
+            "through": "2026-12-31",
+            "service_tier": "flex"
+          },
+          "inputUSDPerMillionTokens": "0.375",
+          "outputUSDPerMillionTokens": "1.875",
+          "cacheReadUSDPerMillionTokens": "0.0375",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "verified_vendor_service_tier",
+            "provider_effective_timestamp"
+          ],
+          "source": [
+            {
+              "id": "google-price",
+              "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+              "verifiedOn": "2026-09-15",
+              "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+            }
+          ]
+        },
+        {
+          "id": "priority",
+          "condition": {
+            "through": "2026-12-31",
+            "service_tier": "priority"
+          },
+          "inputUSDPerMillionTokens": "1.350",
+          "outputUSDPerMillionTokens": "6.750",
+          "cacheReadUSDPerMillionTokens": "0.1350",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "verified_vendor_service_tier",
+            "provider_effective_timestamp"
+          ],
+          "source": [
+            {
+              "id": "google-price",
+              "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+              "verifiedOn": "2026-09-15",
+              "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+            }
+          ]
+        }
+      ],
+      "uncertainty": [],
+      "pricingNotes": {
+        "future": "2027-01-01: token rates and cache storage double",
+        "cache_write_status": "not separately listed"
+      }
+    },
+    {
+      "bindingId": "combo/ailsa-gemini-opus-4-6:google-antigravity:claude-opus-4-6-thinking",
+      "provider": "google-antigravity",
+      "resolvedModel": "claude-opus-4-6-thinking",
+      "referenceAPIModel": "claude-opus-4-6",
+      "apiEquivalentEligibility": "not_eligible_unknown_identity",
+      "identityStatus": "local bridge variant; public alias equivalence UNVERIFIED; reference-only price, do not auto-bill",
+      "officialSource": [
+        {
+          "id": "claude-price",
+          "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-effort",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/effort",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-models",
+          "url": "https://platform.claude.com/docs/en/about-claude/models/overview",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "unknown",
+      "rateRules": [],
+      "uncertainty": [
+        "catalog_default_differs_from_official_API"
+      ]
+    },
+    {
+      "bindingId": "combo/ailsa-gemini-sonnet-4-6:google-antigravity:claude-sonnet-4-6",
+      "provider": "google-antigravity",
+      "resolvedModel": "claude-sonnet-4-6",
+      "referenceAPIModel": "claude-sonnet-4-6",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "claude-price",
+          "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-effort",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/effort",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-models",
+          "url": "https://platform.claude.com/docs/en/about-claude/models/overview",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard",
+          "condition": {
+            "all_contexts": true
+          },
+          "inputUSDPerMillionTokens": "3",
+          "outputUSDPerMillionTokens": "15",
+          "cacheReadUSDPerMillionTokens": "0.3",
+          "cacheWriteUSDPerMillionTokens": "3.75",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency"
+          ],
+          "source": [
+            {
+              "id": "claude-price",
+              "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_default_differs_from_official_API"
+      ],
+      "pricingNotes": {
+        "context_tiering": "4.6 and later: standard rates over full 1M window; no 200k premium",
+        "regional_uplift": "inference_geo us +10%"
+      }
+    },
+    {
+      "bindingId": "combo/cursor-auto:cursor-proxy:auto",
+      "provider": "cursor-proxy",
+      "resolvedModel": "auto",
+      "referenceAPIModel": null,
+      "apiEquivalentEligibility": "not_eligible_unknown_identity",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [],
+      "status": "unknown",
+      "rateRules": [],
+      "uncertainty": [
+        "official_identity_or_price_unknown",
+        "bridge_response_service_tier_echoes_request_not_vendor_confirmation"
+      ]
+    },
+    {
+      "bindingId": "combo/cursor-claude-fable-5:cursor-proxy:claude-fable-5",
+      "provider": "cursor-proxy",
+      "resolvedModel": "claude-fable-5",
+      "referenceAPIModel": "claude-fable-5",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "claude-price",
+          "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-effort",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/effort",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-models",
+          "url": "https://platform.claude.com/docs/en/about-claude/models/overview",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard",
+          "condition": {
+            "all_contexts": true
+          },
+          "inputUSDPerMillionTokens": "10",
+          "outputUSDPerMillionTokens": "50",
+          "cacheReadUSDPerMillionTokens": "1",
+          "cacheWriteUSDPerMillionTokens": "12.50",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "cursor_vendor_billing_tier_not_bridge_echo"
+          ],
+          "source": [
+            {
+              "id": "claude-price",
+              "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_default_differs_from_official_API",
+        "bridge_response_service_tier_echoes_request_not_vendor_confirmation"
+      ],
+      "pricingNotes": {
+        "context_tiering": "4.6 and later: standard rates over full 1M window; no 200k premium",
+        "regional_uplift": "inference_geo us +10%"
+      }
+    },
+    {
+      "bindingId": "combo/cursor-claude-fable-5-1:cursor-proxy:claude-fable-5-1",
+      "provider": "cursor-proxy",
+      "resolvedModel": "claude-fable-5-1",
+      "referenceAPIModel": "claude-fable-5-1",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "claude-price",
+          "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-effort",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/effort",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-models",
+          "url": "https://platform.claude.com/docs/en/about-claude/models/overview",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard",
+          "condition": {
+            "all_contexts": true
+          },
+          "inputUSDPerMillionTokens": "10",
+          "outputUSDPerMillionTokens": "50",
+          "cacheReadUSDPerMillionTokens": "0.25",
+          "cacheWriteUSDPerMillionTokens": "12.50",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "cursor_vendor_billing_tier_not_bridge_echo"
+          ],
+          "source": [
+            {
+              "id": "claude-price",
+              "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_default_differs_from_official_API",
+        "bridge_response_service_tier_echoes_request_not_vendor_confirmation"
+      ],
+      "pricingNotes": {
+        "context_tiering": "4.6 and later: standard rates over full 1M window; no 200k premium",
+        "regional_uplift": "inference_geo us +10%"
+      }
+    },
+    {
+      "bindingId": "combo/cursor-claude-fable-5-1-thinking:cursor-proxy:claude-fable-5-1-thinking",
+      "provider": "cursor-proxy",
+      "resolvedModel": "claude-fable-5-1-thinking",
+      "referenceAPIModel": "claude-fable-5-1",
+      "apiEquivalentEligibility": "not_eligible_unknown_identity",
+      "identityStatus": "local bridge variant; public alias equivalence UNVERIFIED; reference-only price, do not auto-bill",
+      "officialSource": [
+        {
+          "id": "claude-price",
+          "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-effort",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/effort",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-models",
+          "url": "https://platform.claude.com/docs/en/about-claude/models/overview",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "unknown",
+      "rateRules": [],
+      "uncertainty": [
+        "catalog_default_differs_from_official_API",
+        "bridge_response_service_tier_echoes_request_not_vendor_confirmation"
+      ]
+    },
+    {
+      "bindingId": "combo/cursor-claude-fable-5-thinking:cursor-proxy:claude-fable-5-thinking",
+      "provider": "cursor-proxy",
+      "resolvedModel": "claude-fable-5-thinking",
+      "referenceAPIModel": "claude-fable-5",
+      "apiEquivalentEligibility": "not_eligible_unknown_identity",
+      "identityStatus": "local bridge variant; public alias equivalence UNVERIFIED; reference-only price, do not auto-bill",
+      "officialSource": [
+        {
+          "id": "claude-price",
+          "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-effort",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/effort",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-models",
+          "url": "https://platform.claude.com/docs/en/about-claude/models/overview",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "unknown",
+      "rateRules": [],
+      "uncertainty": [
+        "catalog_effort_differs_from_official_API",
+        "catalog_default_differs_from_official_API",
+        "bridge_response_service_tier_echoes_request_not_vendor_confirmation"
+      ]
+    },
+    {
+      "bindingId": "combo/cursor-claude-opus-5:cursor-proxy:claude-opus-5",
+      "provider": "cursor-proxy",
+      "resolvedModel": "claude-opus-5",
+      "referenceAPIModel": "claude-opus-5",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "claude-price",
+          "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-effort",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/effort",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-models",
+          "url": "https://platform.claude.com/docs/en/about-claude/models/overview",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard",
+          "condition": {
+            "all_contexts": true
+          },
+          "inputUSDPerMillionTokens": "5",
+          "outputUSDPerMillionTokens": "25",
+          "cacheReadUSDPerMillionTokens": "0.5",
+          "cacheWriteUSDPerMillionTokens": "6.25",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "cursor_vendor_billing_tier_not_bridge_echo"
+          ],
+          "source": [
+            {
+              "id": "claude-price",
+              "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "fast",
+          "condition": {
+            "confirmed_speed": "fast",
+            "platform": "first-party Claude API"
+          },
+          "inputUSDPerMillionTokens": "10",
+          "outputUSDPerMillionTokens": "50",
+          "cacheReadUSDPerMillionTokens": "1",
+          "cacheWriteUSDPerMillionTokens": "12.5",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "cursor_vendor_billing_tier_not_bridge_echo"
+          ],
+          "source": [
+            {
+              "id": "claude-price",
+              "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_effort_differs_from_official_API",
+        "catalog_default_differs_from_official_API",
+        "bridge_response_service_tier_echoes_request_not_vendor_confirmation"
+      ],
+      "pricingNotes": {
+        "context_tiering": "4.6 and later: standard rates over full 1M window; no 200k premium",
+        "regional_uplift": "inference_geo us +10%"
+      }
+    },
+    {
+      "bindingId": "combo/cursor-claude-opus-5-thinking:cursor-proxy:claude-opus-5-thinking",
+      "provider": "cursor-proxy",
+      "resolvedModel": "claude-opus-5-thinking",
+      "referenceAPIModel": "claude-opus-5",
+      "apiEquivalentEligibility": "not_eligible_unknown_identity",
+      "identityStatus": "local bridge variant; public alias equivalence UNVERIFIED; reference-only price, do not auto-bill",
+      "officialSource": [
+        {
+          "id": "claude-price",
+          "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-effort",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/effort",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-models",
+          "url": "https://platform.claude.com/docs/en/about-claude/models/overview",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "unknown",
+      "rateRules": [],
+      "uncertainty": [
+        "catalog_default_differs_from_official_API",
+        "bridge_response_service_tier_echoes_request_not_vendor_confirmation"
+      ]
+    },
+    {
+      "bindingId": "combo/cursor-claude-sonnet-5:cursor-proxy:claude-sonnet-5",
+      "provider": "cursor-proxy",
+      "resolvedModel": "claude-sonnet-5",
+      "referenceAPIModel": "claude-sonnet-5",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "claude-price",
+          "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-effort",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/effort",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-models",
+          "url": "https://platform.claude.com/docs/en/about-claude/models/overview",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard",
+          "condition": {
+            "all_contexts": true
+          },
+          "inputUSDPerMillionTokens": "2",
+          "outputUSDPerMillionTokens": "10",
+          "cacheReadUSDPerMillionTokens": "0.2",
+          "cacheWriteUSDPerMillionTokens": "2.50",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "cursor_vendor_billing_tier_not_bridge_echo"
+          ],
+          "source": [
+            {
+              "id": "claude-price",
+              "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_default_differs_from_official_API",
+        "bridge_response_service_tier_echoes_request_not_vendor_confirmation"
+      ],
+      "pricingNotes": {
+        "context_tiering": "4.6 and later: standard rates over full 1M window; no 200k premium",
+        "regional_uplift": "inference_geo us +10%"
+      }
+    },
+    {
+      "bindingId": "combo/cursor-claude-sonnet-5-thinking:cursor-proxy:claude-sonnet-5-thinking",
+      "provider": "cursor-proxy",
+      "resolvedModel": "claude-sonnet-5-thinking",
+      "referenceAPIModel": "claude-sonnet-5",
+      "apiEquivalentEligibility": "not_eligible_unknown_identity",
+      "identityStatus": "local bridge variant; public alias equivalence UNVERIFIED; reference-only price, do not auto-bill",
+      "officialSource": [
+        {
+          "id": "claude-price",
+          "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-effort",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/effort",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-models",
+          "url": "https://platform.claude.com/docs/en/about-claude/models/overview",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "unknown",
+      "rateRules": [],
+      "uncertainty": [
+        "catalog_effort_differs_from_official_API",
+        "catalog_default_differs_from_official_API",
+        "bridge_response_service_tier_echoes_request_not_vendor_confirmation"
+      ]
+    },
+    {
+      "bindingId": "combo/cursor-composer-2.5:cursor-proxy:composer-2.5",
+      "provider": "cursor-proxy",
+      "resolvedModel": "composer-2.5",
+      "referenceAPIModel": "composer-2.5",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "cursor-price",
+          "url": "https://cursor.com/docs/models",
+          "verifiedOn": "2026-09-15",
+          "note": "实际重定向中文文档；Cursor 费率单列，非 xAI/Moonshot 实付"
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard",
+          "condition": {},
+          "inputUSDPerMillionTokens": "0.5",
+          "outputUSDPerMillionTokens": "2.5",
+          "cacheReadUSDPerMillionTokens": "0.2",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "cursor_vendor_billing_tier_not_bridge_echo"
+          ],
+          "source": [
+            {
+              "id": "cursor-price",
+              "url": "https://cursor.com/docs/models",
+              "verifiedOn": "2026-09-15",
+              "note": "实际重定向中文文档；Cursor 费率单列，非 xAI/Moonshot 实付"
+            }
+          ]
+        },
+        {
+          "id": "fast",
+          "condition": {
+            "confirmed_fast": true
+          },
+          "inputUSDPerMillionTokens": "3",
+          "outputUSDPerMillionTokens": "15",
+          "cacheReadUSDPerMillionTokens": "0.5",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "cursor_vendor_billing_tier_not_bridge_echo"
+          ],
+          "source": [
+            {
+              "id": "cursor-price",
+              "url": "https://cursor.com/docs/models",
+              "verifiedOn": "2026-09-15",
+              "note": "实际重定向中文文档；Cursor 费率单列，非 xAI/Moonshot 实付"
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "bridge_response_service_tier_echoes_request_not_vendor_confirmation"
+      ],
+      "pricingNotes": {}
+    },
+    {
+      "bindingId": "combo/cursor-glm-5.2:cursor-proxy:glm-5.2",
+      "provider": "cursor-proxy",
+      "resolvedModel": "glm-5.2",
+      "referenceAPIModel": "glm-5.2",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "zai-model",
+          "url": "https://docs.z.ai/guides/llm/glm-5.2",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "zai-price",
+          "url": "https://docs.z.ai/guides/overview/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard",
+          "condition": {
+            "all_contexts": true
+          },
+          "inputUSDPerMillionTokens": "1.4",
+          "outputUSDPerMillionTokens": "4.4",
+          "cacheReadUSDPerMillionTokens": "0.26",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "cursor_vendor_billing_tier_not_bridge_echo"
+          ],
+          "source": [
+            {
+              "id": "zai-price",
+              "url": "https://docs.z.ai/guides/overview/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "bridge_response_service_tier_echoes_request_not_vendor_confirmation"
+      ],
+      "pricingNotes": {
+        "cache_storage": "limited-time free"
+      }
+    },
+    {
+      "bindingId": "combo/cursor-grok-4.6:cursor-proxy:grok-4.6",
+      "provider": "cursor-proxy",
+      "resolvedModel": "grok-4.6",
+      "referenceAPIModel": "grok-4.6",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "xai-price",
+          "url": "https://docs.x.ai/developers/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "xai46",
+          "url": "https://docs.x.ai/developers/models/grok-4.6",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "xai-priority",
+          "url": "https://docs.x.ai/developers/advanced-api-usage/priority-processing",
+          "verifiedOn": "2026-09-15",
+          "note": "priority 以供应商响应确认；所阅页面未给出可用的准确 premium 数值"
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard-short",
+          "condition": {
+            "prompt_tokens_lt": 200000
+          },
+          "inputUSDPerMillionTokens": "2",
+          "outputUSDPerMillionTokens": "6",
+          "cacheReadUSDPerMillionTokens": "0.5",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "cursor_vendor_billing_tier_not_bridge_echo"
+          ],
+          "source": [
+            {
+              "id": "xai-price",
+              "url": "https://docs.x.ai/developers/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "standard-long",
+          "condition": {
+            "prompt_tokens_gte": 200000
+          },
+          "inputUSDPerMillionTokens": "4",
+          "outputUSDPerMillionTokens": "12",
+          "cacheReadUSDPerMillionTokens": "1.0",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "cursor_vendor_billing_tier_not_bridge_echo"
+          ],
+          "source": [
+            {
+              "id": "xai-price",
+              "url": "https://docs.x.ai/developers/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_context_differs_from_official_API",
+        "catalog_default_differs_from_official_API",
+        "bridge_response_service_tier_echoes_request_not_vendor_confirmation",
+        "multi_provider_combo_requires_actual_resolved_target"
+      ],
+      "pricingNotes": {
+        "long_scope": "All tokens once prompt reaches threshold; pricing table says >=200k; model detail says exceeds 200K. Exact boundary conflict must be retained.",
+        "priority_rates": null
+      }
+    },
+    {
+      "bindingId": "combo/cursor-grok-4.6:xai:grok-4.6",
+      "provider": "xai",
+      "resolvedModel": "grok-4.6",
+      "referenceAPIModel": "grok-4.6",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "xai-price",
+          "url": "https://docs.x.ai/developers/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "xai46",
+          "url": "https://docs.x.ai/developers/models/grok-4.6",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "xai-priority",
+          "url": "https://docs.x.ai/developers/advanced-api-usage/priority-processing",
+          "verifiedOn": "2026-09-15",
+          "note": "priority 以供应商响应确认；所阅页面未给出可用的准确 premium 数值"
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard-short",
+          "condition": {
+            "prompt_tokens_lt": 200000
+          },
+          "inputUSDPerMillionTokens": "2",
+          "outputUSDPerMillionTokens": "6",
+          "cacheReadUSDPerMillionTokens": "0.5",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens"
+          ],
+          "source": [
+            {
+              "id": "xai-price",
+              "url": "https://docs.x.ai/developers/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "standard-long",
+          "condition": {
+            "prompt_tokens_gte": 200000
+          },
+          "inputUSDPerMillionTokens": "4",
+          "outputUSDPerMillionTokens": "12",
+          "cacheReadUSDPerMillionTokens": "1.0",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens"
+          ],
+          "source": [
+            {
+              "id": "xai-price",
+              "url": "https://docs.x.ai/developers/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_context_differs_from_official_API",
+        "catalog_default_differs_from_official_API",
+        "bridge_response_service_tier_echoes_request_not_vendor_confirmation",
+        "multi_provider_combo_requires_actual_resolved_target"
+      ],
+      "pricingNotes": {
+        "long_scope": "All tokens once prompt reaches threshold; pricing table says >=200k; model detail says exceeds 200K. Exact boundary conflict must be retained.",
+        "priority_rates": null
+      }
+    },
+    {
+      "bindingId": "combo/cursor-kimi-k3:cursor-proxy:kimi-k3",
+      "provider": "cursor-proxy",
+      "resolvedModel": "kimi-k3",
+      "referenceAPIModel": "kimi-k3",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "kimi-price",
+          "url": "https://platform.moonshot.ai/docs/pricing/chat",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "kimi-api",
+          "url": "https://platform.moonshot.ai/docs/guide/kimi-k3",
+          "verifiedOn": "2026-09-15",
+          "note": "实际呈现 Quickstart；列明 low/high/max，默认 max"
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard",
+          "condition": {
+            "all_contexts": true
+          },
+          "inputUSDPerMillionTokens": "3",
+          "outputUSDPerMillionTokens": "15",
+          "cacheReadUSDPerMillionTokens": "0.3",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "cursor_vendor_billing_tier_not_bridge_echo"
+          ],
+          "source": [
+            {
+              "id": "kimi-price",
+              "url": "https://platform.moonshot.ai/docs/pricing/chat",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_context_differs_from_official_API",
+        "catalog_default_differs_from_official_API",
+        "bridge_response_service_tier_echoes_request_not_vendor_confirmation"
+      ],
+      "pricingNotes": {
+        "tax": "exclusive",
+        "cache_write_status": "not separately published",
+        "fast_rates": null
+      }
+    },
+    {
+      "bindingId": "cursor-proxy/grok-4.6:cursor-proxy:grok-4.6",
+      "provider": "cursor-proxy",
+      "resolvedModel": "grok-4.6",
+      "referenceAPIModel": "grok-4.6",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "xai-price",
+          "url": "https://docs.x.ai/developers/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "xai46",
+          "url": "https://docs.x.ai/developers/models/grok-4.6",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "xai-priority",
+          "url": "https://docs.x.ai/developers/advanced-api-usage/priority-processing",
+          "verifiedOn": "2026-09-15",
+          "note": "priority 以供应商响应确认；所阅页面未给出可用的准确 premium 数值"
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard-short",
+          "condition": {
+            "prompt_tokens_lt": 200000
+          },
+          "inputUSDPerMillionTokens": "2",
+          "outputUSDPerMillionTokens": "6",
+          "cacheReadUSDPerMillionTokens": "0.5",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "cursor_vendor_billing_tier_not_bridge_echo"
+          ],
+          "source": [
+            {
+              "id": "xai-price",
+              "url": "https://docs.x.ai/developers/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "standard-long",
+          "condition": {
+            "prompt_tokens_gte": 200000
+          },
+          "inputUSDPerMillionTokens": "4",
+          "outputUSDPerMillionTokens": "12",
+          "cacheReadUSDPerMillionTokens": "1.0",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "cursor_vendor_billing_tier_not_bridge_echo"
+          ],
+          "source": [
+            {
+              "id": "xai-price",
+              "url": "https://docs.x.ai/developers/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_context_differs_from_official_API",
+        "catalog_effort_differs_from_official_API",
+        "bridge_response_service_tier_echoes_request_not_vendor_confirmation",
+        "ultra_is_local_delegation_and_wire_mapping_not_independent_native_effort"
+      ],
+      "pricingNotes": {
+        "long_scope": "All tokens once prompt reaches threshold; pricing table says >=200k; model detail says exceeds 200K. Exact boundary conflict must be retained.",
+        "priority_rates": null
+      }
+    },
+    {
+      "bindingId": "deepseek/deepseek-v4-flash:deepseek:deepseek-v4-flash",
+      "provider": "deepseek",
+      "resolvedModel": "deepseek-v4-flash",
+      "referenceAPIModel": "deepseek-v4-flash",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "deepseek-price",
+          "url": "https://api-docs.deepseek.com/quick_start/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "deepseek-thinking",
+          "url": "https://api-docs.deepseek.com/guides/thinking_mode",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "peak",
+          "condition": {
+            "utc_weekdays": "Mon-Fri",
+            "utc_intervals": [
+              "01:00-04:00",
+              "06:00-10:00"
+            ]
+          },
+          "inputUSDPerMillionTokens": "0.3",
+          "outputUSDPerMillionTokens": "1.2",
+          "cacheReadUSDPerMillionTokens": "0.006",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "provider_effective_timestamp"
+          ],
+          "source": [
+            {
+              "id": "deepseek-price",
+              "url": "https://api-docs.deepseek.com/quick_start/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "off-peak",
+          "condition": {
+            "otherwise": true
+          },
+          "inputUSDPerMillionTokens": "0.15",
+          "outputUSDPerMillionTokens": "0.6",
+          "cacheReadUSDPerMillionTokens": "0.003",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency"
+          ],
+          "source": [
+            {
+              "id": "deepseek-price",
+              "url": "https://api-docs.deepseek.com/quick_start/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_effort_differs_from_official_API",
+        "ultra_is_local_delegation_and_wire_mapping_not_independent_native_effort",
+        "official_legacy_alias_now_served_by_V4.1_Flash"
+      ],
+      "pricingNotes": {
+        "time_boundary": "Exact endpoint inclusivity not stated; do not infer invoice timestamp from local receive time"
+      }
+    },
+    {
+      "bindingId": "deepseek/deepseek-v4-pro:deepseek:deepseek-v4-pro",
+      "provider": "deepseek",
+      "resolvedModel": "deepseek-v4-pro",
+      "referenceAPIModel": "deepseek-v4-pro",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "deepseek-price",
+          "url": "https://api-docs.deepseek.com/quick_start/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "deepseek-thinking",
+          "url": "https://api-docs.deepseek.com/guides/thinking_mode",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "peak",
+          "condition": {
+            "utc_weekdays": "Mon-Fri",
+            "utc_intervals": [
+              "01:00-04:00",
+              "06:00-10:00"
+            ]
+          },
+          "inputUSDPerMillionTokens": "1.32",
+          "outputUSDPerMillionTokens": "3.96",
+          "cacheReadUSDPerMillionTokens": "0.044",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "provider_effective_timestamp"
+          ],
+          "source": [
+            {
+              "id": "deepseek-price",
+              "url": "https://api-docs.deepseek.com/quick_start/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "off-peak",
+          "condition": {
+            "otherwise": true
+          },
+          "inputUSDPerMillionTokens": "0.66",
+          "outputUSDPerMillionTokens": "1.98",
+          "cacheReadUSDPerMillionTokens": "0.022",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency"
+          ],
+          "source": [
+            {
+              "id": "deepseek-price",
+              "url": "https://api-docs.deepseek.com/quick_start/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_effort_differs_from_official_API",
+        "ultra_is_local_delegation_and_wire_mapping_not_independent_native_effort"
+      ],
+      "pricingNotes": {
+        "time_boundary": "Exact endpoint inclusivity not stated; do not infer invoice timestamp from local receive time"
+      }
+    },
+    {
+      "bindingId": "google-antigravity/claude-opus-4-6-thinking:google-antigravity:claude-opus-4-6-thinking",
+      "provider": "google-antigravity",
+      "resolvedModel": "claude-opus-4-6-thinking",
+      "referenceAPIModel": "claude-opus-4-6",
+      "apiEquivalentEligibility": "not_eligible_unknown_identity",
+      "identityStatus": "local bridge variant; public alias equivalence UNVERIFIED; reference-only price, do not auto-bill",
+      "officialSource": [
+        {
+          "id": "claude-price",
+          "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-effort",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/effort",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-models",
+          "url": "https://platform.claude.com/docs/en/about-claude/models/overview",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "unknown",
+      "rateRules": [],
+      "uncertainty": [
+        "catalog_effort_differs_from_official_API",
+        "catalog_default_differs_from_official_API",
+        "ultra_is_local_delegation_and_wire_mapping_not_independent_native_effort"
+      ]
+    },
+    {
+      "bindingId": "google-antigravity/claude-sonnet-4-6:google-antigravity:claude-sonnet-4-6",
+      "provider": "google-antigravity",
+      "resolvedModel": "claude-sonnet-4-6",
+      "referenceAPIModel": "claude-sonnet-4-6",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "claude-price",
+          "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-effort",
+          "url": "https://platform.claude.com/docs/en/build-with-claude/effort",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "claude-models",
+          "url": "https://platform.claude.com/docs/en/about-claude/models/overview",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard",
+          "condition": {
+            "all_contexts": true
+          },
+          "inputUSDPerMillionTokens": "3",
+          "outputUSDPerMillionTokens": "15",
+          "cacheReadUSDPerMillionTokens": "0.3",
+          "cacheWriteUSDPerMillionTokens": "3.75",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency"
+          ],
+          "source": [
+            {
+              "id": "claude-price",
+              "url": "https://platform.claude.com/docs/en/about-claude/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_effort_differs_from_official_API",
+        "catalog_default_differs_from_official_API",
+        "ultra_is_local_delegation_and_wire_mapping_not_independent_native_effort"
+      ],
+      "pricingNotes": {
+        "context_tiering": "4.6 and later: standard rates over full 1M window; no 200k premium",
+        "regional_uplift": "inference_geo us +10%"
+      }
+    },
+    {
+      "bindingId": "google-antigravity/gemini-3.1-flash-image:google-antigravity:gemini-3.1-flash-image",
+      "provider": "google-antigravity",
+      "resolvedModel": "gemini-3.1-flash-image",
+      "referenceAPIModel": "gemini-3.1-flash-image",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "gemini-3.1-flash-image",
+          "url": "https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image?hl=en",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "google-price",
+          "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+          "verifiedOn": "2026-09-15",
+          "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard",
+          "condition": {
+            "modality": "text input/output"
+          },
+          "inputUSDPerMillionTokens": "0.5",
+          "outputUSDPerMillionTokens": "3",
+          "cacheReadUSDPerMillionTokens": null,
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency"
+          ],
+          "source": [
+            {
+              "id": "google-price",
+              "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+              "verifiedOn": "2026-09-15",
+              "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+            }
+          ]
+        },
+        {
+          "id": "batch",
+          "condition": {
+            "modality": "text input/output"
+          },
+          "inputUSDPerMillionTokens": "0.25",
+          "outputUSDPerMillionTokens": "1.5",
+          "cacheReadUSDPerMillionTokens": null,
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency"
+          ],
+          "source": [
+            {
+              "id": "google-price",
+              "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+              "verifiedOn": "2026-09-15",
+              "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_context_differs_from_official_API",
+        "catalog_input_limit_8x_official_API_input_limit"
+      ],
+      "pricingNotes": {
+        "cache_read_status": "not supported"
+      }
+    },
+    {
+      "bindingId": "google-antigravity/gemini-3.1-pro:google-antigravity:gemini-3.1-pro",
+      "provider": "google-antigravity",
+      "resolvedModel": "gemini-3.1-pro",
+      "referenceAPIModel": "gemini-3.1-pro-preview",
+      "apiEquivalentEligibility": "not_eligible_unknown_identity",
+      "identityStatus": "candidate reference only; no official Antigravity alias equality verified",
+      "officialSource": [
+        {
+          "id": "gemini-3.1-pro-preview",
+          "url": "https://ai.google.dev/gemini-api/docs/models/gemini-3.1-pro-preview?hl=en",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "google-price",
+          "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+          "verifiedOn": "2026-09-15",
+          "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+        }
+      ],
+      "status": "unknown",
+      "rateRules": [],
+      "uncertainty": [
+        "ultra_is_local_delegation_and_wire_mapping_not_independent_native_effort"
+      ]
+    },
+    {
+      "bindingId": "google-antigravity/gemini-3.7-flash:google-antigravity:gemini-3.7-flash",
+      "provider": "google-antigravity",
+      "resolvedModel": "gemini-3.7-flash",
+      "referenceAPIModel": "gemini-3.7-flash",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "gemini-3.7-flash",
+          "url": "https://ai.google.dev/gemini-api/docs/models/gemini-3.7-flash?hl=en",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "google-price",
+          "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+          "verifiedOn": "2026-09-15",
+          "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard",
+          "condition": {
+            "through": "2026-12-31",
+            "service_tier": "standard"
+          },
+          "inputUSDPerMillionTokens": "0.75",
+          "outputUSDPerMillionTokens": "3.75",
+          "cacheReadUSDPerMillionTokens": "0.075",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "verified_vendor_service_tier",
+            "provider_effective_timestamp"
+          ],
+          "source": [
+            {
+              "id": "google-price",
+              "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+              "verifiedOn": "2026-09-15",
+              "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+            }
+          ]
+        },
+        {
+          "id": "batch",
+          "condition": {
+            "through": "2026-12-31",
+            "service_tier": "batch"
+          },
+          "inputUSDPerMillionTokens": "0.375",
+          "outputUSDPerMillionTokens": "1.875",
+          "cacheReadUSDPerMillionTokens": "0.0375",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "verified_vendor_service_tier",
+            "provider_effective_timestamp"
+          ],
+          "source": [
+            {
+              "id": "google-price",
+              "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+              "verifiedOn": "2026-09-15",
+              "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+            }
+          ]
+        },
+        {
+          "id": "flex",
+          "condition": {
+            "through": "2026-12-31",
+            "service_tier": "flex"
+          },
+          "inputUSDPerMillionTokens": "0.375",
+          "outputUSDPerMillionTokens": "1.875",
+          "cacheReadUSDPerMillionTokens": "0.0375",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "verified_vendor_service_tier",
+            "provider_effective_timestamp"
+          ],
+          "source": [
+            {
+              "id": "google-price",
+              "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+              "verifiedOn": "2026-09-15",
+              "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+            }
+          ]
+        },
+        {
+          "id": "priority",
+          "condition": {
+            "through": "2026-12-31",
+            "service_tier": "priority"
+          },
+          "inputUSDPerMillionTokens": "1.350",
+          "outputUSDPerMillionTokens": "6.750",
+          "cacheReadUSDPerMillionTokens": "0.1350",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "verified_vendor_service_tier",
+            "provider_effective_timestamp"
+          ],
+          "source": [
+            {
+              "id": "google-price",
+              "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+              "verifiedOn": "2026-09-15",
+              "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_effort_differs_from_official_API",
+        "ultra_is_local_delegation_and_wire_mapping_not_independent_native_effort"
+      ],
+      "pricingNotes": {
+        "future": "2027-01-01: token rates and cache storage double",
+        "cache_write_status": "not separately listed"
+      }
+    },
+    {
+      "bindingId": "google-antigravity/gemini-3.8-flash:google-antigravity:gemini-3.8-flash",
+      "provider": "google-antigravity",
+      "resolvedModel": "gemini-3.8-flash",
+      "referenceAPIModel": "gemini-3.8-flash",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "gemini-3.8-flash",
+          "url": "https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash?hl=en",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "google-price",
+          "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+          "verifiedOn": "2026-09-15",
+          "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard",
+          "condition": {
+            "through": "2026-12-31",
+            "service_tier": "standard"
+          },
+          "inputUSDPerMillionTokens": "0.75",
+          "outputUSDPerMillionTokens": "3.75",
+          "cacheReadUSDPerMillionTokens": "0.075",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "verified_vendor_service_tier",
+            "provider_effective_timestamp"
+          ],
+          "source": [
+            {
+              "id": "google-price",
+              "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+              "verifiedOn": "2026-09-15",
+              "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+            }
+          ]
+        },
+        {
+          "id": "batch",
+          "condition": {
+            "through": "2026-12-31",
+            "service_tier": "batch"
+          },
+          "inputUSDPerMillionTokens": "0.375",
+          "outputUSDPerMillionTokens": "1.875",
+          "cacheReadUSDPerMillionTokens": "0.0375",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "verified_vendor_service_tier",
+            "provider_effective_timestamp"
+          ],
+          "source": [
+            {
+              "id": "google-price",
+              "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+              "verifiedOn": "2026-09-15",
+              "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+            }
+          ]
+        },
+        {
+          "id": "flex",
+          "condition": {
+            "through": "2026-12-31",
+            "service_tier": "flex"
+          },
+          "inputUSDPerMillionTokens": "0.375",
+          "outputUSDPerMillionTokens": "1.875",
+          "cacheReadUSDPerMillionTokens": "0.0375",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "verified_vendor_service_tier",
+            "provider_effective_timestamp"
+          ],
+          "source": [
+            {
+              "id": "google-price",
+              "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+              "verifiedOn": "2026-09-15",
+              "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+            }
+          ]
+        },
+        {
+          "id": "priority",
+          "condition": {
+            "through": "2026-12-31",
+            "service_tier": "priority"
+          },
+          "inputUSDPerMillionTokens": "1.350",
+          "outputUSDPerMillionTokens": "6.750",
+          "cacheReadUSDPerMillionTokens": "0.1350",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "verified_vendor_service_tier",
+            "provider_effective_timestamp"
+          ],
+          "source": [
+            {
+              "id": "google-price",
+              "url": "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
+              "verifiedOn": "2026-09-15",
+              "note": "英文原文及 DOM textContent 中的全部价格表；中文页缺少部分新模型表"
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_effort_differs_from_official_API",
+        "ultra_is_local_delegation_and_wire_mapping_not_independent_native_effort"
+      ],
+      "pricingNotes": {
+        "future": "2027-01-01: token rates and cache storage double",
+        "cache_write_status": "not separately listed"
+      }
+    },
+    {
+      "bindingId": "google-antigravity/gpt-oss-120b-medium:google-antigravity:gpt-oss-120b-medium",
+      "provider": "google-antigravity",
+      "resolvedModel": "gpt-oss-120b-medium",
+      "referenceAPIModel": null,
+      "apiEquivalentEligibility": "not_eligible_unknown_identity",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [],
+      "status": "unknown",
+      "rateRules": [],
+      "uncertainty": [
+        "official_identity_or_price_unknown"
+      ]
+    },
+    {
+      "bindingId": "kimi-code/k3:kimi-code:k3",
+      "provider": "kimi-code",
+      "resolvedModel": "k3",
+      "referenceAPIModel": "kimi-k3",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "official Kimi Code table identifies k3 as K3; API-equivalent only, membership ceiling separate",
+      "officialSource": [
+        {
+          "id": "kimi-price",
+          "url": "https://platform.moonshot.ai/docs/pricing/chat",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "kimi-api",
+          "url": "https://platform.moonshot.ai/docs/guide/kimi-k3",
+          "verifiedOn": "2026-09-15",
+          "note": "实际呈现 Quickstart；列明 low/high/max，默认 max"
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard",
+          "condition": {
+            "all_contexts": true
+          },
+          "inputUSDPerMillionTokens": "3",
+          "outputUSDPerMillionTokens": "15",
+          "cacheReadUSDPerMillionTokens": "0.3",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency"
+          ],
+          "source": [
+            {
+              "id": "kimi-price",
+              "url": "https://platform.moonshot.ai/docs/pricing/chat",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_context_differs_from_official_API",
+        "catalog_effort_differs_from_official_API",
+        "catalog_default_differs_from_official_API",
+        "ultra_is_local_delegation_and_wire_mapping_not_independent_native_effort",
+        "official_k3_membership_sensitive_1M_and_explicit_k3-256k_now_exist",
+        "selected_k3-256k_missing_from_catalog"
+      ],
+      "pricingNotes": {
+        "tax": "exclusive",
+        "cache_write_status": "not separately published",
+        "fast_rates": null
+      }
+    },
+    {
+      "bindingId": "xai/grok-4.5:xai:grok-4.5",
+      "provider": "xai",
+      "resolvedModel": "grok-4.5",
+      "referenceAPIModel": "grok-4.5",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "xai-price",
+          "url": "https://docs.x.ai/developers/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "xai45",
+          "url": "https://docs.x.ai/developers/models/grok-4.5",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "xai-priority",
+          "url": "https://docs.x.ai/developers/advanced-api-usage/priority-processing",
+          "verifiedOn": "2026-09-15",
+          "note": "priority 以供应商响应确认；所阅页面未给出可用的准确 premium 数值"
+        },
+        {
+          "id": "xai-reasoning",
+          "url": "https://docs.x.ai/developers/model-capabilities/text/reasoning",
+          "verifiedOn": "2026-09-15",
+          "note": "与 4.5 模型详情页存在 xhigh 冲突：专门 reasoning 页说明 4.5 xhigh 实际按 high"
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard-short",
+          "condition": {
+            "prompt_tokens_lt": 200000
+          },
+          "inputUSDPerMillionTokens": "2",
+          "outputUSDPerMillionTokens": "6",
+          "cacheReadUSDPerMillionTokens": "0.3",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens"
+          ],
+          "source": [
+            {
+              "id": "xai-price",
+              "url": "https://docs.x.ai/developers/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "standard-long",
+          "condition": {
+            "prompt_tokens_gte": 200000
+          },
+          "inputUSDPerMillionTokens": "4",
+          "outputUSDPerMillionTokens": "12",
+          "cacheReadUSDPerMillionTokens": "0.6",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens"
+          ],
+          "source": [
+            {
+              "id": "xai-price",
+              "url": "https://docs.x.ai/developers/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_effort_differs_from_official_API",
+        "ultra_is_local_delegation_and_wire_mapping_not_independent_native_effort"
+      ],
+      "pricingNotes": {
+        "long_scope": "All tokens once prompt reaches threshold; pricing table says >=200k; model detail says exceeds 200K. Exact boundary conflict must be retained.",
+        "priority_rates": null
+      }
+    },
+    {
+      "bindingId": "xai/grok-4.6:xai:grok-4.6",
+      "provider": "xai",
+      "resolvedModel": "grok-4.6",
+      "referenceAPIModel": "grok-4.6",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "xai-price",
+          "url": "https://docs.x.ai/developers/pricing",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "xai46",
+          "url": "https://docs.x.ai/developers/models/grok-4.6",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        },
+        {
+          "id": "xai-priority",
+          "url": "https://docs.x.ai/developers/advanced-api-usage/priority-processing",
+          "verifiedOn": "2026-09-15",
+          "note": "priority 以供应商响应确认；所阅页面未给出可用的准确 premium 数值"
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard-short",
+          "condition": {
+            "prompt_tokens_lt": 200000
+          },
+          "inputUSDPerMillionTokens": "2",
+          "outputUSDPerMillionTokens": "6",
+          "cacheReadUSDPerMillionTokens": "0.5",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens"
+          ],
+          "source": [
+            {
+              "id": "xai-price",
+              "url": "https://docs.x.ai/developers/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "id": "standard-long",
+          "condition": {
+            "prompt_tokens_gte": 200000
+          },
+          "inputUSDPerMillionTokens": "4",
+          "outputUSDPerMillionTokens": "12",
+          "cacheReadUSDPerMillionTokens": "1.0",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens"
+          ],
+          "source": [
+            {
+              "id": "xai-price",
+              "url": "https://docs.x.ai/developers/pricing",
+              "verifiedOn": "2026-09-15",
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "catalog_effort_differs_from_official_API",
+        "ultra_is_local_delegation_and_wire_mapping_not_independent_native_effort"
+      ],
+      "pricingNotes": {
+        "long_scope": "All tokens once prompt reaches threshold; pricing table says >=200k; model detail says exceeds 200K. Exact boundary conflict must be retained.",
+        "priority_rates": null
+      }
+    },
+    {
+      "bindingId": "unknown:kimi-code:k3-256k",
+      "provider": "kimi-code",
+      "resolvedModel": "k3-256k",
+      "referenceAPIModel": null,
+      "apiEquivalentEligibility": "not_eligible_unknown_identity",
+      "identityStatus": "Selected in config, absent from 37-row catalog; runtime routability untested",
+      "officialSource": [
+        {
+          "id": "kimi-code",
+          "url": "https://www.kimi.com/code/docs/en/kimi-code/models.html",
+          "verifiedOn": "2026-09-15",
+          "note": ""
+        }
+      ],
+      "status": "unknown",
+      "rateRules": [],
+      "uncertainty": [
+        "configured_selected_not_in_catalog"
+      ]
+    }
+  ]
+}
