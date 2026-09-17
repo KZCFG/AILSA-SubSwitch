@@ -23,6 +23,21 @@ It is a derivative of Copool, with the upstream MIT notices preserved.
 - The build script signs and checks the bundles, and generates a ZIP, checksum
   and local source manifest. The default signing identity is ad-hoc.
 
+## Public project delivery
+
+The independent source repository and English project page are public. The
+README images were rendered from native components with synthetic data, and all
+six homepage images loaded successfully on GitHub. Relative documentation links
+were checked. A bounded scan of 207 outgoing files found no known private-key,
+API-token, personal home-directory or personal account-address patterns. This is
+not a guarantee of the absence of every possible secret. Private vulnerability
+reporting is enabled.
+
+The 1.0.0 ZIP and SHA-256 are staged in a GitHub Release draft. Package signatures,
+version/build fields and the absence of updater keys/frameworks were verified.
+After the English account-card labels changed, all 11 account-card regression
+tests passed again.
+
 ## Still to validate before calling the binary stable
 
 Use [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md) for current acceptance. Source

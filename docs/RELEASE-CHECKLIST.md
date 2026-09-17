@@ -11,7 +11,7 @@ separate steps.
 - [x] Set version 1.0.0; exclude updater code and dependencies.
 - [x] Check all relative documentation links and preview images.
 - [x] Review outgoing files for credentials, personal accounts, logs and build artifacts.
-- [ ] Publish a clean source snapshot to KZCFG/AILSA-SubSwitch; verify remote readback.
+- [x] Publish a clean source snapshot to KZCFG/AILSA-SubSwitch; verify remote readback.
 - [x] Enable private vulnerability reporting.
 
 ## Binary candidate: 1.0.0 (2026091713)
