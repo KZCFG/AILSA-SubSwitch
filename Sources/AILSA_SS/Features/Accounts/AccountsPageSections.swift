@@ -158,11 +158,10 @@ struct ReorderableAccountGrid<Item: Identifiable, Card: View>: View where Item.I
         savedOrder = preferences.encoded
     }
     private func offset(for id: String) -> CGSize {
-        // Once a drag starts, the grid is allowed to settle neighboring cards
-        // into their new order. The lifted card must continue to use its frozen
-        // origin; reading the live frame here makes its offset jump whenever
-        // SwiftUI lays out the reordered grid.
-        guard draggingID == id, let frame = dragFrames[id] ?? frames[id] else { return .zero }
+        // The frozen map is for deciding which slot is the target. For the
+        // dragged card's visual offset, use its current pre-offset layout
+        // frame so a slot change is compensated instead of becoming a jump.
+        guard draggingID == id, let frame = frames[id] ?? dragFrames[id] else { return .zero }
         return CGSize(width: liftedFrame.minX - frame.minX + translation.width,
                       height: liftedFrame.minY - frame.minY + translation.height)
     }

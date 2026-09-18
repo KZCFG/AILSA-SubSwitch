@@ -16,9 +16,10 @@ extension AccountsCoordinator {
 
     func listAccounts(refreshWorkspaceMetadata: Bool = true) async throws -> [AccountSummary] {
         var store = try storeRepository.loadStore()
+        let didClearUnverifiedCountdowns = clearUnverifiedCountdownMarkers(in: &store)
         let didMigrateAntigravity = try migrateLegacyAntigravityAccountsIfNeeded(in: &store)
         let didReconcile = Self.reconcileStoredAccountMetadata(in: &store, authRepository: authRepository)
-        if didMigrateAntigravity || didReconcile {
+        if didClearUnverifiedCountdowns || didMigrateAntigravity || didReconcile {
             try storeRepository.saveStore(store)
             // The remote metadata lookup below may suspend. Start it from the
             // just-persisted store rather than carrying an earlier whole-store
@@ -48,6 +49,22 @@ extension AccountsCoordinator {
             "refreshWorkspaceMetadata=\(refreshWorkspaceMetadata) reconciled=\(didReconcile) enriched=\(didEnrich) \(AccountSwitchDebugLog.describe(store: store, currentAuthAccountKey: authRepository.currentAuthAccountKey())) \(AccountSwitchDebugLog.describe(accounts: summaries))"
         )
         return summaries
+    }
+
+    /// Remove markers written by older builds that treated a quota read as a
+    /// first model request. A verified request marker is retained across reads.
+    private func clearUnverifiedCountdownMarkers(in store: inout AccountsStore) -> Bool {
+        let now = dateProvider.unixSecondsNow()
+        var changed = false
+        for index in store.accounts.indices {
+            guard let usage = store.accounts[index].usage else { continue }
+            let cleaned = QuotaCountdownState.reconcile(previous: usage, refreshed: usage, observedAt: now)
+            if cleaned != usage {
+                store.accounts[index].usage = cleaned
+                changed = true
+            }
+        }
+        return changed
     }
 
     /// The previous integration maintained a second AntiGravity account file.

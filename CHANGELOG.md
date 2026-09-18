@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.0 candidate 2026091820 — require request evidence for countdowns
+
+- Stop starting 5-hour and 1-week countdowns from read-only quota refreshes or
+  legacy markers. Only explicit model-request evidence can authorize a marker.
+
+## 1.0.0 candidate 2026091819 — correct drag offset compensation
+
+- Keep frozen geometry for target detection while compensating the lifted card
+  against its current grid slot, avoiding a jump when neighboring cards move.
+
 ## 1.0.0 candidate 2026091818 — stable account-card dragging
 
 - Keep the lifted account card anchored to its frozen drag origin while the

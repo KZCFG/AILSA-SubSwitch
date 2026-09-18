@@ -30,7 +30,7 @@ final class QuotaCountdownStateTests: XCTestCase {
         ))
     }
 
-    func testNonZeroUsageArmsFromObservationTime() {
+    func testReadOnlyQuotaDoesNotArmFromNonZeroUsage() {
         let refreshed = UsageSnapshot(
             fetchedAt: 210,
             planType: "pro",
@@ -44,12 +44,12 @@ final class QuotaCountdownStateTests: XCTestCase {
             observedAt: 210
         )
 
-        XCTAssertEqual(reconciled.fiveHour?.countdownStartedAt, 210)
-        XCTAssertEqual(QuotaCountdownState.effectiveResetAt(
+        XCTAssertNil(reconciled.fiveHour?.countdownStartedAt)
+        XCTAssertNil(QuotaCountdownState.effectiveResetAt(
             resetAt: reconciled.fiveHour?.resetAt,
             countdownStartedAt: reconciled.fiveHour?.countdownStartedAt,
             now: 210
-        ), 500)
+        ))
     }
 
     func testReadOnlyCheckClearsLegacyActivationWithoutUsageEvidence() {
@@ -79,7 +79,7 @@ final class QuotaCountdownStateTests: XCTestCase {
         XCTAssertNil(checked.oneWeek?.countdownStartedAt)
         XCTAssertNil(checked.quotaFamilies?.first?.buckets.first?.countdownStartedAt)
     }
-    func testResetFiveHourWindowWaitsWhileUsedWeeklyWindowKeepsCounting() {
+    func testReadOnlyRefreshClearsBothWindowMarkers() {
         let previous = UsageSnapshot(
             fetchedAt: 100,
             planType: "pro",
@@ -94,7 +94,19 @@ final class QuotaCountdownStateTests: XCTestCase {
         )
         let checked = QuotaCountdownState.reconcile(previous: previous, refreshed: refreshed, observedAt: 120)
         XCTAssertNil(checked.fiveHour?.countdownStartedAt)
-        XCTAssertEqual(checked.oneWeek?.countdownStartedAt, 50)
+        XCTAssertNil(checked.oneWeek?.countdownStartedAt)
+    }
+
+    func testExplicitRequestEvidenceStartsCountdown() {
+        let usage = UsageSnapshot(
+            fetchedAt: 210,
+            planType: "pro",
+            fiveHour: UsageWindow(usedPercent: 2, windowSeconds: 18_000, resetAt: 500),
+            oneWeek: nil
+        )
+        let marked = QuotaCountdownState.markRequestObserved(usage, observedAt: 210)
+        XCTAssertEqual(marked.fiveHour?.countdownStartedAt, 210)
+        XCTAssertEqual(marked.fiveHour?.countdownStartEvidence, .requestObserved)
     }
 
 }

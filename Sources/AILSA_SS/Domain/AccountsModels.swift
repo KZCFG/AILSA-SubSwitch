@@ -515,6 +515,10 @@ struct UsageQuotaFamily: Codable, Equatable, Identifiable, Sendable {
     var buckets: [UsageQuotaBucket]
 }
 
+enum QuotaCountdownStartEvidence: String, Codable, Equatable, Sendable {
+    case requestObserved
+}
+
 struct UsageQuotaBucket: Codable, Equatable, Identifiable, Sendable {
     var id: String
     var displayName: String
@@ -526,6 +530,8 @@ struct UsageQuotaBucket: Codable, Equatable, Identifiable, Sendable {
     /// Local lower bound for the first request observed in this reset window.
     /// It is intentionally separate from the provider's absolute reset time.
     var countdownStartedAt: Int64? = nil
+    /// Missing in older stores; those markers are intentionally invalidated.
+    var countdownStartEvidence: QuotaCountdownStartEvidence? = nil
 
     /// A stable, provider-neutral ordering key. It intentionally relies on
     /// canonical window metadata and bucket IDs, never a localized display
@@ -639,6 +645,8 @@ struct UsageWindow: Codable, Equatable {
     var resetAt: Int64?
     /// Local lower bound for the first request observed in this reset window.
     var countdownStartedAt: Int64? = nil
+    /// Missing in older stores; those markers are intentionally invalidated.
+    var countdownStartEvidence: QuotaCountdownStartEvidence? = nil
 }
 
 struct CreditSnapshot: Codable, Equatable {

@@ -107,9 +107,10 @@ below Progress display, chooses Time remaining or Expiry date. This is independe
 of Used/Remaining percentages. Countdowns update every second; missing dates stay
 unknown and expired dates are labeled as expired.
 
-For a newly reset 5-hour or 1-week window, the countdown waits until the provider
-reports usage in that window. Reading quota alone does not activate a usage
-window. **Settings → General → Automatic quota checks** can check the current
+For a newly reset 5-hour or 1-week window, the countdown waits for explicit
+evidence that a model request was observed in that window. Reading quota alone
+does not activate a usage window, and legacy unverified markers are cleared.
+**Settings → General → Automatic quota checks** can check the current
 Codex or Antigravity account after switching, or all accounts during configured
 work hours while the app is running. Work hours use local time; matching start
 and end times means all day. These checks do not send model requests or activate
