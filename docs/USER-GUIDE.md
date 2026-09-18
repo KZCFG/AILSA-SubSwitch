@@ -86,6 +86,41 @@ Cursor amounts come from its usage API when reported. Data Details identifies
 price sources and their verification dates where available. See [Privacy](PRIVACY.md)
 for the inputs read by each provider.
 
+## Compact cards and display preferences
+
+In **Settings → Quota Display**, select Codex, Antigravity or Cursor:
+
+- **Quota windows** controls which limits are visible; it does not change usage or switching policy.
+- **Compact rings** (Codex and Antigravity) selects the first and second ring. Set
+  a provider default or choose an individual account. Selecting the other ring's
+  quota swaps positions; choose Hidden to omit a ring. Restore automatic selection
+  or use provider defaults to remove an override. Hidden quotas remain hidden;
+  an unavailable selected quota shows a dash instead of another quota's value.
+- **Progress skin** offers Official logo colors and AILSA SubSwitch default
+  (black, white and gray). It applies to this provider's bars and rings and follows
+  light/dark appearance. Existing installations retain official colors initially.
+
+Compact Antigravity rings label both the model family and time window. A single
+Codex ring leaves room for the reset-credit count and balance. Reset credits are
+listed individually in expiry order. **Settings → General → Reset credit dates**,
+below Progress display, chooses Time remaining or Expiry date. This is independent
+of Used/Remaining percentages. Countdowns update every second; missing dates stay
+unknown and expired dates are labeled as expired.
+
+For a newly reset 5-hour or 1-week window, the countdown waits until the provider
+reports usage in that window. Reading quota alone does not activate a usage
+window. **Settings → General → Automatic quota checks** can check the current
+Codex or Antigravity account after switching, or all accounts during configured
+work hours while the app is running. Work hours use local time; matching start
+and end times means all day. These checks do not send model requests or activate
+the provider's countdown.
+
+In **Settings → Switch behavior**, **Open OpenCodex dashboard** opens the local
+dashboard at `http://127.0.0.1:10100/`; OpenCodex must be running. The separate
+editor restart controls apply after switching a Codex account: enable the toggle
+and choose which installed editor to restart so it loads the new sign-in. Save
+your work first. Choosing None skips the editor restart.
+
 ## About AILSA SubSwitch
 
 Choose **Settings → About** from the settings tabs. This opens a page inside
@@ -108,3 +143,26 @@ feedback and third-party notices. Version 1.0.0 has no update controls.
 Include your ASS version/build (Settings → About), macOS version and reproduction
 steps in bug reports. Do not upload credential files, native profile databases,
 private account exports, or unredacted usage screenshots.
+
+## Browse and arrange accounts
+
+All three providers use vertical scrolling instead of account pages. With cards
+collapsed, Antigravity and Cursor use up to three columns; Codex uses up to two
+columns to leave room for balances and reset credits. The standard panel fits
+three rows of compact Antigravity cards. Smaller displays show fewer rows and
+keep the rest reachable by scrolling.
+
+Press and hold a card for a moment, then drag it before or after another card.
+The other cards move into place. Each provider remembers its own order, including
+after relaunch; new accounts are appended. This order does not change the smart
+switching policy. VoiceOver also offers Move earlier / Move later actions.
+Use the small switch button to change accounts; the current account's button is disabled.
+
+Antigravity's compact-ring choices are grouped by model: Gemini 5h and weekly,
+then Claude 5h and weekly. Existing custom selections are preserved. The automatic
+selection shows the shortest visible window from each family, Gemini first.
+
+Reset credits use Arabic numbers (Reset 1, Reset 2, and so on), one per line.
+Settings → General offers countdown or expiry-date display and **d / h / m / s**
+or Chinese countdown units. Countdown labels update each second; this does not
+poll provider APIs each second or imply that an expired quota has refreshed.

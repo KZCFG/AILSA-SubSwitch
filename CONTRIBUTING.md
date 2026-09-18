@@ -10,14 +10,14 @@ Open an issue describing the problem and intended behavior for substantial
 changes. Keep fixes focused. Preserve upstream attribution and do not introduce
 credentials, private usage data or unlicensed copied code.
 
-The app uses SwiftUI and AppKit. Most files retain Copool's module names:
+The app uses SwiftUI and AppKit. The source tree uses the AILSA_SS module name:
 
-- `Sources/Copool/Features/`: accounts, quota dashboard, settings and About.
-- `Sources/Copool/Behavior/`: account selection and switching coordination.
-- `Sources/Copool/Infrastructure/`: local storage and provider integrations.
-- `Sources/Copool/Domain/`: data models, quota/usage and localization helpers.
-- `Sources/CopoolWidgets/`: widget extension; clean-device validation remains open.
-- `Tests/CopoolTests/`: tests and synthetic fixtures.
+- `Sources/AILSA_SS/Features/`: accounts, quota dashboard, settings and About.
+- `Sources/AILSA_SS/Behavior/`: account selection and switching coordination.
+- `Sources/AILSA_SS/Infrastructure/`: local storage and provider integrations.
+- `Sources/AILSA_SS/Domain/`: data models, quota/usage and localization helpers.
+- `Sources/AILSA_SSWidgets/`: widget extension; clean-device validation remains open.
+- `Tests/AILSA_SSTests/`: tests and synthetic fixtures.
 
 ## Build and verify
 

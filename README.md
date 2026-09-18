@@ -21,14 +21,26 @@ Keep your coding accounts and their remaining quota in one place. See which
 account is ready, switch to it, and understand where your recorded usage went—
 without leaving the menu bar.
 
-AILSA SubSwitch is an independent, community-maintained project derived from
-[Copool](https://github.com/AlickH/Copool). It is not affiliated with OpenAI,
-Google, Anysphere, or the providers whose usage it displays.
+AILSA SubSwitch is designed to be one of the most user-focused and visually
+considered products in its category. The project treats interaction details,
+readability and visual polish as product features, so quota information stays
+clear without making the menu bar feel like an operations console.
+
+The open-source project includes at least two free progress-bar skins. Future
+releases may add paid skins and other advanced user-experience improvements,
+while the core features remain free throughout the 1.x series.
+
+AILSA SubSwitch is an independent, community-maintained project. It is not
+affiliated with OpenAI, Google, Anysphere, or the providers whose usage it
+displays. The application includes code derived from
+[Copool](https://github.com/AlickH/Copool), with attribution and notices
+preserved in this repository.
 
 ## What you can do
 
 - **Switch accounts.** Save local sign-ins for Codex / ChatGPT, Antigravity and
-  Cursor, see the active account, and switch from an account card.
+  Cursor, see the active account, and switch from an account card. More service
+  providers are planned for future releases.
 - **Read the actual limits.** View provider-reported quota windows and reset
   times, with Codex reset-credit counts and expirations when reported.
 - **Follow usage over time.** Explore Today, 7-day and 30-day views, model
@@ -55,6 +67,9 @@ Unknown usage or pricing remains unknown. **API reference cost is not your
 subscription bill, credit balance, or a promise of what a provider will charge.**
 Antigravity quota percentages are not converted into invented token totals.
 
+We expect to add Grok and Kimi quota monitoring in **1.0.1**, followed by
+Alibaba and DeepSeek quota and usage monitoring in **1.0.2**.
+
 ## Preview
 
 Actual SwiftUI components, rendered with **synthetic demo accounts and usage**.
@@ -64,13 +79,18 @@ The sample numbers are illustrative, not provider prices or a real account's bil
 
 ![Usage dashboard with model breakdown and an intraday chart](docs/assets/usage-demo.png)
 
+Compact cards keep quota-family names visible and show Codex reset-credit details:
+
+![Compact cards with labeled quota rings and reset-credit expiry](docs/assets/compact-demo.png)
+
 Regenerate these previews with `bash scripts/render_docs.sh`; the renderer does
 not load your live account library.
 
 ## Get started
 
 **Requirements:** macOS 14 or later, an Apple Silicon Mac, and an existing sign-in
-for each provider you want to use. Provider subscriptions are separate from ASS.
+for each provider you want to use. Provider subscriptions are separate from
+AILSA SubSwitch.
 
 1. Download the macOS ZIP from [Releases](https://github.com/KZCFG/AILSA-SubSwitch/releases) once the
    1.0.0 package is published. You do not need Xcode to use a prebuilt package.
@@ -79,7 +99,8 @@ for each provider you want to use. Provider subscriptions are separate from ASS.
    current sign-in. Sign into another account in the provider's own app and
    import that account to save it for later switching.
 4. Open **Quota Management** for recorded usage. Use **Settings** to choose
-   which limits are visible and whether provider apps restart after a switch.
+   which limits are visible, the compact ring order, progress skin, reset-credit
+   date format, and whether provider apps restart after a switch.
 
 **1.0.0 distribution:** manual downloads, no OTA updater and no App Store
 submission. The package is ad-hoc signed and is not Apple-notarized. macOS may
@@ -87,12 +108,12 @@ require an explicit first-open approval in **System Settings → Privacy &
 Security**. See the [installation guide](docs/USER-GUIDE.md#install-and-update).
 Do not disable system-wide security protections to run it.
 
-When updating, quit ASS and replace the application bundle. Account data is
+When updating, quit AILSA SubSwitch and replace the application bundle. Account data is
 stored separately. This version does not install updates in the background.
 
 ## Usage sources and privacy
 
-ASS does not operate an account-sync service or collect analytics. It reads
+AILSA SubSwitch does not operate an account-sync service or collect analytics. It reads
 local account/usage files and contacts the relevant providers for sign-in and
 quota information. Some saved profiles contain credentials; they are not public
 project files and should never be attached to an issue.
@@ -105,13 +126,13 @@ project files and should never be attached to an issue.
 | Cursor local profile and usage API | Cursor switching and usage events |
 
 Read [Privacy & data](docs/PRIVACY.md) for storage locations, network behavior and
-what to redact in bug reports. ASS does not provide an API relay or bundle a
+what to redact in bug reports. AILSA SubSwitch does not provide an API relay or bundle a
 model backend.
 
 ## Build from source
 
 The supported packaging path uses **Xcode Command Line Tools** and Python 3;
-no package-manager dependencies or previously installed ASS binary are required.
+no package-manager dependencies or previously installed AILSA SubSwitch binary are required.
 
 ```bash
 # On an Apple Silicon Mac:
@@ -120,11 +141,11 @@ cd AILSA-SubSwitch
 bash scripts/build_app.sh
 ```
 
-Output: `build/1.0.0-2026091716/AILSA SubSwitch.app`, an arm64 ZIP, SHA-256 checksum,
+Output: `build/1.0.0-2026091812/AILSA SubSwitch.app`, an arm64 ZIP, SHA-256 checksum,
 and source manifest. Check [build and release notes](docs/release-macos.md) for
 custom output locations and signing details.
 
-The project page and app use the same A.S.S. artwork. After replacing
+The project page and app use the same AILSA SubSwitch artwork. After replacing
 `docs/assets/app-icon.png`, run `bash scripts/build_icon.sh` to regenerate the
 macOS icon, then build the app.
 
@@ -170,6 +191,6 @@ preserved.
   and provider-integration references.
 - OpenCodex: an optional external usage-data source; its runtime is not bundled.
 
-See the [third-party notices](Sources/Copool/Resources/THIRD_PARTY_NOTICES.md)
+See the [third-party notices](Sources/AILSA_SS/Resources/THIRD_PARTY_NOTICES.md)
 and [provenance notes](docs/PROVENANCE.md) for the boundaries of reuse. Provider
 names and marks belong to their respective owners.

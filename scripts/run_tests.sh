@@ -1,6 +1,6 @@
 #!/bin/bash
-# Build and RUN Tests/CopoolTests on a Command Line Tools-only machine.
-#   run_tests.sh [--isolate] [--only <substring>] [--repo /path/to/Copool]
+# Build and RUN Tests/AILSA_SSTests on a Command Line Tools-only machine.
+#   run_tests.sh [--isolate] [--only <substring>] [--repo /path/to/AILSA_SS]
 # - Uses XCTestRuntime.swift (asserting shim) instead of Apple's XCTest.
 # - Generates a main that calls every `func test*` of every direct
 #   `XCTestCase` subclass (files importing swift-testing are skipped).
@@ -29,21 +29,21 @@ xcrun --sdk macosx swiftc -emit-library -emit-module -module-name XCTest -parse-
   "$tools/XCTestRuntime.swift"
 
 app_sources=()
-while IFS= read -r file; do app_sources+=("$file"); done < <(find "$repo/Sources/Copool" -name '*.swift' | sort)
-echo "[2/4] Copool library (testable, DEBUG)"
-xcrun --sdk macosx swiftc -emit-library -emit-module -module-name Copool -enable-testing -DDEBUG \
-  -target "$target" -emit-module-path "$work/Copool.swiftmodule" -o "$work/libCopool.dylib" \
+while IFS= read -r file; do app_sources+=("$file"); done < <(find "$repo/Sources/AILSA_SS" -name '*.swift' | sort)
+echo "[2/4] AILSA_SS library (testable, DEBUG)"
+xcrun --sdk macosx swiftc -emit-library -emit-module -module-name AILSA_SS -enable-testing -DDEBUG \
+  -target "$target" -emit-module-path "$work/AILSA_SS.swiftmodule" -o "$work/libAILSA_SS.dylib" \
   "${frameworks[@]}" \
-  "${app_sources[@]}" 2> "$work/copool-build.log" || { cat "$work/copool-build.log"; exit 1; }
+  "${app_sources[@]}" 2> "$work/ailsa-ss-build.log" || { cat "$work/ailsa-ss-build.log"; exit 1; }
 
 echo "[3/4] generate runner main"
 test_files=()
-while IFS= read -r file; do test_files+=("$file"); done < <(grep -L '^import Testing' "$repo"/Tests/CopoolTests/*.swift | sort)
+while IFS= read -r file; do test_files+=("$file"); done < <(grep -L '^import Testing' "$repo"/Tests/AILSA_SSTests/*.swift | sort)
 python3 - "$work/OfflineTestRunner.swift" "$only" "${test_files[@]}" <<'EOF'
 import re, sys
 out, only, files = sys.argv[1], sys.argv[2], sys.argv[3:]
 cls_re = re.compile(r'^(?:@MainActor\s+)?(?:final\s+)?class\s+(\w+)\s*:\s*XCTestCase\b', re.M)
-lines = ["import XCTest", "@testable import Copool", "", "@main struct OfflineTestRunner {", "  @MainActor static func main() async {"]
+lines = ["import XCTest", "@testable import AILSA_SS", "", "@main struct OfflineTestRunner {", "  @MainActor static func main() async {"]
 count = 0
 for path in files:
     src = open(path).read()
@@ -76,13 +76,13 @@ print(f"  {count} test methods in {len(files)} files")
 EOF
 
 echo "[4/4] compile + run"
-xcrun --sdk macosx swiftc -module-name CopoolTests -target "$target" -DDEBUG -parse-as-library -suppress-warnings \
-  -I "$work" -L "$work" -lXCTest -lCopool "${frameworks[@]}" \
+xcrun --sdk macosx swiftc -module-name AILSA_SSTests -target "$target" -DDEBUG -parse-as-library -suppress-warnings \
+  -I "$work" -L "$work" -lXCTest -lAILSA_SS "${frameworks[@]}" \
   -Xlinker -rpath -Xlinker "$work" \
   -o "$work/runner" "${test_files[@]}" "$work/OfflineTestRunner.swift" 2> "$work/tests-build.log" || { cat "$work/tests-build.log"; exit 1; }
 # L10n resolves through Bundle.main (= the runner's directory here); give it
 # the app's .lproj tables so localization-dependent tests see real strings.
-cp -R "$repo"/Sources/Copool/Resources/*.lproj "$work/"
+cp -R "$repo"/Sources/AILSA_SS/Resources/*.lproj "$work/"
 cd "$work"
 if [[ $isolate -eq 1 ]]; then
   # One process per test class so a crash in one class does not hide the rest.

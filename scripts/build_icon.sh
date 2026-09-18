@@ -13,5 +13,5 @@ for size in 16 32 128 256 512; do
   sips -z "$retina_size" "$retina_size" "$source_icon" --out "$iconset/icon_${size}x${size}@2x.png" >/dev/null
 done
 iconutil -c icns "$iconset" -o "$work/AILSASubSwitch.icns"
-cp "$work/AILSASubSwitch.icns" "$repo/Sources/Copool/Resources/AILSASubSwitch.icns"
+cp "$work/AILSASubSwitch.icns" "$repo/Sources/AILSA_SS/Resources/AILSASubSwitch.icns"
 printf 'Updated AILSASubSwitch.icns from docs/assets/app-icon.png\n'

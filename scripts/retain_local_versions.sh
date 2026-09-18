@@ -8,7 +8,7 @@ set -euo pipefail
 # after success it is moved to Trash, never retained as an installed Legacy app.
 #
 # Everything this script prunes is moved to the user's Trash, never removed
-# permanently. It only considers exact AILSA SubSwitch/Copool app bundles and
+# permanently. It only considers exact AILSA SubSwitch/AILSA_SS app bundles and
 # matching zip/dmg archives under explicitly supplied prune roots; reports,
 # source code, account data, credentials, and unrelated projects are out of
 # scope by construction.
@@ -44,7 +44,7 @@ Options:
   --prune-only           Do not install an app; prune only explicit roots.
   --keep-archive <path>  The single latest zip/dmg archive to retain.
   --prune-root <path>    A narrow, explicit directory to scan for old exact
-                         AILSA SubSwitch/Copool .app, .zip, or .dmg artifacts.
+                         AILSA SubSwitch/AILSA_SS .app, .zip, or .dmg artifacts.
                          May be repeated.
   --installed-app <path> Current app path. Default: /Applications/AILSA SubSwitch.app
   --legacy-app <path>    Temporary rollback path. Default: /Applications/AILSA SubSwitch (Legacy).app
@@ -77,7 +77,7 @@ canonical_existing_path() {
 
 is_exact_app_bundle() {
   case "$(basename "$1")" in
-    'Copool.app'|AILSA\ SubSwitch*.app|.AILSA\ SubSwitch*-stage.app)
+    'AILSA_SS.app'|AILSA\ SubSwitch*.app|.AILSA\ SubSwitch*-stage.app)
       return 0
       ;;
     *)
@@ -88,7 +88,7 @@ is_exact_app_bundle() {
 
 is_exact_archive() {
   case "$(basename "$1")" in
-    AILSA*SubSwitch*.zip|Copool*.zip|AILSA*SubSwitch*.dmg|Copool*.dmg)
+    AILSA*SubSwitch*.zip|AILSA_SS*.zip|AILSA*SubSwitch*.dmg|AILSA_SS*.dmg)
       return 0
       ;;
     *)
@@ -169,7 +169,7 @@ verify_app_bundle() {
   [[ -d "$app_path" ]] || fail "Expected an app bundle: $app_path"
   is_exact_app_bundle "$app_path" || fail "Refusing a non-SubSwitch app bundle: $app_path"
   [[ -f "$app_path/Contents/Info.plist" ]] || fail "Missing Info.plist: $app_path"
-  [[ -x "$app_path/Contents/MacOS/Copool" ]] || fail "Missing Copool executable: $app_path"
+  [[ -x "$app_path/Contents/MacOS/AILSA_SS" ]] || fail "Missing AILSA_SS executable: $app_path"
   codesign --verify --deep --strict "$app_path"
 }
 
@@ -188,7 +188,7 @@ collect_prune_targets() {
       prune_targets+=("$item")
     done < <(
       find "$root" -type d \
-        \( -name 'Copool.app' -o -name 'AILSA SubSwitch*.app' \) \
+        \( -name 'AILSA_SS.app' -o -name 'AILSA SubSwitch*.app' \) \
         -prune -print0
     )
 
@@ -200,7 +200,7 @@ collect_prune_targets() {
       fi
     done < <(
       find "$root" -type f \
-        \( -name 'AILSA*SubSwitch*.zip' -o -name 'Copool*.zip' -o -name 'AILSA*SubSwitch*.dmg' -o -name 'Copool*.dmg' \) \
+        \( -name 'AILSA*SubSwitch*.zip' -o -name 'AILSA_SS*.zip' -o -name 'AILSA*SubSwitch*.dmg' -o -name 'AILSA_SS*.dmg' \) \
         -print0
     )
   done
@@ -230,9 +230,14 @@ install_replacement() {
     fi
   fi
 
-  if [[ "$apply_changes" -eq 1 && -f "$installed_app/Contents/MacOS/Copool" ]]; then
-    if /usr/sbin/lsof -t "$installed_app/Contents/MacOS/Copool" >/dev/null 2>&1; then
-      fail "Installed app is running; close it before replacement. No files changed."
+  if [[ "$apply_changes" -eq 1 && -f "$installed_app/Contents/MacOS/AILSA_SS" ]]; then
+    # lsof also reports system services such as tccd reading a signed binary;
+    # that is not an app instance and must not block a replacement. Match the
+    # exact executable (including spaces) in the process comm column instead.
+    local running_pid
+    running_pid="$(ps -axo pid=,comm= | awk -v executable="$installed_app/Contents/MacOS/AILSA_SS" '{ pid = $1; sub(/^[[:space:]]*[0-9]+[[:space:]]+/, ""); if ($0 == executable) print pid }')"
+    if [[ -n "$running_pid" ]]; then
+      fail "Installed app is running (pid $running_pid); close it before replacement. No files changed."
     fi
   fi
 
@@ -361,7 +366,7 @@ fi
 
 if [[ -n "$keep_archive" ]]; then
   [[ -f "$keep_archive" ]] || fail "Latest archive is not a file: $keep_archive"
-  is_exact_archive "$keep_archive" || fail "Latest archive is not an AILSA SubSwitch/Copool zip or dmg: $keep_archive"
+  is_exact_archive "$keep_archive" || fail "Latest archive is not an AILSA SubSwitch/AILSA_SS zip or dmg: $keep_archive"
 fi
 
 if [[ "$prune_only" -eq 0 ]]; then

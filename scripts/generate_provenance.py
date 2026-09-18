@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inventory current public files against Copool's recorded upstream baseline."""
+"""Inventory current public files against AILSA_SS's recorded upstream baseline."""
 import argparse
 import csv
 from pathlib import Path

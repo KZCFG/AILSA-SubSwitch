@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+@testable import AILSA_SS
 
 /// A deliberately narrow command-line surface for validating the production
 /// AntiGravity switch transaction.  It never serializes account e-mail,
@@ -78,7 +79,7 @@ struct AntigravityCoordinatorDriver {
     }
 
     /// An ephemeral, read-only answer from the currently running native
-    /// language server. `matchedAccountID` is an opaque Copool card ID; the
+    /// language server. `matchedAccountID` is an opaque AILSA_SS card ID; the
     /// native e-mail is used solely for an in-memory exact match and is never
     /// serialized.
     private struct DriverNativeReadback: Encodable {
@@ -119,7 +120,7 @@ struct AntigravityCoordinatorDriver {
                 chatGPTOAuthLoginService: OpenAIChatGPTOAuthLoginService(configPath: paths.codexConfigPath),
                 codexCLIService: CodexCLIService(),
                 editorAppService: EditorAppService(),
-                opencodeAuthSyncService: OpencodeAuthSyncService(),
+                opencodeAuthSyncService: AILSA_SSAuthSyncService(),
                 antigravityAuthRepository: AntigravityAuthRepository(),
                 antigravityUsageService: antigravityUsageService
             )

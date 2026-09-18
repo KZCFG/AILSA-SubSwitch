@@ -69,11 +69,11 @@ fi
 
 app_bundle="$output_root/$app_display_name.app"
 app_contents="$app_bundle/Contents"
-app_binary="$app_contents/MacOS/Copool"
+app_binary="$app_contents/MacOS/AILSA_SS"
 app_resources="$app_contents/Resources"
-widget_bundle="$app_contents/PlugIns/CopoolWidgetsMac.appex"
+widget_bundle="$app_contents/PlugIns/AILSA_SSWidgetsMac.appex"
 widget_contents="$widget_bundle/Contents"
-widget_binary="$widget_contents/MacOS/CopoolWidgetsMac"
+widget_binary="$widget_contents/MacOS/AILSA_SSWidgetsMac"
 
 mkdir -p "$app_contents/MacOS" "$app_resources" "$widget_contents/MacOS"
 
@@ -83,7 +83,7 @@ mkdir -p "$app_contents/MacOS" "$app_resources" "$widget_contents/MacOS"
 app_sources=()
 while IFS= read -r source_file; do
   app_sources+=("$source_file")
-done < <(find "$repo_dir/Sources/Copool" -type f -name '*.swift' -print | sort)
+done < <(find "$repo_dir/Sources/AILSA_SS" -type f -name '*.swift' -print | sort)
 
 common_swift_flags=(
   -target "$target_triple"
@@ -103,37 +103,37 @@ common_swift_flags=(
 printf '[build_app] compiling app (%d sources)\n' "${#app_sources[@]}"
 xcrun --sdk macosx swiftc \
   "${common_swift_flags[@]}" \
-  -module-name Copool \
+  -module-name AILSA_SS \
   -o "$app_binary" \
   "${app_sources[@]}"
 
 # The widget links a small, explicit subset of app files. Keep this list in
-# sync with Sources/CopoolWidgets/*.swift imports.
+# sync with Sources/AILSA_SSWidgets/*.swift imports.
 widget_sources=(
-  "$repo_dir/Sources/CopoolWidgets/CopoolWidgets.swift"
-  "$repo_dir/Sources/CopoolWidgets/AccountsWidgetViews.swift"
-  "$repo_dir/Sources/Copool/WidgetSupport/AccountsWidgetSnapshot.swift"
-  "$repo_dir/Sources/Copool/WidgetSupport/AccountsWidgetSnapshotStore.swift"
-  "$repo_dir/Sources/Copool/Domain/AppError.swift"
-  "$repo_dir/Sources/Copool/UI/LiquidProgress.swift"
-  "$repo_dir/Sources/Copool/UI/AccountTagView.swift"
-  "$repo_dir/Sources/Copool/UI/AppDesign.swift"
-  "$repo_dir/Sources/Copool/Layout/LayoutRules.swift"
+  "$repo_dir/Sources/AILSA_SSWidgets/AILSA_SSWidgets.swift"
+  "$repo_dir/Sources/AILSA_SSWidgets/AccountsWidgetViews.swift"
+  "$repo_dir/Sources/AILSA_SS/WidgetSupport/AccountsWidgetSnapshot.swift"
+  "$repo_dir/Sources/AILSA_SS/WidgetSupport/AccountsWidgetSnapshotStore.swift"
+  "$repo_dir/Sources/AILSA_SS/Domain/AppError.swift"
+  "$repo_dir/Sources/AILSA_SS/UI/LiquidProgress.swift"
+  "$repo_dir/Sources/AILSA_SS/UI/AccountTagView.swift"
+  "$repo_dir/Sources/AILSA_SS/UI/AppDesign.swift"
+  "$repo_dir/Sources/AILSA_SS/Layout/LayoutRules.swift"
 )
 
 printf '[build_app] compiling widget extension\n'
 xcrun --sdk macosx swiftc \
   "${common_swift_flags[@]}" \
   -application-extension \
-  -module-name CopoolWidgetsMac \
+  -module-name AILSA_SSWidgetsMac \
   -o "$widget_binary" \
   "${widget_sources[@]}"
 
 # ---------------------------------------------------------------------------
 # Info.plist (resolve every $(...) placeholder from VERSION / constants)
 # ---------------------------------------------------------------------------
-cp "$repo_dir/Sources/Copool/Info-macOS.plist" "$app_contents/Info.plist"
-cp "$repo_dir/Sources/CopoolWidgets/Info.plist" "$widget_contents/Info.plist"
+cp "$repo_dir/Sources/AILSA_SS/Info-macOS.plist" "$app_contents/Info.plist"
+cp "$repo_dir/Sources/AILSA_SSWidgets/Info.plist" "$widget_contents/Info.plist"
 
 plist_set_string() {
   if /usr/libexec/PlistBuddy -c "Print :$2" "$1" >/dev/null 2>&1; then
@@ -145,7 +145,7 @@ plist_set_string() {
 
 plist_set_string "$app_contents/Info.plist" CFBundleDevelopmentRegion en
 plist_set_string "$app_contents/Info.plist" CFBundleDisplayName "$app_display_name"
-plist_set_string "$app_contents/Info.plist" CFBundleExecutable Copool
+plist_set_string "$app_contents/Info.plist" CFBundleExecutable AILSA_SS
 plist_set_string "$app_contents/Info.plist" CFBundleIconFile AILSASubSwitch.icns
 plist_set_string "$app_contents/Info.plist" CFBundleIdentifier "$app_bundle_id"
 plist_set_string "$app_contents/Info.plist" CFBundleName "$app_display_name"
@@ -155,7 +155,7 @@ plist_set_string "$app_contents/Info.plist" CFBundleVersion "$build_number"
 plist_set_string "$app_contents/Info.plist" ASSBuildLabel "$build_label"
 plist_set_string "$app_contents/Info.plist" ASSBuildDate "$build_date"
 
-plist_set_string "$widget_contents/Info.plist" CFBundleExecutable CopoolWidgetsMac
+plist_set_string "$widget_contents/Info.plist" CFBundleExecutable AILSA_SSWidgetsMac
 plist_set_string "$widget_contents/Info.plist" CFBundleIdentifier "$widget_bundle_id"
 plist_set_string "$widget_contents/Info.plist" CFBundleShortVersionString "$marketing_version"
 plist_set_string "$widget_contents/Info.plist" CFBundleVersion "$build_number"
@@ -169,13 +169,13 @@ for info_plist in "$app_contents/Info.plist" "$widget_contents/Info.plist"; do
 done
 
 # ---------------------------------------------------------------------------
-# Resources (everything under Sources/Copool/Resources is a runtime asset)
+# Resources (everything under Sources/AILSA_SS/Resources is a runtime asset)
 # ---------------------------------------------------------------------------
-ditto "$repo_dir/Sources/Copool/Resources" "$app_resources"
+ditto "$repo_dir/Sources/AILSA_SS/Resources" "$app_resources"
 for required_resource in \
   AILSASubSwitch.icns \
   THIRD_PARTY_NOTICES.md \
-  opencodex-runtime-pricing-bindings-v1.json \
+  AILSA_SS-runtime-pricing-bindings-v1.json \
   en.lproj/Localizable.strings \
   zh-Hans.lproj/Localizable.strings; do
   if [[ ! -f "$app_resources/$required_resource" ]]; then
@@ -194,9 +194,9 @@ if [[ "$do_sign" -eq 1 ]]; then
     sign_flags+=(--timestamp --options runtime)
   fi
   codesign "${sign_flags[@]}" \
-    --entitlements "$repo_dir/CopoolWidgetsMac.entitlements" "$widget_bundle"
+    --entitlements "$repo_dir/AILSA_SSWidgetsMac.entitlements" "$widget_bundle"
   codesign "${sign_flags[@]}" \
-    --entitlements "$repo_dir/Copool.entitlements" "$app_bundle"
+    --entitlements "$repo_dir/AILSA_SS.entitlements" "$app_bundle"
   codesign --verify --deep --strict "$app_bundle"
   printf '[build_app] signed with: %s\n' "$codesign_identity"
 else
@@ -239,8 +239,8 @@ manifest="$output_root/source-manifest.json"
     [[ $first -eq 1 ]] || printf ',\n'
     first=0
     printf '    "%s": "%s"' "$rel" "$hash"
-  done < <(find "$repo_dir/Sources" "$repo_dir/scripts" "$repo_dir/Package.swift" "$repo_dir/VERSION" "$repo_dir/Copool.entitlements" \
-             "$repo_dir/CopoolWidgetsMac.entitlements" -type f -print | sort)
+  done < <(find "$repo_dir/Sources" "$repo_dir/scripts" "$repo_dir/Package.swift" "$repo_dir/VERSION" "$repo_dir/AILSA_SS.entitlements" \
+             "$repo_dir/AILSA_SSWidgetsMac.entitlements" -type f -print | sort)
   printf '\n  }\n}\n'
 } > "$manifest"
 

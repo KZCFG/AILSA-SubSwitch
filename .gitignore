@@ -13,7 +13,7 @@ SDKStatCaches.noindex/
 *.sha256
 *.xcuserstate
 xcuserdata/
-Copool.xcodeproj/project.xcworkspace/xcuserdata/
+AILSA_SS.xcodeproj/project.xcworkspace/xcuserdata/
 .codex-artifacts/
 artifacts/
 scripts/__pycache__/

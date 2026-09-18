@@ -1,6 +1,6 @@
 import AppKit
 import SwiftUI
-@testable import Copool
+@testable import AILSA_SS
 
 // Documentation only: the account IDs, usage and USD figures are synthetic.
 // This driver never creates AppContainer.live or a live usage service.
@@ -21,7 +21,7 @@ private struct DemoUsageService: QuotaManagementUsageServiceProtocol {
         let epoch = Int64(now.timeIntervalSince1970)
         let accounts = [
             AccountSummary(id: "demo-one", label: "Personal", email: "personal@example.invalid", accountID: "demo-one", planType: "pro_5x", teamName: nil, teamAlias: nil, addedAt: epoch, updatedAt: epoch,
-                           usage: UsageSnapshot(fetchedAt: epoch, planType: "pro_5x", fiveHour: nil, oneWeek: UsageWindow(usedPercent: 28, windowSeconds: 604800, resetAt: epoch + 259200), credits: nil, resetCredits: ResetCreditInventory(availableCount: 2, expiresAt: [now.addingTimeInterval(604800), now.addingTimeInterval(1209600)], fetchedAt: now)), usageError: nil, isCurrent: true),
+                           usage: UsageSnapshot(fetchedAt: epoch, planType: "pro_5x", fiveHour: nil, oneWeek: UsageWindow(usedPercent: 28, windowSeconds: 604800, resetAt: epoch + 259200), credits: CreditSnapshot(hasCredits: true, unlimited: false, balance: "128.50"), resetCredits: ResetCreditInventory(availableCount: 2, expiresAt: [now.addingTimeInterval(604800), now.addingTimeInterval(1209600)], fetchedAt: now)), usageError: nil, isCurrent: true),
             AccountSummary(id: "demo-two", label: "Work", email: "work@example.invalid", accountID: "demo-two", planType: "pro", teamName: nil, teamAlias: nil, addedAt: epoch, updatedAt: epoch,
                            usage: UsageSnapshot(fetchedAt: epoch, planType: "pro", fiveHour: nil, oneWeek: UsageWindow(usedPercent: 9, windowSeconds: 604800, resetAt: epoch + 432000), credits: nil), usageError: nil, isCurrent: false)
         ]
@@ -38,6 +38,26 @@ private struct DemoUsageService: QuotaManagementUsageServiceProtocol {
             }
         }.padding(24).frame(width: 720).background(.white).environmentObject(ASModalHost()).environment(\.colorScheme, .light)
         try save(accountPreview, to: output.appendingPathComponent("accounts-demo.png"))
+
+        let agUsage = UsageSnapshot(fetchedAt: epoch, planType: "pro", fiveHour: nil, oneWeek: nil, credits: nil,
+            quotaFamilies: ["Gemini", "Claude"].map { family in
+                UsageQuotaFamily(id: family.lowercased(), displayName: family,
+                    buckets: [UsageQuotaBucket(id: "5h", displayName: "5h", usedPercent: family == "Gemini" ? 22 : 8,
+                        resetAt: epoch + 7200, windowSeconds: 18_000, resetDescription: nil, isUsageKnown: true),
+                        UsageQuotaBucket(id: "weekly", displayName: "weekly", usedPercent: 36,
+                        resetAt: epoch + 259200, windowSeconds: 604_800, resetDescription: nil, isUsageKnown: true)])
+            }, source: .antigravityNativeSummary, sourceAccountMatched: true)
+        let ag = AccountSummary(id: "demo-gemini", label: "Gemini", email: "gemini@example.invalid", accountID: "demo-gemini", planType: "pro", teamName: nil, teamAlias: nil, addedAt: epoch, updatedAt: epoch, usage: agUsage, usageError: nil, isCurrent: false, provider: .antigravity)
+        let compactPreview = HStack(alignment: .top, spacing: 12) {
+            ForEach([accounts[0], ag]) { account in
+                AccountCardView(card: AccountCardViewState(account: account,
+                    presentation: AccountCardPresentation(account: account, isCollapsed: true, locale: Locale(identifier: "en"), usageProgressDisplayMode: .remaining),
+                    isCollapsed: true, switching: false, refreshing: false, showsRefreshButton: true, showsReauthenticateButton: false, isRefreshEnabled: true, isUsageRefreshActive: false, usageProgressDisplayMode: .remaining),
+                    onSwitch: {}, onRefresh: {}, onReauthenticate: {}, onDelete: {})
+                    .frame(width: account.provider == .codex ? 250 : 163)
+            }
+        }.padding(24).background(.white).environmentObject(ASModalHost()).environment(\.colorScheme, .light)
+        try save(compactPreview, to: output.appendingPathComponent("compact-demo.png"))
 
         var day = QuotaBucket()
         var minutes: [Date: Int] = [:]

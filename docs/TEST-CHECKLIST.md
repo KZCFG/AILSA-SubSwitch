@@ -3,6 +3,11 @@
 Record the exact build, macOS version, display configuration and observed result.
 Run offline checks first; compilation alone is not interaction acceptance.
 
+The September 18 continuation is recorded in
+[ACCEPTANCE-RESULTS-20260918.md](ACCEPTANCE-RESULTS-20260918.md), with separate
+statuses for each exercised behavior. The installed candidate is **2026091805**;
+the checklist below remains the full specification, not a list of claimed passes.
+
 ## Offline checks
 
 ```bash
@@ -39,8 +44,15 @@ investigating them.
   Verify the native identity after switching, not merely the selected card.
 - Respect restart-after-switch settings; do not interrupt unsaved provider work.
 - Wrong-account quota must not be displayed as the selected account's quota.
+- A verified external Antigravity sign-in updates only the current-card marker.
+  Unknown/ambiguous verified identities clear the marker; failed, stale or partial
+  evidence must not promote a selection, overwrite a pending switch, replace
+  credentials or refresh an old quota timestamp.
 - Expired or denied credentials yield a recoverable error. Background refresh must
   not repeatedly prompt for a macOS password. Interactive Keychain access may need approval.
+- Compact cards retain stale/error warnings and the last successful update time.
+  Recheck failed accounts after a new login; preserved cached numbers are not a
+  successful refresh.
 - Replacing ASS preserves saved profiles, quota preferences and native provider data.
 
 ## Usage dashboard

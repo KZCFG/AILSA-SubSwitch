@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Propagate the repo-root VERSION file into the Xcode project descriptions.
 # scripts/build_app.sh reads VERSION directly; this keeps project.yml and
-# Copool.xcodeproj/project.pbxproj (used by Xcode / release_macos.sh) in sync.
+# AILSA_SS.xcodeproj/project.pbxproj (used by Xcode / release_macos.sh) in sync.
 #
 #   scripts/sync_version.sh          # rewrite
 #   scripts/sync_version.sh --check  # exit 1 if anything is out of sync
@@ -23,7 +23,7 @@ marketing="$(read_key MARKETING_VERSION)"
 build="$(read_key BUILD_NUMBER)"
 label="$(read_key BUILD_LABEL)"
 
-pbxproj="$repo_dir/Copool.xcodeproj/project.pbxproj"
+pbxproj="$repo_dir/AILSA_SS.xcodeproj/project.pbxproj"
 project_yml="$repo_dir/project.yml"
 
 expected_pbx=(

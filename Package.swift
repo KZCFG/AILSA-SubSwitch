@@ -2,25 +2,25 @@
 import PackageDescription
 
 let package = Package(
-    name: "Copool",
+    name: "AILSA_SS",
     defaultLocalization: "en",
     platforms: [
         .macOS(.v14)
     ],
     products: [
-        .executable(name: "Copool", targets: ["Copool"])
+        .executable(name: "AILSA_SS", targets: ["AILSA_SS"])
     ],
     targets: [
         .executableTarget(
-            name: "Copool",
-            path: "Sources/Copool",
+            name: "AILSA_SS",
+            path: "Sources/AILSA_SS",
             exclude: [
                 "Info-macOS.plist"
             ],
             resources: [
                 .copy("Resources/AILSASubSwitch.icns"),
                 .copy("Resources/THIRD_PARTY_NOTICES.md"),
-                .process("Resources/opencodex-runtime-pricing-bindings-v1.json"),
+                .process("Resources/AILSA_SS-runtime-pricing-bindings-v1.json"),
                 .process("Resources/de.lproj"),
                 .process("Resources/en.lproj"),
                 .process("Resources/es.lproj"),
@@ -35,9 +35,9 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "CopoolTests",
-            dependencies: ["Copool"],
-            path: "Tests/CopoolTests"
+            name: "AILSA_SSTests",
+            dependencies: ["AILSA_SS"],
+            path: "Tests/AILSA_SSTests"
         )
     ]
 )

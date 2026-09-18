@@ -1,6 +1,6 @@
 # Single source of truth for the shipped version.
 # Consumed by scripts/build_app.sh and scripts/sync_version.sh; project.yml and
-# Copool.xcodeproj are derived from these values (run scripts/sync_version.sh).
+# AILSA_SS.xcodeproj are derived from these values (run scripts/sync_version.sh).
 MARKETING_VERSION=1.0.0
-BUILD_NUMBER=2026091716
+BUILD_NUMBER=2026091818
 BUILD_LABEL=1.0.0

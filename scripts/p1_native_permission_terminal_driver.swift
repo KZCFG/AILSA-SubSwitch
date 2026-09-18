@@ -665,7 +665,7 @@ private final class StubCodexCLIService: CodexCLIServiceProtocol, @unchecked Sen
     func launchApp(workspacePath: String?) throws -> Bool { false }
 }
 
-private final class StubOpencodeService: OpencodeAuthSyncServiceProtocol, @unchecked Sendable {
+private final class StubOpencodeService: AILSA_SSAuthSyncServiceProtocol, @unchecked Sendable {
     func syncFromCodexAuth(_ authJSON: JSONValue) throws {}
 }
 
