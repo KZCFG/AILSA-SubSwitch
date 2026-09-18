@@ -418,7 +418,12 @@ final class AccountCardCustomizationTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
     private let locale = Locale(identifier: "zh_Hans_CN")
 
-    private func warningPresentation(age: Int64, error: String?, hasSnapshot: Bool = true) -> AccountCardPresentation {
+    private func warningPresentation(
+        age: Int64,
+        error: String?,
+        hasSnapshot: Bool = true,
+        isRefreshing: Bool = false
+    ) -> AccountCardPresentation {
         let fetchedAt = Int64(Date().timeIntervalSince1970) - age
         let usage = UsageSnapshot(fetchedAt: fetchedAt, planType: "pro",
             fiveHour: nil, oneWeek: UsageWindow(usedPercent: 30, windowSeconds: 604_800, resetAt: nil), credits: nil)
@@ -426,7 +431,7 @@ final class AccountCardCustomizationTests: XCTestCase {
             planType: "pro", teamName: nil, teamAlias: nil, addedAt: 1, updatedAt: 1,
             usage: hasSnapshot ? usage : nil, usageError: error, isCurrent: false)
         return AccountCardPresentation(account: account, isCollapsed: true, locale: locale,
-            usageProgressDisplayMode: .remaining)
+            usageProgressDisplayMode: .remaining, isRefreshing: isRefreshing)
     }
 
     func testCompactStaleSnapshotShowsWarningAndOriginalUpdateTime() {
@@ -434,6 +439,14 @@ final class AccountCardCustomizationTests: XCTestCase {
         XCTAssertTrue(p.compactQuotaWarningText?.contains(L10n.tr("accounts.quota.stale")) == true)
         XCTAssertTrue(p.compactQuotaWarningText?.contains(" · ") == true)
         XCTAssertEqual(p.compactUsage.oneWeekDisplayPercent, 70)
+    }
+
+    func testRefreshingSnapshotTakesPriorityOverStaleWarning() {
+        let p = warningPresentation(age: 3600, error: "previous failure", isRefreshing: true)
+
+        XCTAssertEqual(p.compactQuotaWarningText, L10n.tr("accounts.quota.refreshing"))
+        XCTAssertFalse(p.quotaStatusIsStale)
+        XCTAssertFalse(p.provenanceText?.contains(L10n.tr("accounts.quota.stale")) == true)
     }
 
     func testCompactRecentSnapshotStillExposesFailedRefresh() {

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.0 candidate 2026091904 — refresh every subscription when the menu opens
+
+- Refresh every visible Codex and AntiGravity subscription when the SubSwitch
+  popup opens, instead of refreshing only the active account through the
+  background policy.
+- Show “正在刷新数据” while a card is waiting for its response, and reveal
+  stale or failed-refresh status only after the request ends.
+- Remove obsolete local QA/build artifacts while retaining the live account
+  store and current app installation.
+
 ## 1.0.0 candidate 2026091902 — separate fixed weekly resets from request-activated 5-hour windows
 
 - Keep Codex and other weekly quota windows counting down from the provider's

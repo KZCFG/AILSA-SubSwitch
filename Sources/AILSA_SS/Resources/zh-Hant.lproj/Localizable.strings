@@ -186,6 +186,7 @@
 "accounts.quota.unavailable" = "額度不可用";
 "accounts.quota.unknown" = "未知";
 "accounts.quota.stale" = "資料已過期";
+"accounts.quota.refreshing" = "正在重新整理資料";
 "accounts.quota.account_unverified" = "帳號未驗證";
 "accounts.quota.last_updated_format" = "更新於 %@";
 "accounts.quota.just_now" = "剛剛";

@@ -69,6 +69,7 @@ struct AccountCardPresentation: Equatable {
     let oneWeekWindow: AccountWindowPresentation
     let quotaFamilies: [AccountQuotaFamilyPresentation]
     let quotaStatusText: String?
+    let isRefreshing: Bool
     let isQuotaDisplayHidden: Bool
     /// True when the usage snapshot behind the status/provenance metadata is
     /// stale, so views can tint that metadata instead of only appending a
@@ -89,22 +90,29 @@ struct AccountCardPresentation: Equatable {
         isCollapsed: Bool,
         locale: Locale,
         usageProgressDisplayMode: UsageProgressDisplayMode,
-        quotaVisibility: UsageQuotaVisibilityPreferences = .defaultValue
+        quotaVisibility: UsageQuotaVisibilityPreferences = .defaultValue,
+        isRefreshing: Bool = false
     ) {
         accountID = account.id
         hiddenQuotaKeys = quotaVisibility.hiddenKeys
         provider = account.provider
+        self.isRefreshing = isRefreshing
         resetCreditInventory = account.provider == .codex ? account.usage?.resetCredits : nil
         let planLabel = account.normalizedPlanLabel
         self.planLabel = planLabel
         usageProgressFillStyle = account.provider == .codex ? .codex : .antigravity
         accent = Self.accent(for: planLabel)
-        quotaStatusIsStale = account.usage?.isStale(now: Int64(Date().timeIntervalSince1970)) ?? false
+        let usageIsStale = account.usage?.isStale(now: Int64(Date().timeIntervalSince1970)) ?? false
+        quotaStatusIsStale = !isRefreshing && usageIsStale
         let refreshError = account.usageError?.trimmingCharacters(in: .whitespacesAndNewlines)
         var compactWarnings: [String] = []
-        if quotaStatusIsStale { compactWarnings.append(L10n.tr("accounts.quota.stale")) }
-        if let refreshError, !refreshError.isEmpty { compactWarnings.append(refreshError) }
-        if !compactWarnings.isEmpty, let usage = account.usage, usage.fetchedAt > 0 {
+        if isRefreshing {
+            compactWarnings.append(L10n.tr("accounts.quota.refreshing"))
+        } else {
+            if usageIsStale { compactWarnings.append(L10n.tr("accounts.quota.stale")) }
+            if let refreshError, !refreshError.isEmpty { compactWarnings.append(refreshError) }
+        }
+        if !isRefreshing, !compactWarnings.isEmpty, let usage = account.usage, usage.fetchedAt > 0 {
             compactWarnings.append(Self.lastUpdatedText(usage.fetchedAt, locale: locale))
         }
         compactQuotaWarningText = compactWarnings.isEmpty ? nil : compactWarnings.joined(separator: " · ")
@@ -133,7 +141,8 @@ struct AccountCardPresentation: Equatable {
                 usage: account.usage,
                 locale: locale,
                 usageProgressDisplayMode: usageProgressDisplayMode,
-                quotaVisibility: quotaVisibility
+                quotaVisibility: quotaVisibility,
+                showStale: !isRefreshing
             )
             quotaWindows = []
             quotaFamilies = antigravityQuota.families
@@ -165,14 +174,15 @@ struct AccountCardPresentation: Equatable {
             usage: account.usage,
             locale: locale,
             usageProgressDisplayMode: usageProgressDisplayMode,
-            quotaVisibility: quotaVisibility
+            quotaVisibility: quotaVisibility,
+            showStale: !isRefreshing
         )
         quotaWindows = codexQuota.standardWindows
         quotaFamilies = codexQuota.additionalFamilies
         quotaStatusText = codexQuota.statusText
         isQuotaDisplayHidden = codexQuota.isHidden
         provenanceText = account.usage.flatMap {
-            Self.provenanceText(for: $0, locale: locale)
+            Self.provenanceText(for: $0, locale: locale, showStale: !isRefreshing)
         }
         fiveHourWindow = codexQuota.fiveHourWindow
         oneWeekWindow = codexQuota.oneWeekWindow
@@ -191,7 +201,8 @@ struct AccountCardPresentation: Equatable {
         usage: UsageSnapshot?,
         locale: Locale,
         usageProgressDisplayMode: UsageProgressDisplayMode,
-        quotaVisibility: UsageQuotaVisibilityPreferences
+        quotaVisibility: UsageQuotaVisibilityPreferences,
+        showStale: Bool = true
     ) -> AntigravityQuotaResult {
         guard let usage else {
             return AntigravityQuotaResult(
@@ -208,7 +219,7 @@ struct AccountCardPresentation: Equatable {
             return AntigravityQuotaResult(
                 families: [],
                 compactItems: [],
-                statusText: unavailableStatus(for: usage, locale: locale),
+                statusText: unavailableStatus(for: usage, locale: locale, showStale: showStale),
                 isHidden: false
             )
         }
@@ -264,7 +275,7 @@ struct AccountCardPresentation: Equatable {
                 compactItems: [],
                 statusText: allKnownWereHidden
                     ? L10n.tr("accounts.quota.hidden")
-                    : unavailableStatus(for: usage, locale: locale),
+                    : unavailableStatus(for: usage, locale: locale, showStale: showStale),
                 isHidden: allKnownWereHidden
             )
         }
@@ -304,7 +315,7 @@ struct AccountCardPresentation: Equatable {
         return AntigravityQuotaResult(
             families: families,
             compactItems: compactItems,
-            statusText: statusText(forVerifiedUsage: usage, locale: locale),
+            statusText: statusText(forVerifiedUsage: usage, locale: locale, showStale: showStale),
             isHidden: false
         )
     }
@@ -324,7 +335,8 @@ struct AccountCardPresentation: Equatable {
         usage: UsageSnapshot?,
         locale: Locale,
         usageProgressDisplayMode: UsageProgressDisplayMode,
-        quotaVisibility: UsageQuotaVisibilityPreferences
+        quotaVisibility: UsageQuotaVisibilityPreferences,
+        showStale: Bool = true
     ) -> CodexQuotaResult {
         let fiveHourWindow = windowPresentation(
             id: UsageQuotaVisibilityKey.codexFiveHour,
@@ -659,7 +671,7 @@ struct AccountCardPresentation: Equatable {
         )
     }
 
-    private static func unavailableStatus(for usage: UsageSnapshot, locale: Locale) -> String {
+    private static func unavailableStatus(for usage: UsageSnapshot, locale: Locale, showStale: Bool = true) -> String {
         // A legacy availability-only snapshot must never expose internal
         // implementation wording such as model availability/account status.
         // New r3 code does not create these snapshots, but old stores remain
@@ -671,7 +683,7 @@ struct AccountCardPresentation: Equatable {
         if usage.sourceAccountMatched == false && !isAvailabilityOnly {
             parts.append(L10n.tr("accounts.quota.account_unverified"))
         }
-        if usage.isStale(now: Int64(Date().timeIntervalSince1970)) {
+        if showStale, usage.isStale(now: Int64(Date().timeIntervalSince1970)) {
             parts.append(L10n.tr("accounts.quota.stale"))
         }
         if usage.fetchedAt > 0 {
@@ -680,9 +692,9 @@ struct AccountCardPresentation: Equatable {
         return parts.joined(separator: " · ")
     }
 
-    private static func statusText(forVerifiedUsage usage: UsageSnapshot, locale: Locale) -> String? {
+    private static func statusText(forVerifiedUsage usage: UsageSnapshot, locale: Locale, showStale: Bool = true) -> String? {
         var parts = [sourceDescription(usage.source)]
-        if usage.isStale(now: Int64(Date().timeIntervalSince1970)) {
+        if showStale, usage.isStale(now: Int64(Date().timeIntervalSince1970)) {
             parts.append(L10n.tr("accounts.quota.stale"))
         }
         if usage.fetchedAt > 0 {
@@ -691,12 +703,12 @@ struct AccountCardPresentation: Equatable {
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
-    private static func provenanceText(for usage: UsageSnapshot, locale: Locale) -> String? {
+    private static func provenanceText(for usage: UsageSnapshot, locale: Locale, showStale: Bool = true) -> String? {
         var parts: [String] = []
         if usage.source != nil {
             parts.append(sourceDescription(usage.source))
         }
-        if usage.isStale(now: Int64(Date().timeIntervalSince1970)) {
+        if showStale, usage.isStale(now: Int64(Date().timeIntervalSince1970)) {
             parts.append(L10n.tr("accounts.quota.stale"))
         }
         if usage.fetchedAt > 0 {

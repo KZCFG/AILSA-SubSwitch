@@ -148,6 +148,7 @@ extension AccountsPageModel {
         forceCollapsed: Bool = false
     ) -> AccountCardViewState {
         let isCollapsed = forceCollapsed || isAccountCollapsed(account.id)
+        let isUsageRefreshActive = isUsageRefreshActive(forAccountID: account.id)
         return AccountCardViewState(
             account: account,
             presentation: AccountCardPresentation(
@@ -155,7 +156,8 @@ extension AccountsPageModel {
                 isCollapsed: isCollapsed,
                 locale: locale,
                 usageProgressDisplayMode: usageProgressDisplayMode,
-                quotaVisibility: quotaVisibilityPreferences
+                quotaVisibility: quotaVisibilityPreferences,
+                isRefreshing: isUsageRefreshActive
             ),
             isCollapsed: isCollapsed,
             switching: switchingAccountID == account.id,
@@ -163,7 +165,7 @@ extension AccountsPageModel {
             showsRefreshButton: runtimePlatform == .macOS,
             showsReauthenticateButton: shouldShowReauthenticateButton(for: account),
             isRefreshEnabled: canRefreshAccount(account.id),
-            isUsageRefreshActive: isUsageRefreshActive(forAccountID: account.id),
+            isUsageRefreshActive: isUsageRefreshActive,
             usageProgressDisplayMode: usageProgressDisplayMode
         )
     }

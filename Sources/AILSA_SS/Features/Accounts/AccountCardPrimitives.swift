@@ -153,7 +153,15 @@ struct AccountCardExpandedUsageSection: View {
                 )
             }
 
-            if let quotaStatusText = presentation.quotaStatusText {
+            if presentation.isRefreshing {
+                Text(L10n.tr("accounts.quota.refreshing"))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.trailing, AccountCardOverlayLayout.actionReservationWidth)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                    .truncationMode(.tail)
+            } else if let quotaStatusText = presentation.quotaStatusText {
                 Text(quotaStatusText)
                     .font(.caption2)
                     .foregroundStyle(presentation.quotaStatusIsStale ? Color.orange : .secondary)
@@ -255,7 +263,9 @@ struct AccountCardCompactUsageSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if rings.isEmpty {
-                Text(presentation.quotaStatusText ?? L10n.tr("settings.compact_rings.none"))
+                Text(presentation.isRefreshing
+                    ? L10n.tr("accounts.quota.refreshing")
+                    : (presentation.quotaStatusText ?? L10n.tr("settings.compact_rings.none")))
                     .font(.caption2).foregroundStyle(.secondary)
                 AccountQuotaDisplaySettingsLink(compact: true)
             } else if presentation.provider == .codex && rings.count == 1 {

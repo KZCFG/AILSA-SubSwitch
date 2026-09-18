@@ -2,5 +2,5 @@
 # Consumed by scripts/build_app.sh and scripts/sync_version.sh; project.yml and
 # AILSA_SS.xcodeproj are derived from these values (run scripts/sync_version.sh).
 MARKETING_VERSION=1.0.0
-BUILD_NUMBER=2026091902
+BUILD_NUMBER=2026091904
 BUILD_LABEL=1.0.0

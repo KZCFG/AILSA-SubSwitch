@@ -186,6 +186,7 @@
 "accounts.quota.unavailable" = "Quota unavailable";
 "accounts.quota.unknown" = "Unknown";
 "accounts.quota.stale" = "Stale";
+"accounts.quota.refreshing" = "Daten werden aktualisiert";
 "accounts.quota.account_unverified" = "Account not verified";
 "accounts.quota.last_updated_format" = "Updated %@";
 "accounts.quota.just_now" = "just now";

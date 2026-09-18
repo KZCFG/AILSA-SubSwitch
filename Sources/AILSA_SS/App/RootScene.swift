@@ -86,6 +86,7 @@ struct RootScene: View {
         .environment(\.locale, runtimeLocale)
         .onAppear {
             selectedTab = .accounts
+            Task { await accountsModel.refreshOnWindowOpen() }
             Task { await quotaManagementModel.refreshOnWindowOpen() }
             L10n.setLocale(identifier: chromeStore.localeIdentifier)
         }

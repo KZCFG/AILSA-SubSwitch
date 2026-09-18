@@ -197,6 +197,7 @@
 "accounts.quota.unavailable" = "额度不可用";
 "accounts.quota.unknown" = "未知";
 "accounts.quota.stale" = "数据已过期";
+"accounts.quota.refreshing" = "正在刷新数据";
 "accounts.quota.account_unverified" = "账号未验证";
 "accounts.quota.last_updated_format" = "更新于 %@";
 "accounts.quota.just_now" = "刚刚";
