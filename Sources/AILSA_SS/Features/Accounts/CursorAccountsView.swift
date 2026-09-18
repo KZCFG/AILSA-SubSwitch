@@ -42,7 +42,8 @@ struct CursorAccountsView: View {
                     .disabled(loading)
             }
             ScrollView(.vertical) {
-                ReorderableAccountGrid(items: tiles, provider: .cursor, columns: compact ? 3 : 2) { tile in
+                ReorderableAccountGrid(items: tiles, provider: .cursor, columns: compact ? 3 : 2,
+                    pinnedID: account?.id) { tile in
                     if let account, account.id == tile.id {
                         if compact { compactCurrentCard(account) }
                         else { currentCard(account) }

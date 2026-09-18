@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0 candidate 2026091822 — pin the active account and settle drag sorting
+
+- Keep the active provider account at the far-left card position and exclude it
+  from manual account ordering.
+- Keep neighboring cards in fixed grid slots while dragging and commit one
+  reorder on drop, removing the reflow feedback that caused rapid shaking.
+
 ## 1.0.0 candidate 2026091820 — require request evidence for countdowns
 
 - Stop starting 5-hour and 1-week countdowns from read-only quota refreshes or

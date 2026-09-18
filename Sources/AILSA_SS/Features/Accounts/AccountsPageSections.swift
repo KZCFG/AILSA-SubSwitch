@@ -64,13 +64,14 @@ private struct AccountsGridSection: View {
     let onReauthenticateAccount: (String) -> Void
     let onDeleteAccount: (String) -> Void
     private var provider: AccountProvider { cards.first?.account.provider ?? .codex }
+    private var currentID: String? { cards.first(where: { $0.account.isCurrent })?.id }
     private var columnCount: Int {
         AccountCollectionLayout.columns(provider: provider, compact: isOverviewMode,
             availableWidth: availableViewportSize.width - LayoutRules.pagePadding * 2)
     }
 
     var body: some View {
-        ReorderableAccountGrid(items: cards, provider: provider, columns: columnCount) { card in
+        ReorderableAccountGrid(items: cards, provider: provider, columns: columnCount, pinnedID: currentID) { card in
             AccountCardGridItem(
                 card: card, areCardsPresented: areCardsPresented, frameWidth: nil, index: 0,
                 onSwitch: { onSwitchAccount(card.id) },
@@ -89,6 +90,10 @@ struct ReorderableAccountGrid<Item: Identifiable, Card: View>: View where Item.I
     let items: [Item]
     let provider: AccountProvider
     let columns: Int
+    /// The native-current account is always rendered first and is excluded
+    /// from the persisted/manual order. A current-account change therefore
+    /// changes the lead card without rewriting the user's arrangement.
+    var pinnedID: String?
     @ViewBuilder let card: (Item) -> Card
     @AppStorage(AccountOrderPreferences.defaultsKey) private var savedOrder = "{}"
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -104,7 +109,13 @@ struct ReorderableAccountGrid<Item: Identifiable, Card: View>: View where Item.I
     @State private var lastTarget: String?
     @GestureState private var gestureActive = false
     private var space: String { "account-sort-" + provider.rawValue }
-    private var orderedIDs: [String] { AccountOrderPreferences.reconcile(order, available: items.map(\.id)) }
+    private var availableIDs: [String] { items.map(\.id) }
+    private var movableIDs: [String] { availableIDs.filter { $0 != pinnedID } }
+    private var orderedIDs: [String] {
+        let movable = AccountOrderPreferences.reconcile(order, available: movableIDs)
+        guard let pinnedID, availableIDs.contains(pinnedID) else { return movable }
+        return [pinnedID] + movable
+    }
     private var orderedItems: [Item] {
         let lookup = Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         return orderedIDs.compactMap { lookup[$0] }
@@ -145,23 +156,27 @@ struct ReorderableAccountGrid<Item: Identifiable, Card: View>: View where Item.I
             loadOrder()
         }
         .onChange(of: items.map(\.id)) { _, _ in loadOrder() }
+        .onChange(of: pinnedID) { _, _ in loadOrder() }
         .onChange(of: savedOrder) { _, _ in if draggingID == nil { loadOrder() } }
         .onChange(of: gestureActive) { _, active in if !active { finishDrag() } }
         .onDisappear { finishDrag() }
     }
     private func loadOrder() {
-        order = AccountOrderPreferences.decode(savedOrder).ordered(items.map(\.id), provider: provider)
+        order = AccountOrderPreferences.decode(savedOrder).ordered(movableIDs, provider: provider)
     }
-    private func persist() {
+    private func persist(_ committedOrder: [String]? = nil) {
         var preferences = AccountOrderPreferences.decode(savedOrder)
-        preferences.orders[provider.rawValue] = orderedIDs
+        let orderToSave = committedOrder ?? orderedIDs
+        preferences.orders[provider.rawValue] = orderToSave.filter { $0 != pinnedID }
         savedOrder = preferences.encoded
     }
     private func offset(for id: String) -> CGSize {
-        // The frozen map is for deciding which slot is the target. For the
-        // dragged card's visual offset, use its current pre-offset layout
-        // frame so a slot change is compensated instead of becoming a jump.
-        guard draggingID == id, let frame = frames[id] ?? dragFrames[id] else { return .zero }
+        // Keep the grid in its original slots for the whole gesture. Reflowing
+        // a LazyVGrid while the pointer is over a neighbor makes the lifted
+        // card inherit a new origin and appear to shake or jump. The order is
+        // committed once, on drop, so this offset is calculated from one
+        // immutable frame map.
+        guard draggingID == id, let frame = dragFrames[id] ?? frames[id] else { return .zero }
         return CGSize(width: liftedFrame.minX - frame.minX + translation.width,
                       height: liftedFrame.minY - frame.minY + translation.height)
     }
@@ -170,6 +185,7 @@ struct ReorderableAccountGrid<Item: Identifiable, Card: View>: View where Item.I
             .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .named(space)))
             .updating($gestureActive) { _, active, _ in active = true }
             .onChanged { value in
+                guard pinnedID != id else { return }
                 switch value {
                 case .second(true, let drag):
                     if draggingID == nil {
@@ -190,6 +206,7 @@ struct ReorderableAccountGrid<Item: Identifiable, Card: View>: View where Item.I
                     )
                     let target = orderedIDs.first { candidate in
                         candidate != id
+                            && candidate != pinnedID
                             && dragFrames[candidate]?.insetBy(dx: 8, dy: 8).contains(liftedCenter) == true
                     }
                     // Keep the last target while crossing a gap. This gives the
@@ -197,33 +214,36 @@ struct ReorderableAccountGrid<Item: Identifiable, Card: View>: View where Item.I
                     // and reapplying the same move.
                     guard let target, target != lastTarget else { return }
                     lastTarget = target
-                    // Do not animate intermediate swaps. A single settle animation
-                    // runs when the drag ends, so the lifted card cannot oscillate
-                    // as neighboring cards move under the pointer.
-                    var transaction = Transaction()
-                    transaction.animation = nil
-                    withTransaction(transaction) {
-                        order = AccountOrderPreferences.moving(id, to: target, in: orderedIDs)
-                    }
+                    // Do not mutate the grid during the gesture. The target is
+                    // remembered and applied once on drop, which keeps every
+                    // neighboring card's frame stable under the pointer.
                 default: break
                 }
             }
             .onEnded { _ in finishDrag() }
     }
     private func finishDrag() {
-        guard draggingID != nil else { return }
-        persist()
+        guard let draggingID, pinnedID != draggingID else { return }
+        let committedOrder = lastTarget.map { AccountOrderPreferences.moving(draggingID, to: $0, in: orderedIDs) }
+        if let committedOrder {
+            withAnimation(motion) {
+                order = committedOrder
+            }
+        }
+        persist(committedOrder)
         withAnimation(motion) {
-            draggingID = nil
+            self.draggingID = nil
             translation = .zero
             lastTarget = nil
             dragFrames = [:]
         }
     }
     private func step(_ id: String, by delta: Int) {
+        guard id != pinnedID else { return }
         guard let index = orderedIDs.firstIndex(of: id), orderedIDs.indices.contains(index + delta) else { return }
-        withAnimation(motion) { order = AccountOrderPreferences.moving(id, to: orderedIDs[index + delta], in: orderedIDs) }
-        persist()
+        let committedOrder = AccountOrderPreferences.moving(id, to: orderedIDs[index + delta], in: orderedIDs)
+        withAnimation(motion) { order = committedOrder }
+        persist(committedOrder)
     }
 }
 private struct AccountCardFrames: PreferenceKey {
