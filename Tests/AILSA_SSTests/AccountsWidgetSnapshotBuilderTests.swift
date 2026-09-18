@@ -63,7 +63,8 @@ struct AccountsWidgetSnapshotBuilderTests {
                     fiveHourUsed: 12,
                     oneWeekUsed: 34,
                     fiveHourResetAt: 1_774_020_225,
-                    oneWeekResetAt: 1_774_106_625
+                    oneWeekResetAt: 1_774_106_625,
+                    fiveHourCountdownStartedAt: 100
                 )
             ],
             usageProgressDisplayMode: .used,
@@ -235,7 +236,8 @@ struct AccountsWidgetSnapshotBuilderTests {
         fiveHourUsed: Double,
         oneWeekUsed: Double,
         fiveHourResetAt: Int64 = 1_774_020_225,
-        oneWeekResetAt: Int64 = 1_774_106_625
+        oneWeekResetAt: Int64 = 1_774_106_625,
+        fiveHourCountdownStartedAt: Int64? = nil
     ) -> AccountSummary {
         AccountSummary(
             id: id,
@@ -250,7 +252,13 @@ struct AccountsWidgetSnapshotBuilderTests {
             usage: UsageSnapshot(
                 fetchedAt: 0,
                 planType: "team",
-                fiveHour: UsageWindow(usedPercent: fiveHourUsed, windowSeconds: 18_000, resetAt: fiveHourResetAt),
+                fiveHour: UsageWindow(
+                    usedPercent: fiveHourUsed,
+                    windowSeconds: 18_000,
+                    resetAt: fiveHourResetAt,
+                    countdownStartedAt: fiveHourCountdownStartedAt,
+                    countdownStartEvidence: fiveHourCountdownStartedAt == nil ? nil : .requestObserved
+                ),
                 oneWeek: UsageWindow(usedPercent: oneWeekUsed, windowSeconds: 604_800, resetAt: oneWeekResetAt),
                 credits: nil
             ),

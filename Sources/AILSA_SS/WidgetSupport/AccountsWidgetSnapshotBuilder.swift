@@ -153,6 +153,10 @@ struct AccountsWidgetSnapshotBuilder {
                         title: UsageQuotaDisplayName.bucket(bucket),
                         usedPercent: bucket.usedPercent ?? 0,
                         resetAt: bucket.resetAt,
+                        countdownRequiresRequest: QuotaCountdownState.requiresRequestEvidence(
+                            windowSeconds: bucket.windowSeconds,
+                            identifier: "\(bucket.id) \(bucket.displayName)"
+                        ),
                         countdownStartedAt: bucket.countdownStartedAt,
                         locale: locale,
                         timeZone: timeZone
@@ -202,6 +206,10 @@ struct AccountsWidgetSnapshotBuilder {
             return windowSnapshot(
                 title: candidate.title,
                 window: window,
+                countdownRequiresRequest: QuotaCountdownState.requiresRequestEvidence(
+                    windowSeconds: window.windowSeconds,
+                    identifier: candidate.title
+                ),
                 locale: locale,
                 timeZone: timeZone
             )
@@ -215,6 +223,10 @@ struct AccountsWidgetSnapshotBuilder {
                 title: title,
                 usedPercent: usedPercent,
                 resetAt: bucket.resetAt,
+                countdownRequiresRequest: QuotaCountdownState.requiresRequestEvidence(
+                    windowSeconds: bucket.windowSeconds,
+                    identifier: "\(bucket.id) \(bucket.displayName)"
+                ),
                 countdownStartedAt: bucket.countdownStartedAt,
                 locale: locale,
                 timeZone: timeZone
@@ -240,6 +252,7 @@ struct AccountsWidgetSnapshotBuilder {
         title: String,
         usedPercent: Double,
         resetAt: Int64?,
+        countdownRequiresRequest: Bool,
         countdownStartedAt: Int64?,
         locale: Locale,
         timeZone: TimeZone
@@ -250,7 +263,13 @@ struct AccountsWidgetSnapshotBuilder {
             progressFraction: usedPercent / 100,
             usedText: "\(Int(usedPercent.rounded()))%",
             remainingText: "\(remaining)%",
-            resetText: resetText(for: resetAt, countdownStartedAt: countdownStartedAt, locale: locale, timeZone: timeZone),
+            resetText: resetText(
+                for: resetAt,
+                countdownStartedAt: countdownStartedAt,
+                requiresRequestEvidence: countdownRequiresRequest,
+                locale: locale,
+                timeZone: timeZone
+            ),
             isVisible: true
         )
     }
@@ -269,6 +288,7 @@ struct AccountsWidgetSnapshotBuilder {
     private func windowSnapshot(
         title: String,
         window: UsageWindow,
+        countdownRequiresRequest: Bool,
         locale: Locale,
         timeZone: TimeZone
     ) -> AccountsWidgetWindowSnapshot {
@@ -280,7 +300,13 @@ struct AccountsWidgetSnapshotBuilder {
             progressFraction: usedPercent / 100,
             usedText: "\(Int(usedPercent.rounded()))%",
             remainingText: "\(remaining)%",
-            resetText: resetText(for: window.resetAt, countdownStartedAt: window.countdownStartedAt, locale: locale, timeZone: timeZone),
+            resetText: resetText(
+                for: window.resetAt,
+                countdownStartedAt: window.countdownStartedAt,
+                requiresRequestEvidence: countdownRequiresRequest,
+                locale: locale,
+                timeZone: timeZone
+            ),
             isVisible: true
         )
     }
@@ -288,11 +314,12 @@ struct AccountsWidgetSnapshotBuilder {
     private func resetText(
         for resetAt: Int64?,
         countdownStartedAt: Int64?,
+        requiresRequestEvidence: Bool,
         locale: Locale,
         timeZone: TimeZone
     ) -> String {
         guard let resetAt else { return "--" }
-        guard countdownStartedAt != nil else {
+        guard !requiresRequestEvidence || countdownStartedAt != nil else {
             return L10n.tr("accounts.window.awaiting_first_request")
         }
         let formatter = DateFormatter()

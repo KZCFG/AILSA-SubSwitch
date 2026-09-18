@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0 candidate 2026091902 — separate fixed weekly resets from request-activated 5-hour windows
+
+- Keep Codex and other weekly quota windows counting down from the provider's
+  fixed reset time, even before a local model request is observed.
+- Keep first-request gating only for 5-hour quota windows, and clear stale
+  activation evidence when a new 5-hour reset cycle is reported.
+- Apply the same semantics to account cards and the menu-bar/widget snapshots.
+
 ## 1.0.0 candidate 2026091822 — pin the active account and settle drag sorting
 
 - Keep the active provider account at the far-left card position and exclude it

@@ -109,4 +109,58 @@ final class QuotaCountdownStateTests: XCTestCase {
         XCTAssertEqual(marked.fiveHour?.countdownStartEvidence, .requestObserved)
     }
 
+    func testWeeklyWindowUsesProviderResetWithoutRequestEvidence() {
+        let resetAt: Int64 = 700
+
+        XCTAssertEqual(
+            QuotaCountdownState.effectiveResetAt(
+                resetAt: resetAt,
+                countdownStartedAt: nil,
+                now: 210,
+                requiresRequestEvidence: false
+            ),
+            resetAt
+        )
+    }
+
+    func testRequestObservationDoesNotArmWeeklyWindow() {
+        let usage = UsageSnapshot(
+            fetchedAt: 210,
+            planType: "pro",
+            fiveHour: nil,
+            oneWeek: UsageWindow(usedPercent: 100, windowSeconds: 604_800, resetAt: 700)
+        )
+
+        let marked = QuotaCountdownState.markRequestObserved(usage, observedAt: 210)
+
+        XCTAssertNil(marked.oneWeek?.countdownStartedAt)
+        XCTAssertNil(marked.oneWeek?.countdownStartEvidence)
+    }
+
+    func testResetCycleChangeClearsOldFiveHourRequestEvidence() {
+        let previous = UsageSnapshot(
+            fetchedAt: 100,
+            planType: "pro",
+            fiveHour: UsageWindow(
+                usedPercent: 50,
+                windowSeconds: 18_000,
+                resetAt: 700,
+                countdownStartedAt: 200,
+                countdownStartEvidence: .requestObserved
+            ),
+            oneWeek: nil
+        )
+        let refreshed = UsageSnapshot(
+            fetchedAt: 300,
+            planType: "pro",
+            fiveHour: UsageWindow(usedPercent: 0, windowSeconds: 18_000, resetAt: 900),
+            oneWeek: nil
+        )
+
+        let reconciled = QuotaCountdownState.reconcile(previous: previous, refreshed: refreshed, observedAt: 300)
+
+        XCTAssertNil(reconciled.fiveHour?.countdownStartedAt)
+        XCTAssertNil(reconciled.fiveHour?.countdownStartEvidence)
+    }
+
 }

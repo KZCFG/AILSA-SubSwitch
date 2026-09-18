@@ -239,6 +239,10 @@ struct AccountCardPresentation: Equatable {
                     title: UsageQuotaDisplayName.bucket(bucket),
                     usedPercent: usedPercent,
                     resetAt: bucket.resetAt,
+                    countdownRequiresRequest: QuotaCountdownState.requiresRequestEvidence(
+                        windowSeconds: bucket.windowSeconds,
+                        identifier: "\(bucket.id) \(bucket.displayName)"
+                    ),
                     countdownStartedAt: bucket.countdownStartedAt,
                     locale: locale,
                     usageProgressDisplayMode: usageProgressDisplayMode,
@@ -327,6 +331,10 @@ struct AccountCardPresentation: Equatable {
             title: L10n.tr("accounts.window.five_hour"),
             usedPercent: usage?.fiveHour?.usedPercent,
             resetAt: usage?.fiveHour?.resetAt,
+            countdownRequiresRequest: QuotaCountdownState.requiresRequestEvidence(
+                windowSeconds: usage?.fiveHour?.windowSeconds,
+                identifier: "fiveHour"
+            ),
             countdownStartedAt: usage?.fiveHour?.countdownStartedAt,
             locale: locale,
             usageProgressDisplayMode: usageProgressDisplayMode,
@@ -337,6 +345,10 @@ struct AccountCardPresentation: Equatable {
             title: L10n.tr("accounts.window.one_week"),
             usedPercent: usage?.oneWeek?.usedPercent,
             resetAt: usage?.oneWeek?.resetAt,
+            countdownRequiresRequest: QuotaCountdownState.requiresRequestEvidence(
+                windowSeconds: usage?.oneWeek?.windowSeconds,
+                identifier: "oneWeek"
+            ),
             countdownStartedAt: usage?.oneWeek?.countdownStartedAt,
             locale: locale,
             usageProgressDisplayMode: usageProgressDisplayMode,
@@ -380,6 +392,10 @@ struct AccountCardPresentation: Equatable {
                     title: UsageQuotaDisplayName.bucket(bucket),
                     usedPercent: usedPercent,
                     resetAt: bucket.resetAt,
+                    countdownRequiresRequest: QuotaCountdownState.requiresRequestEvidence(
+                        windowSeconds: bucket.windowSeconds,
+                        identifier: "\(bucket.id) \(bucket.displayName)"
+                    ),
                     countdownStartedAt: bucket.countdownStartedAt,
                     locale: locale,
                     usageProgressDisplayMode: usageProgressDisplayMode,
@@ -538,6 +554,7 @@ struct AccountCardPresentation: Equatable {
         title: String,
         usedPercent: Double?,
         resetAt: Int64?,
+        countdownRequiresRequest: Bool,
         countdownStartedAt: Int64?,
         locale: Locale,
         usageProgressDisplayMode: UsageProgressDisplayMode,
@@ -559,7 +576,8 @@ struct AccountCardPresentation: Equatable {
         let effectiveResetAt = QuotaCountdownState.effectiveResetAt(
             resetAt: resetAt,
             countdownStartedAt: countdownStartedAt,
-            now: Int64(Date().timeIntervalSince1970)
+            now: Int64(Date().timeIntervalSince1970),
+            requiresRequestEvidence: countdownRequiresRequest
         )
         return AccountWindowPresentation(
             id: id,
@@ -567,7 +585,11 @@ struct AccountCardPresentation: Equatable {
             progressPercent: progress,
             primaryText: primaryText,
             secondaryText: secondaryText,
-            resetText: formatResetCountdown(resetAt, countdownStartedAt: countdownStartedAt),
+            resetText: formatResetCountdown(
+                resetAt,
+                countdownStartedAt: countdownStartedAt,
+                requiresRequestEvidence: countdownRequiresRequest
+            ),
             isUsageKnown: validUsedPercent(usedPercent) != nil || unknownFallbackUsedPercent != nil,
             resetAt: effectiveResetAt.map { Date(timeIntervalSince1970: TimeInterval($0)) }
         )
@@ -615,9 +637,13 @@ struct AccountCardPresentation: Equatable {
     /// than as an absolute timestamp the user has to mentally diff.
     /// The formatter follows the in-app language (not the system locale) so
     /// countdown words and the surrounding template can never mix languages.
-    private static func formatResetCountdown(_ epoch: Int64?, countdownStartedAt: Int64?) -> String {
+    private static func formatResetCountdown(
+        _ epoch: Int64?,
+        countdownStartedAt: Int64?,
+        requiresRequestEvidence: Bool
+    ) -> String {
         guard let epoch else { return L10n.tr("accounts.window.reset_at_format", "--") }
-        guard countdownStartedAt != nil else {
+        guard !requiresRequestEvidence || countdownStartedAt != nil else {
             return L10n.tr("accounts.window.awaiting_first_request")
         }
         let date = Date(timeIntervalSince1970: TimeInterval(epoch))
