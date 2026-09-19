@@ -386,10 +386,22 @@
 "about.title" = "关于";
 "about.version_format" = "版本 %@";
 "about.built_format" = "构建于 %@";
-"about.tagline" = "一眼看额度，一键切账户。";
+"about.tagline" = "一眼看用量，一鍵切帳戶。";
 
-"about.feedback" = "問題回報";
 "about.licenses" = "授權與致謝";
+
+"about.configuration.title" = "本機設定";
+"about.configuration.backup" = "備份本機設定";
+"about.configuration.delete" = "刪除本機設定";
+"about.configuration.backup.title" = "備份本機設定";
+"about.configuration.backup.warning" = "此備份包含密碼和 Token。若檔案洩露，可能導致你的帳戶或額度遭濫用。請妥善保管。";
+"about.configuration.backup.confirm" = "選擇儲存位置";
+"about.configuration.backup.saved" = "本機設定備份已儲存。";
+"about.configuration.delete.title" = "刪除本機設定？";
+"about.configuration.delete.warning" = "刪除本機設定後，AILSA SubSwitch 將恢復原廠狀態，你需要重新設定所有帳戶。";
+"about.configuration.delete.confirm" = "刪除並恢復原廠設定";
+"about.configuration.delete.deleted" = "本機設定已刪除。請重新開啟 AILSA SubSwitch 進行設定。";
+"about.configuration.operation_failed_format" = "操作失敗：%@";
 
 /* Compact quota customization */
 "accounts.card.balance" = "余额";

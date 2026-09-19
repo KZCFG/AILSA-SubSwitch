@@ -381,6 +381,15 @@ fi
 
 collect_prune_targets
 for item in ${prune_targets[@]+"${prune_targets[@]}"}; do
+  # `find /Applications` may print a double-leading slash on macOS. Normalize
+  # it before comparing against the protected current-app path; otherwise the
+  # retention pass could mistake the freshly installed app for an old bundle.
+  while [[ "$item" == //* ]]; do
+    item="${item#/}"
+  done
+  if [[ "$item" != /* ]]; then
+    item="/$item"
+  fi
   if [[ "$item" == "$installed_app" ]]; then
     log "keeping current app $item"
   elif is_exact_app_bundle "$item"; then

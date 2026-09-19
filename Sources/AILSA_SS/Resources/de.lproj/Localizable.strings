@@ -386,10 +386,22 @@
 "about.title" = "About";
 "about.version_format" = "Version %@";
 "about.built_format" = "Built on %@";
-"about.tagline" = "Quota at a glance. Switch accounts in a click.";
+"about.tagline" = "Usage at a glance. Switch accounts in a click.";
 
-"about.feedback" = "Feedback";
 "about.licenses" = "Licenses";
+
+"about.configuration.title" = "Local configuration";
+"about.configuration.backup" = "Back up local configuration";
+"about.configuration.delete" = "Delete local configuration";
+"about.configuration.backup.title" = "Back up local configuration";
+"about.configuration.backup.warning" = "This backup contains passwords and tokens. If the file is leaked, your accounts or quota may be misused. Store it somewhere secure.";
+"about.configuration.backup.confirm" = "Choose save location";
+"about.configuration.backup.saved" = "Configuration backup saved.";
+"about.configuration.delete.title" = "Delete local configuration?";
+"about.configuration.delete.warning" = "Deleting local configuration returns AILSA SubSwitch to factory state. You will need to configure all accounts again.";
+"about.configuration.delete.confirm" = "Delete and reset";
+"about.configuration.delete.deleted" = "Local configuration deleted. Reopen AILSA SubSwitch to configure it again.";
+"about.configuration.operation_failed_format" = "Operation failed: %@";
 
 /* Compact quota customization */
 "accounts.card.balance" = "Balance";

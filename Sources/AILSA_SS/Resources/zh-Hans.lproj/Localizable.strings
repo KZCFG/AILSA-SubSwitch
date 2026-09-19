@@ -412,10 +412,22 @@
 "about.title" = "关于";
 "about.version_format" = "版本 %@";
 "about.built_format" = "构建于 %@";
-"about.tagline" = "一眼看额度，一键切账户。";
+"about.tagline" = "一眼看用量，一键切账户。";
 
-"about.feedback" = "问题反馈";
 "about.licenses" = "许可与致谢";
+
+"about.configuration.title" = "本地配置";
+"about.configuration.backup" = "备份本地配置";
+"about.configuration.delete" = "删除本地配置";
+"about.configuration.backup.title" = "备份本地配置";
+"about.configuration.backup.warning" = "此备份包含密码和 Token。如果文件泄露，可能导致你的账户或额度被滥用。请妥善保管。";
+"about.configuration.backup.confirm" = "选择保存位置";
+"about.configuration.backup.saved" = "本地配置备份已保存。";
+"about.configuration.delete.title" = "删除本地配置？";
+"about.configuration.delete.warning" = "删除本地配置后，AILSA SubSwitch 将恢复出厂状态，你需要重新配置所有账号。";
+"about.configuration.delete.confirm" = "删除并恢复出厂设置";
+"about.configuration.delete.deleted" = "本地配置已删除。请重新打开 AILSA SubSwitch 进行配置。";
+"about.configuration.operation_failed_format" = "操作失败：%@";
 
 /* Compact quota customization */
 "accounts.card.balance" = "余额";

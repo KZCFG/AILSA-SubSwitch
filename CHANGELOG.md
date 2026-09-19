@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.0 candidate 2026091905 — local configuration backup and factory reset
+
+- Replace the public tagline with “Usage at a glance. Switch accounts in a
+  click.” across the app, widget, README and release documentation.
+- Replace About → Feedback with Licenses and acknowledgements, and add local
+  configuration backup and factory-reset actions.
+- Export AILSA SubSwitch configuration as a structured JSON file after an
+  explicit token-safety warning; delete only the app-owned configuration
+  directory after an explicit factory-reset warning.
+- Keep provider-native credentials and external editor databases outside the
+  backup and reset boundary.
+
 ## 1.0.0 candidate 2026091904 — refresh every subscription when the menu opens
 
 - Refresh every visible Codex and AntiGravity subscription when the SubSwitch
