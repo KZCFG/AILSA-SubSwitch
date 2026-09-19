@@ -2,7 +2,7 @@
 
 ## 1.0.0 candidate 2026091905 — local configuration backup and factory reset
 
-- Replace the public tagline with “Usage at a glance. Switch accounts in a
+- Replace the public tagline with “Weekly usage at a glance. Switch accounts in a
   click.” across the app, widget, README and release documentation.
 - Replace About → Feedback with Licenses and acknowledgements, and add local
   configuration backup and factory-reset actions.

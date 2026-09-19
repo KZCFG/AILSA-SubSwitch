@@ -386,7 +386,7 @@
 "about.title" = "关于";
 "about.version_format" = "版本 %@";
 "about.built_format" = "构建于 %@";
-"about.tagline" = "一眼看用量，一鍵切帳戶。";
+"about.tagline" = "一眼看每週用量，一鍵切帳戶。";
 
 "about.licenses" = "授權與致謝";
 

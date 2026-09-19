@@ -412,7 +412,7 @@
 "about.title" = "关于";
 "about.version_format" = "版本 %@";
 "about.built_format" = "构建于 %@";
-"about.tagline" = "一眼看用量，一键切账户。";
+"about.tagline" = "一眼看每周用量，一键切账户。";
 
 "about.licenses" = "许可与致谢";
 

@@ -3,7 +3,7 @@
 </p>
 
 <h1 align="center">AILSA SubSwitch</h1>
-<p align="center"><strong>Usage at a glance. Switch accounts in a click.</strong></p>
+<p align="center"><strong>Weekly usage at a glance. Switch accounts in a click.</strong></p>
 <p align="center">A native macOS menu bar app for Codex, Antigravity, and Cursor.</p>
 <p align="center">
   <img alt="macOS 14 or later" src="https://img.shields.io/badge/macOS-14%2B-111111">

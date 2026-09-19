@@ -17,7 +17,7 @@ struct AILSA_SSAccountsWidget: Widget {
             AccountsWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("AILSA SubSwitch Accounts")
-        .description("See the current account and usage at a glance.")
+        .description("See the current account and weekly usage at a glance.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }

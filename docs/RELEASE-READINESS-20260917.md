@@ -13,7 +13,7 @@ It is a derivative of Copool, with the upstream MIT notices preserved.
 - Marketing version: **1.0.0**; build **2026091805**.
 - Manual distribution; no OTA updater, feed, Sparkle framework or automatic download.
 - Settings → About shows the application icon, product name, version, build time,
-  “Usage at a glance. Switch accounts in a click.” and “© 2026 KZCFG · MIT”.
+  “Weekly usage at a glance. Switch accounts in a click.” and “© 2026 KZCFG · MIT”.
 - Duplicate main-page headings are removed; usage actions share the provider row.
 - The app and project-page icon share updated A.S.S. lettering; all macOS icon
   sizes can be regenerated with `scripts/build_icon.sh`.

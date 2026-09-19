@@ -412,7 +412,7 @@
 "about.title" = "About";
 "about.version_format" = "Version %@";
 "about.built_format" = "Built on %@";
-"about.tagline" = "Usage at a glance. Switch accounts in a click.";
+"about.tagline" = "Weekly usage at a glance. Switch accounts in a click.";
 
 "about.licenses" = "Licenses";
 
