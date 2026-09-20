@@ -256,8 +256,8 @@ private struct QuotaDashboard: View {
             }
             if layout.showsTrend {
                 if range == 1 && selectedDay == nil && !isQuota {
-                    QuotaIntradayChart(minutes: data.minuteTokens, now: data.scannedAt, hovered: $hoveredMinute).frame(height: 180)
-                } else { trend.frame(height: 76) }
+                    QuotaIntradayChart(minutes: data.minuteTokens, now: data.scannedAt, hovered: $hoveredMinute).frame(height: layout.trendHeight)
+                } else { trend.frame(height: layout.trendHeight) }
             }
             else { Button(qtext("查看趋势", "Show trend")) { detail = QuotaDetailRequest(total: bucket.total, title: nil, trend: true) }.font(.caption) }
             Spacer(minLength: 0)
@@ -321,7 +321,11 @@ private struct QuotaDashboard: View {
     }
     private var selectedQuotaLatestSummary: String {
         selectedQuotaPoolWindows.compactMap { window in
-            guard let value = data.quotaTrends[window.windowName]?[today] else { return nil }
+            // Prefer today's history point, but fall back to the latest
+            // provider snapshot. A newly refreshed account should be useful
+            // immediately even before the daily history row is persisted.
+            let value = data.quotaTrends[window.windowName]?[today] ?? window.usedPercent
+            guard value.isFinite else { return nil }
             return "\(window.displayName): \(String(format: "%.1f%%", value))"
         }.joined(separator: " · ")
     }
@@ -335,10 +339,21 @@ private struct QuotaDashboard: View {
             kpi(qtext("额度消耗", "Quota used"), value: selectedQuotaLatestSummary.isEmpty ? "—" : selectedQuotaLatestSummary, detail: qtext("同一账号的额度池", "Pools from the same account"))
             kpi(qtext("额度池", "Quota pools"), value: String(poolWindows.count), detail: selectedQuotaPoolNames.isEmpty ? qtext("暂无快照", "No snapshots") : selectedQuotaPoolNames)
         }.frame(height: 78)
-        HStack { Text(qtext("历史额度快照", "Quota history")).font(.subheadline.bold()); Spacer(); Text(qtext("各额度池已用百分比", "Used percentage by pool")).font(.caption) }.frame(height: 24)
+        HStack {
+            Text(qtext("额度使用历史", "Usage history")).font(.subheadline.bold())
+            Spacer()
+            Text(qtext("当前账号 · 各额度池已用百分比", "Active account · used percentage by pool")).font(.caption)
+        }.frame(height: 24)
         let pageCount = max(1, (historyDays.count + layout.rows - 1) / layout.rows)
         let safe = min(page, pageCount - 1)
-        if historyDays.isEmpty { Text(qtext("所选日期暂无快照；启用后逐日积累。", "No snapshots in this range; history accumulates after enabling.")).font(.caption).foregroundStyle(.secondary) }
+        if historyDays.isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(qtext("暂无可用的历史快照", "No usage snapshots in this range"))
+                    .font(.callout.weight(.semibold))
+                Text(qtext("下方图表会在刷新当前账号后显示；当前快照仍显示在上方。", "Refresh the active account to populate the chart; the current snapshot remains above."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
+        }
         ForEach(Array(historyDays.dropFirst(safe * layout.rows).prefix(layout.rows)), id: \.self) { day in
             HStack {
                 Text(day.formatted(.dateTime.month().day())).frame(maxWidth: .infinity, alignment: .leading)
@@ -368,6 +383,7 @@ private struct QuotaDashboard: View {
             guard let total = data.days[day]?.total, total.reported > 0 else { return nil }
             return sortUSD ? total.reference.usd : Double(total.tokens.total)
         }
+        let chartYMax = isQuota ? 100.0 : max(1.0, values.compactMap { $0 }.max() ?? 1.0)
         return VStack(spacing: 4) {
             if isQuota {
                 Picker(qtext("额度池", "Quota pool"), selection: Binding(get: { quotaWindow.isEmpty ? (data.quotaWindows.first?.windowName ?? "") : quotaWindow }, set: { quotaWindow = $0 })) {
@@ -412,8 +428,18 @@ private struct QuotaDashboard: View {
                     }
                 }
             }
-            .chartXAxis { AxisMarks(values: .automatic(desiredCount: 4)) }
-            .chartYAxis(.hidden)
+            .chartXAxis { AxisMarks(values: .automatic(desiredCount: min(6, max(2, days.count))) ) }
+            .chartYScale(domain: 0...chartYMax)
+            .chartYAxis {
+                if isQuota {
+                    AxisMarks(values: [0, 25, 50, 75, 100]) { value in
+                        AxisGridLine().foregroundStyle(.secondary.opacity(0.16))
+                        AxisValueLabel { if let percent = value.as(Int.self) { Text("\(percent)%").font(.caption2) } }
+                    }
+                } else {
+                    AxisMarks(values: .automatic(desiredCount: 3))
+                }
+            }
             .chartOverlay { proxy in
                 GeometryReader { geometry in
                     Color.clear.contentShape(Rectangle()).onContinuousHover { phase in

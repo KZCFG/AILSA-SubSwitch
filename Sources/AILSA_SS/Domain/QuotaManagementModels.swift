@@ -590,11 +590,15 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
 struct QuotaDashboardLayout {
     let rows: Int
     let showsTrend: Bool
+    /// Keep every range on the same chart canvas. A 30-day view is still a
+    /// primary dashboard view, so it must not collapse into a thin footer
+    /// strip just because it is not the intraday chart.
+    let trendHeight: Double = 180
     init(height: Double, expandedIntraday: Bool = true) {
         showsTrend = height >= 520
         // Includes range, KPIs, table header, paging, chart, footer and stack gaps.
-        // Reserve before allocating rows; undercounting hid the footer on 544pt panels.
-        let fixed: Double = showsTrend ? (expandedIntraday ? 494 : 410) : 330
+        // Both the intraday and dated charts use the same 180pt canvas.
+        let fixed: Double = showsTrend ? (expandedIntraday ? 494 : 514) : 330
         rows = max(1, min(8, Int((height - fixed) / 33)))
     }
 }

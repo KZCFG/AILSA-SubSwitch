@@ -58,6 +58,16 @@ final class PanelHeightLayoutRulesTests: XCTestCase {
         let available = Double(LayoutRules.quotaManagementPanelHeight) - 114
         let layout = QuotaDashboardLayout(height: available, expandedIntraday: true)
         XCTAssertTrue(layout.showsTrend)
+        XCTAssertEqual(layout.trendHeight, 180)
+        let contentHeight = 42.0 + 78 + 24 + Double(layout.rows) * 33 + 26 + 180 + 26 + 60
+        XCTAssertLessThanOrEqual(contentHeight, available)
+    }
+
+    func testQuotaDashboardUsesTheSameLargeChartForDatedRanges() {
+        let available = Double(LayoutRules.quotaManagementPanelHeight) - 114
+        let layout = QuotaDashboardLayout(height: available, expandedIntraday: false)
+        XCTAssertTrue(layout.showsTrend)
+        XCTAssertEqual(layout.trendHeight, 180)
         let contentHeight = 42.0 + 78 + 24 + Double(layout.rows) * 33 + 26 + 180 + 26 + 60
         XCTAssertLessThanOrEqual(contentHeight, available)
     }
