@@ -297,6 +297,32 @@ private struct QuotaDashboard: View {
         }.frame(maxWidth: .infinity, alignment: .leading).padding(10)
             .background(Color.primary.opacity(0.035)).clipShape(RoundedRectangle(cornerRadius: 10))
     }
+    private func quotaMetricCard<Accessory: View>(icon: String, title: String, value: String, detail: String,
+                                                  tint: Color, @ViewBuilder accessory: () -> Accessory) -> some View {
+        HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
+                Label(title, systemImage: icon)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                Text(value)
+                    .font(.system(size: 25, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                Text(detail)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 3)
+            accessory().frame(width: 60, height: 44).foregroundStyle(tint)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(Color.primary.opacity(0.035))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
     private var quotaPoolWindows: [AntigravityQuotaObservation] {
         data.quotaWindows.sorted { left, right in
             if left.isFiveHourWindow != right.isFiveHourWindow {
@@ -326,6 +352,9 @@ private struct QuotaDashboard: View {
         default: return .secondary
         }
     }
+    private func quotaIcon(for window: AntigravityQuotaObservation) -> String {
+        window.isFiveHourWindow ? "clock" : "calendar"
+    }
     private var quotaHistoryDays: [Date] {
         var days = Set<Date>()
         for window in quotaPoolWindows {
@@ -354,12 +383,30 @@ private struct QuotaDashboard: View {
         guard !deltas.isEmpty else { return nil }
         return deltas.reduce(0, +)
     }
+    private var quotaPeriodChange: Double? {
+        if let quotaWeeklyDelta { return quotaWeeklyDelta }
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        let values = quotaPoolWindows.filter { !$0.isFiveHourWindow }.compactMap { window -> Double? in
+            guard let current = quotaValue(window, on: today), let previous = quotaValue(window, on: yesterday) else { return nil }
+            return current - previous
+        }
+        return values.isEmpty ? nil : values.reduce(0, +)
+    }
+    private var quotaWeeklySparklineValues: [Double] {
+        let weekly = quotaPoolWindows.filter { !$0.isFiveHourWindow }
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        return Set(quotaHistoryDays + [yesterday, today]).sorted().compactMap { day in
+            let values = weekly.compactMap { quotaValue($0, on: day) }
+            return values.isEmpty ? nil : values.reduce(0, +) / Double(values.count)
+        }
+    }
     private var quotaFiveHourPeak: (peak: Double, daysAtRisk: Int)? {
         let fiveHour = quotaPoolWindows.filter(\.isFiveHourWindow)
         let values = fiveHour.flatMap { window in
             quotaHistoryDays.compactMap { quotaValue(window, on: $0) }
         }
-        guard let peak = values.max() else { return nil }
+        let peak = values.max() ?? fiveHour.map(\.usedPercent).max()
+        guard let peak else { return nil }
         let daysAtRisk = Set(fiveHour.flatMap { window in
             quotaHistoryDays.filter { (quotaValue(window, on: $0) ?? 0) >= 90 }
         }).count
@@ -375,11 +422,22 @@ private struct QuotaDashboard: View {
         let weeklyDelta = quotaWeeklyDelta
         let peak = quotaFiveHourPeak
         HStack(spacing: 10) {
-            kpi(qtext("周期增量", "Period change"), value: weeklyDelta.map { String(format: "%+.1fpp", $0) } ?? "—", detail: qtext("所有 7d 池的期初到期末", "All 7d pools, first to last snapshot"))
-            kpi(qtext("5h 峰值", "5h peak"), value: peak.map { String(format: "%.1f%%", $0.peak) } ?? "—", detail: peak.map { qtext("≥90%：\($0.daysAtRisk) 天", "≥90%: \($0.daysAtRisk) days") } ?? qtext("暂无 5h 快照", "No 5h snapshots"))
+            quotaMetricCard(icon: "chart.line.uptrend.xyaxis", title: qtext("周期增量", "Period change"),
+                            value: quotaPeriodChange.map { String(format: "%+.1fpp", $0) } ?? "—",
+                            detail: weeklyDelta == nil ? qtext("今日最新 − 昨日最后", "Today latest − yesterday") : qtext("所有 7d 池的期初到期末", "All 7d pools, first to last snapshot"),
+                            tint: poolWindows.first(where: { !$0.isFiveHourWindow }).map { quotaColor(for: $0) } ?? .secondary) {
+                QuotaSparkline(values: quotaWeeklySparklineValues)
+            }
+            quotaMetricCard(icon: "gauge.with.dots.needle.50percent", title: qtext("5h 峰值", "5h peak"),
+                            value: peak.map { String(format: "%.1f%%", $0.peak) } ?? "—",
+                            detail: peak.map { qtext("≥90%：\($0.daysAtRisk) 天", "≥90%: \($0.daysAtRisk) days") } ?? qtext("暂无 5h 快照", "No 5h snapshots"),
+                            tint: peak.map { $0.peak >= 90 ? .red : .orange } ?? .secondary) {
+                QuotaPeakGauge(value: peak?.peak ?? 0, warning: (peak?.daysAtRisk ?? 0) > 0)
+            }
         }.frame(height: 78)
         HStack {
-            Text(qtext("额度使用历史", "Usage history")).font(.subheadline.bold())
+            Label(qtext("额度使用历史", "Usage history"), systemImage: "tablecells")
+                .font(.subheadline.bold())
             Spacer()
             Text(qtext("账号页中标记为当前的账号 · \(poolWindows.count) 个池", "Active account from Accounts · \(poolWindows.count) pools")).font(.caption)
         }.frame(height: 24)
@@ -387,8 +445,9 @@ private struct QuotaDashboard: View {
             Text(qtext("日期", "Date")).frame(width: 52, alignment: .leading)
             ForEach(poolWindows) { window in
                 VStack(alignment: .leading, spacing: 0) {
-                    Circle().fill(quotaColor(for: window)).frame(width: 6, height: 6)
-                    Text(quotaShortName(for: window)).lineLimit(2).minimumScaleFactor(0.75)
+                    Label(quotaShortName(for: window), systemImage: quotaIcon(for: window))
+                        .foregroundStyle(quotaColor(for: window))
+                        .lineLimit(2).minimumScaleFactor(0.75)
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
             Text(qtext("7d Δ", "7d Δ")).frame(width: 42, alignment: .trailing)
@@ -413,15 +472,22 @@ private struct QuotaDashboard: View {
                 detail = QuotaDetailRequest(total: QuotaAggregate(), title: day.formatted(.dateTime.month().day()), quotaValues: values)
             } label: {
                 HStack(spacing: 8) {
-                    Text(day.formatted(.dateTime.month().day())).frame(width: 52, alignment: .leading)
+                    HStack(spacing: 3) {
+                        if poolWindows.contains(where: { $0.isFiveHourWindow && (quotaDelta($0, on: day) ?? 0) < 0 }) {
+                            Image(systemName: "arrow.counterclockwise")
+                                .foregroundStyle(.secondary)
+                                .accessibilityLabel(qtext("额度重置", "Quota reset"))
+                        }
+                        Text(day.formatted(.dateTime.month().day()))
+                    }.frame(width: 52, alignment: .leading)
                     ForEach(poolWindows) { window in
                         if let used = quotaValue(window, on: day) {
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text(String(format: "%.1f%%", used)).foregroundStyle(quotaColor(for: window))
-                                if let delta = quotaDelta(window, on: day), delta < 0, window.isFiveHourWindow {
-                                    Text(qtext("重置", "Reset")).font(.system(size: 8)).foregroundStyle(.secondary)
-                                }
-                            }.frame(maxWidth: .infinity, alignment: .leading)
+                            Text(String(format: "%.1f%%", used))
+                                .foregroundStyle(quotaColor(for: window))
+                                .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+                                .padding(.horizontal, 4)
+                                .background(quotaColor(for: window).opacity(0.08 + min(0.72, used / 100 * 0.72)), in: RoundedRectangle(cornerRadius: 5))
+                                .overlay(RoundedRectangle(cornerRadius: 5).stroke(used >= 90 ? .red : .clear, lineWidth: 1))
                         } else { Text("—").foregroundStyle(.tertiary).frame(maxWidth: .infinity, alignment: .leading) }
                     }
                     Text(quotaDeltaSummary(on: day)).monospacedDigit().frame(width: 42, alignment: .trailing)
@@ -446,29 +512,31 @@ private struct QuotaDashboard: View {
         let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
         return VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(qtext("今日 vs 昨日", "Today vs yesterday")).font(.subheadline.bold())
+                Label(qtext("今日 vs 昨日", "Today vs yesterday"), systemImage: "arrow.left.arrow.right")
+                    .font(.subheadline.bold())
                 Spacer()
                 Text(qtext("每日仅保留最新一次快照，无日内轨迹", "One final snapshot per day; no intraday trace")).font(.caption2).foregroundStyle(.secondary)
             }
             ForEach(quotaPoolWindows) { window in
-                HStack {
-                    Circle().fill(quotaColor(for: window)).frame(width: 7, height: 7)
-                    Text(quotaShortName(for: window)).font(.caption)
-                    Spacer()
-                    let current = quotaValue(window, on: today)
-                    let previous = quotaValue(window, on: yesterday)
-                    if let current {
-                        Text(String(format: "%.1f%%", current)).monospacedDigit()
-                        if let previous {
-                            Text(String(format: "%+.1fpp", current - previous)).foregroundStyle((current - previous) < 0 ? .secondary : quotaColor(for: window)).monospacedDigit()
-                        }
-                    } else {
-                        Text("—").foregroundStyle(.secondary)
-                    }
-                }.frame(height: 24)
+                QuotaDumbbellRow(title: quotaShortName(for: window), color: quotaColor(for: window),
+                                 previous: quotaValue(window, on: yesterday),
+                                 current: quotaValue(window, on: today) ?? window.usedPercent)
+                    .frame(height: 27)
             }
             Spacer(minLength: 0)
         }
+    }
+    private var quotaLegend: some View {
+        HStack(spacing: 10) {
+            ForEach(quotaPoolWindows) { window in
+                Label(quotaShortName(for: window), systemImage: quotaIcon(for: window))
+                    .foregroundStyle(quotaColor(for: window))
+                    .font(.system(size: 9, weight: .semibold))
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(height: 18)
     }
     private var trend: some View {
         let days = dates
@@ -491,13 +559,17 @@ private struct QuotaDashboard: View {
                         if sortUSD { return String(format: "$%.2f", $0) }
                         return String(format: "%.3f%@ Token", $0 / (tokenUnit == "B" ? 1e9 : 1e6), tokenUnit == "B" ? "B" : "M")
                     } ?? "—")))
-                } else { Text(isQuota ? qtext("每日额度快照（已用 %）", "Daily quota snapshot (used %)") : qtext("Token 词元消耗 / 美元", "Token usage / USD")) }
+                } else {
+                    Label(isQuota ? qtext("每日额度快照（已用 %）", "Daily quota snapshot (used %)") : qtext("Token 词元消耗 / 美元", "Token usage / USD"),
+                          systemImage: isQuota ? "chart.xyaxis.line" : "chart.bar")
+                }
                 Spacer()
                 Picker("图表", selection: $trendStyle) {
                     Image(systemName: "chart.bar").tag("bar")
                     Image(systemName: "chart.xyaxis.line").tag("line")
                 }.labelsHidden().pickerStyle(.segmented).frame(width: 70)
             }.font(.caption)
+            if isQuota { quotaLegend }
             Chart(Array(days.enumerated()), id: \.element) { index, day in
                 if isQuota {
                     ForEach(poolWindows) { window in
@@ -547,6 +619,98 @@ private struct QuotaDashboard: View {
     }
 }
 
+private struct QuotaSparkline: View {
+    let values: [Double]
+
+    var body: some View {
+        GeometryReader { geometry in
+            if values.count > 1 {
+                let low = values.min() ?? 0
+                let high = values.max() ?? 1
+                let spread = max(0.001, high - low)
+                Path { path in
+                    for (index, value) in values.enumerated() {
+                        let x = geometry.size.width * CGFloat(index) / CGFloat(max(1, values.count - 1))
+                        let y = geometry.size.height * (1 - CGFloat((value - low) / spread))
+                        if index == 0 { path.move(to: CGPoint(x: x, y: y)) }
+                        else { path.addLine(to: CGPoint(x: x, y: y)) }
+                    }
+                }
+                .stroke(style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+            } else {
+                Capsule().fill(Color.primary.opacity(0.16)).frame(height: 2).position(x: geometry.size.width / 2, y: geometry.size.height / 2)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+private struct QuotaPeakGauge: View {
+    let value: Double
+    let warning: Bool
+
+    var body: some View {
+        ZStack {
+            Circle().stroke(Color.primary.opacity(0.10), lineWidth: 6)
+            Circle()
+                .trim(from: 0, to: CGFloat(min(1, max(0, value / 100))))
+                .stroke(warning ? .red : .orange, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+            Circle()
+                .trim(from: 0.895, to: 0.905)
+                .stroke(.red, lineWidth: 3)
+                .rotationEffect(.degrees(-90))
+            if warning { Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 11, weight: .bold)).foregroundStyle(.red) }
+        }
+        .padding(5)
+        .accessibilityLabel("5h peak \(String(format: "%.1f", value)) percent")
+    }
+}
+
+private struct QuotaDumbbellRow: View {
+    let title: String
+    let color: Color
+    let previous: Double?
+    let current: Double?
+
+    var body: some View {
+        HStack(spacing: 7) {
+            Label(title, systemImage: title.contains("5h") ? "clock" : "calendar")
+                .font(.caption)
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .frame(width: 112, alignment: .leading)
+            GeometryReader { geometry in
+                let width = max(1, geometry.size.width)
+                let y = geometry.size.height / 2
+                let previousX = CGFloat(min(100, max(0, previous ?? 0))) / 100 * width
+                let currentX = CGFloat(min(100, max(0, current ?? 0))) / 100 * width
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.primary.opacity(0.09)).frame(height: 4).position(x: width / 2, y: y)
+                    if previous != nil, current != nil {
+                        Path { path in
+                            path.move(to: CGPoint(x: min(previousX, currentX), y: y))
+                            path.addLine(to: CGPoint(x: max(previousX, currentX), y: y))
+                        }.stroke(color.opacity(0.55), lineWidth: 2)
+                        Circle().stroke(color, lineWidth: 2).frame(width: 10, height: 10).position(x: previousX, y: y)
+                        Circle().fill(color).frame(width: 10, height: 10).position(x: currentX, y: y)
+                    } else if current != nil {
+                        Circle().fill(color).frame(width: 10, height: 10).position(x: currentX, y: y)
+                    }
+                }
+            }
+            .frame(minWidth: 70, maxWidth: .infinity)
+            VStack(alignment: .trailing, spacing: 0) {
+                Text(current.map { String(format: "%.1f%%", $0) } ?? "—").monospacedDigit()
+                if let current, let previous { Text(String(format: "%+.1fpp", current - previous)).foregroundStyle(color).monospacedDigit() }
+            }
+            .font(.caption)
+            .frame(width: 76, alignment: .trailing)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
 private struct QuotaDetailRequest: Identifiable {
     let id = UUID()
     let total: QuotaAggregate
@@ -577,7 +741,11 @@ private struct QuotaDetails: View {
                 } else {
                     row(qtext("快照日期", "Snapshot date"), modelName ?? "—")
                     ForEach(Array(quotaValues.enumerated()), id: \.offset) { _, item in
-                        row(item.0, String(format: "%.1f%%", item.1))
+                        HStack(spacing: 6) {
+                            let identity = quotaIdentity(for: item.0)
+                            Image(systemName: identity.icon).foregroundStyle(identity.color)
+                            row(item.0, String(format: "%.1f%%", item.1))
+                        }
                     }
                 }
                 Text(qtext("此数据源仅提供额度百分比及重置时间，没有逐次请求的 Token 或价格数据。未知不等于零。", "This source reports quota percentages and resets, not per-request tokens or pricing. Unknown does not mean zero.")).font(.callout)
@@ -616,5 +784,12 @@ private struct QuotaDetails: View {
     }
     private func row(_ title: String, _ value: String) -> some View {
         HStack { Text(title); Spacer(); Text(value).monospacedDigit() }.font(.caption)
+    }
+    private func quotaIdentity(for title: String) -> (icon: String, color: Color) {
+        let fiveHour = title.contains("5h")
+        if title.localizedCaseInsensitiveContains("gemini") {
+            return (fiveHour ? "clock" : "calendar", fiveHour ? Color(red: 0.25, green: 0.49, blue: 0.94) : Color(red: 0.20, green: 0.66, blue: 0.45))
+        }
+        return (fiveHour ? "clock" : "calendar", fiveHour ? Color(red: 0.84, green: 0.35, blue: 0.23) : Color(red: 0.96, green: 0.57, blue: 0.34))
     }
 }
