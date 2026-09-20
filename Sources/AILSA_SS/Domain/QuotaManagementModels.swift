@@ -618,8 +618,13 @@ struct QuotaDashboardLayout {
     let rows: Int
     let showsTrend: Bool
     let trendHeight: Double
-    /// Antigravity gets the larger historical canvas; Codex/Cursor retain
-    /// their established compact dated-trend layout.
+    /// Codex historical charts use the same canvas as Today. Keep Cursor's
+    /// existing layout and Antigravity's independent history layout intact.
+    init(height: Double, provider: QuotaManagementProvider, range: Int) {
+        self.init(height: height, expandedIntraday: range == 1 && provider != .antigravity,
+                  largeTrend: provider != .cursor)
+    }
+
     init(height: Double, expandedIntraday: Bool = true, largeTrend: Bool = false) {
         showsTrend = height >= 520
         trendHeight = expandedIntraday || largeTrend ? 180 : 76

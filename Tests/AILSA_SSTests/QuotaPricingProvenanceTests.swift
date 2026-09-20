@@ -65,11 +65,23 @@ final class PanelHeightLayoutRulesTests: XCTestCase {
 
     func testQuotaDashboardUsesTheSameLargeChartForDatedRanges() {
         let available = Double(LayoutRules.quotaManagementPanelHeight) - 114
-        let layout = QuotaDashboardLayout(height: available, expandedIntraday: false, largeTrend: true)
-        XCTAssertTrue(layout.showsTrend)
-        XCTAssertEqual(layout.trendHeight, 180)
-        let contentHeight = 42.0 + 78 + 24 + Double(layout.rows) * 33 + 26 + 180 + 26 + 60
-        XCTAssertLessThanOrEqual(contentHeight, available)
+        let today = QuotaDashboardLayout(height: available, provider: .codex, range: 1)
+        for range in [7, 30] {
+            let layout = QuotaDashboardLayout(height: available, provider: .codex, range: range)
+            XCTAssertTrue(layout.showsTrend)
+            XCTAssertEqual(layout.trendHeight, today.trendHeight)
+            XCTAssertEqual(layout.trendHeight, 180)
+            let contentHeight = 42.0 + 78 + 24 + Double(layout.rows) * 33 + 26 + 180 + 26 + 60
+            XCTAssertLessThanOrEqual(contentHeight, available)
+        }
+    }
+
+    func testCodexChartFixPreservesOtherProviderLayouts() {
+        let available = Double(LayoutRules.quotaManagementPanelHeight) - 114
+        for range in [7, 30] {
+            XCTAssertEqual(QuotaDashboardLayout(height: available, provider: .cursor, range: range).trendHeight, 76)
+            XCTAssertEqual(QuotaDashboardLayout(height: available, provider: .antigravity, range: range).trendHeight, 180)
+        }
     }
 }
 

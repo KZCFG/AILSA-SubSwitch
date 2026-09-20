@@ -63,6 +63,7 @@ struct QuotaManagementPageView: View {
                 if let data = model.dashboards[selectedProvider] {
                     QuotaDashboard(
                         data: data,
+                        provider: selectedProvider,
                         availableHeight: max(200, Double(geometry.size.height - toolbarHeight - LayoutRules.pagePadding) - 20 - (loadError == nil ? 0 : 24)),
                         ui: Binding(
                             get: { dashboardStates[selectedProvider] ?? QuotaDashboardUIState() },
@@ -153,6 +154,7 @@ struct QuotaDashboardUIState: Equatable {
 
 private struct QuotaDashboard: View {
     let data: QuotaDashboardSnapshot
+    let provider: QuotaManagementProvider
     let availableHeight: Double
     @Binding var ui: QuotaDashboardUIState
     @AppStorage("ass.tokenUnit") private var tokenUnit = "M"
@@ -177,7 +179,7 @@ private struct QuotaDashboard: View {
     var body: some View {
         // At most 30 small day buckets and model rows; no records or I/O in body.
         let bucket = hoveredMinute.flatMap { range == 1 && !isQuota ? data.intradayBucket(from: $0, intervalMinutes: interval) : nil } ?? data.bucket(from: start, until: end)
-        let layout = QuotaDashboardLayout(height: availableHeight, expandedIntraday: range == 1 && !isQuota, largeTrend: isQuota)
+        let layout = QuotaDashboardLayout(height: availableHeight, provider: provider, range: range)
         let families = bucket.models.reduce(into: [QuotaModelKey: QuotaAggregate]()) { result, entry in
             result[entry.key.familyKey, default: QuotaAggregate()].merge(entry.value)
         }
