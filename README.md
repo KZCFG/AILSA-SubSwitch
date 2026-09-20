@@ -141,7 +141,7 @@ cd AILSA-SubSwitch
 bash scripts/build_app.sh
 ```
 
-Output: `build/1.0.0-2026092002/AILSA SubSwitch.app`, an arm64 ZIP, SHA-256 checksum,
+Output: `build/1.0.0-2026092004/AILSA SubSwitch.app`, an arm64 ZIP, SHA-256 checksum,
 and source manifest. Check [build and release notes](docs/release-macos.md) for
 custom output locations and signing details.
 

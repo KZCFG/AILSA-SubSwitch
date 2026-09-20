@@ -306,6 +306,25 @@ struct AntigravityQuotaObservation: Equatable, Identifiable, Sendable {
     var day: Date {
         Calendar.current.startOfDay(for: capturedAt)
     }
+
+    /// Stable provider-family mapping for the native quota IDs. Display text
+    /// can change with localization; the IDs remain the presentation contract.
+    var familyKey: String {
+        let id = windowName.lowercased()
+        if id.hasPrefix("gemini-") || id == "gemini" { return "gemini" }
+        if id.hasPrefix("3p-") || id.hasPrefix("claude-") || id.hasPrefix("gpt-") { return "third-party" }
+        return "other"
+    }
+
+    var isFiveHourWindow: Bool {
+        if windowMinutes > 0 { return windowMinutes <= 6 * 60 }
+        let id = windowName.lowercased()
+        return id.contains("5h") || id.contains("five_hour") || id.contains("session")
+    }
+
+    var cadenceLabel: String {
+        isFiveHourWindow ? "5h" : windowMinutes >= 6 * 24 * 60 ? "7d" : "—"
+    }
 }
 
 struct AntigravityUsageAnalytics: Equatable, Sendable {
@@ -516,7 +535,15 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
                 let day = calendar.startOfDay(for: value.capturedAt)
                 if (daily[value.windowName]?[day]?.capturedAt ?? .distantPast) < value.capturedAt { daily[value.windowName, default: [:]][day] = value }
             }
-            windows = latest.values.sorted { ( $0.windowName.hasPrefix("gemini") ? 0 : 1, $0.windowName ) < ( $1.windowName.hasPrefix("gemini") ? 0 : 1, $1.windowName ) }
+            windows = latest.values.sorted {
+                if $0.isFiveHourWindow != $1.isFiveHourWindow {
+                    return $0.isFiveHourWindow
+                }
+                if $0.familyKey != $1.familyKey {
+                    return $0.familyKey < $1.familyKey
+                }
+                return $0.windowName < $1.windowName
+            }
             trends = daily.mapValues { $0.mapValues(\.usedPercent) }
             trend = windows.first.flatMap { trends[$0.windowName] } ?? [:]
         }
@@ -590,15 +617,14 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
 struct QuotaDashboardLayout {
     let rows: Int
     let showsTrend: Bool
-    /// Keep every range on the same chart canvas. A 30-day view is still a
-    /// primary dashboard view, so it must not collapse into a thin footer
-    /// strip just because it is not the intraday chart.
-    let trendHeight: Double = 180
-    init(height: Double, expandedIntraday: Bool = true) {
+    let trendHeight: Double
+    /// Antigravity gets the larger historical canvas; Codex/Cursor retain
+    /// their established compact dated-trend layout.
+    init(height: Double, expandedIntraday: Bool = true, largeTrend: Bool = false) {
         showsTrend = height >= 520
+        trendHeight = expandedIntraday || largeTrend ? 180 : 76
         // Includes range, KPIs, table header, paging, chart, footer and stack gaps.
-        // Both the intraday and dated charts use the same 180pt canvas.
-        let fixed: Double = showsTrend ? (expandedIntraday ? 494 : 514) : 330
+        let fixed: Double = showsTrend ? (expandedIntraday ? 494 : (largeTrend ? 514 : 410)) : 330
         rows = max(1, min(8, Int((height - fixed) / 33)))
     }
 }

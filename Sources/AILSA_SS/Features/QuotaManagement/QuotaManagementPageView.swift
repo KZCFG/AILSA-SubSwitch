@@ -148,7 +148,6 @@ struct QuotaDashboardUIState: Equatable {
     var selectedDay: Date?
     var page = 0
     var chartPage = 0
-    var quotaWindow = ""
     var sortUSD = false
 }
 
@@ -161,7 +160,6 @@ private struct QuotaDashboard: View {
     private var selectedDay: Date? { get { ui.selectedDay } nonmutating set { ui.selectedDay = newValue } }
     private var page: Int { get { ui.page } nonmutating set { ui.page = newValue } }
     private var chartPage: Int { get { ui.chartPage } nonmutating set { ui.chartPage = newValue } }
-    private var quotaWindow: String { get { ui.quotaWindow } nonmutating set { ui.quotaWindow = newValue } }
     private var sortUSD: Bool { get { ui.sortUSD } nonmutating set { ui.sortUSD = newValue } }
     @AppStorage("ass.trendStyle") private var trendStyle = "bar"
     // Transient pointer/detail state: intentionally not carried across providers.
@@ -179,7 +177,7 @@ private struct QuotaDashboard: View {
     var body: some View {
         // At most 30 small day buckets and model rows; no records or I/O in body.
         let bucket = hoveredMinute.flatMap { range == 1 && !isQuota ? data.intradayBucket(from: $0, intervalMinutes: interval) : nil } ?? data.bucket(from: start, until: end)
-        let layout = QuotaDashboardLayout(height: availableHeight, expandedIntraday: range == 1 && !isQuota)
+        let layout = QuotaDashboardLayout(height: availableHeight, expandedIntraday: range == 1 && !isQuota, largeTrend: isQuota)
         let families = bucket.models.reduce(into: [QuotaModelKey: QuotaAggregate]()) { result, entry in
             result[entry.key.familyKey, default: QuotaAggregate()].merge(entry.value)
         }
@@ -203,7 +201,7 @@ private struct QuotaDashboard: View {
                 }
             }.frame(height: 42)
             if isQuota {
-                Text(qtext("历史为每日最近一次额度快照，不等于当日实际消耗。", "History records the latest quota snapshot per day, not daily consumption.")).font(.caption2).foregroundStyle(.secondary)
+                Text(qtext("当前账号的历史快照；每日仅保留刷新时最后一次记录，不等于当日实际消耗。", "History for the active account; one final refresh snapshot per day, not daily consumption.")).font(.caption2).foregroundStyle(.secondary)
                 quotaContent(layout: layout)
             } else {
                 HStack(spacing: 10) {
@@ -257,6 +255,8 @@ private struct QuotaDashboard: View {
             if layout.showsTrend {
                 if range == 1 && selectedDay == nil && !isQuota {
                     QuotaIntradayChart(minutes: data.minuteTokens, now: data.scannedAt, hovered: $hoveredMinute).frame(height: layout.trendHeight)
+                } else if isQuota && range == 1 && selectedDay == nil {
+                    quotaTodayComparison.frame(height: layout.trendHeight)
                 } else { trend.frame(height: layout.trendHeight) }
             }
             else { Button(qtext("查看趋势", "Show trend")) { detail = QuotaDetailRequest(total: bucket.total, title: nil, trend: true) }.font(.caption) }
@@ -276,7 +276,7 @@ private struct QuotaDashboard: View {
                     VStack { trend; Button(qtext("关闭", "Close")) { modal.close() } }
                         .padding(20).frame(width: 430, height: 180)
                 } else {
-                    QuotaDetails(data: data, total: request.total, modelName: request.title, members: request.members, onClose: { modal.close() })
+                    QuotaDetails(data: data, total: request.total, modelName: request.title, members: request.members, quotaValues: request.quotaValues, onClose: { modal.close() })
                 }
             }
         }
@@ -295,111 +295,201 @@ private struct QuotaDashboard: View {
         }.frame(maxWidth: .infinity, alignment: .leading).padding(10)
             .background(Color.primary.opacity(0.035)).clipShape(RoundedRectangle(cornerRadius: 10))
     }
-    private var selectedQuotaWindowID: String { quotaWindow.isEmpty ? (data.quotaWindows.first?.windowName ?? "") : quotaWindow }
-    private var selectedQuotaPoolWindows: [AntigravityQuotaObservation] {
-        let selected = selectedQuotaWindowID.lowercased()
-        let isGemini = selected.contains("gemini")
-        let matching = data.quotaWindows.filter { window in
-            window.windowName.lowercased().contains("gemini") == isGemini
+    private var quotaPoolWindows: [AntigravityQuotaObservation] {
+        data.quotaWindows.sorted { left, right in
+            if left.isFiveHourWindow != right.isFiveHourWindow {
+                return left.isFiveHourWindow
+            }
+            if left.familyKey != right.familyKey {
+                return left.familyKey < right.familyKey
+            }
+            return left.windowName < right.windowName
         }
-        return matching.isEmpty ? data.quotaWindows.filter { $0.windowName == selectedQuotaWindowID } : matching
     }
-    private func quotaColor(for window: AntigravityQuotaObservation, index: Int) -> Color {
-        if window.windowName.localizedCaseInsensitiveContains("gemini") {
-            return index == 0 ? Color(red: 0.25, green: 0.49, blue: 0.94) : Color(red: 0.20, green: 0.66, blue: 0.45)
+    private func quotaShortName(for window: AntigravityQuotaObservation) -> String {
+        let family: String
+        switch window.familyKey {
+        case "gemini": family = "Gemini"
+        case "third-party": family = "Claude / GPT"
+        default: family = qtext("额度池", "Pool")
         }
-        return index == 0 ? Color(red: 0.84, green: 0.35, blue: 0.23) : Color(red: 0.96, green: 0.57, blue: 0.34)
+        return "\(family) · \(window.cadenceLabel)"
     }
-    private var selectedQuotaHistoryDays: [Date] {
+    private func quotaColor(for window: AntigravityQuotaObservation) -> Color {
+        switch (window.familyKey, window.isFiveHourWindow) {
+        case ("gemini", true): return Color(red: 0.25, green: 0.49, blue: 0.94)
+        case ("gemini", false): return Color(red: 0.20, green: 0.66, blue: 0.45)
+        case ("third-party", true): return Color(red: 0.84, green: 0.35, blue: 0.23)
+        case ("third-party", false): return Color(red: 0.96, green: 0.57, blue: 0.34)
+        default: return .secondary
+        }
+    }
+    private var quotaHistoryDays: [Date] {
         var days = Set<Date>()
-        for window in selectedQuotaPoolWindows {
+        for window in quotaPoolWindows {
             for day in data.quotaTrends[window.windowName]?.keys ?? Dictionary<Date, Double>().keys {
                 if day >= start && day < end { days.insert(day) }
             }
         }
         return days.sorted(by: >)
     }
-    private var selectedQuotaLatestSummary: String {
-        selectedQuotaPoolWindows.compactMap { window in
-            // Prefer today's history point, but fall back to the latest
-            // provider snapshot. A newly refreshed account should be useful
-            // immediately even before the daily history row is persisted.
-            let value = data.quotaTrends[window.windowName]?[today] ?? window.usedPercent
-            guard value.isFinite else { return nil }
-            return "\(window.displayName): \(String(format: "%.1f%%", value))"
-        }.joined(separator: " · ")
+    private func quotaValue(_ window: AntigravityQuotaObservation, on day: Date) -> Double? {
+        data.quotaTrends[window.windowName]?[day]
     }
-    private var selectedQuotaPoolNames: String {
-        selectedQuotaPoolWindows.map(\.displayName).joined(separator: " · ")
+    private func quotaDelta(_ window: AntigravityQuotaObservation, on day: Date) -> Double? {
+        guard let current = quotaValue(window, on: day),
+              let previousDay = calendar.date(byAdding: .day, value: -1, to: day),
+              let previous = quotaValue(window, on: previousDay) else { return nil }
+        return current - previous
+    }
+    private var quotaWeeklyDelta: Double? {
+        let weekly = quotaPoolWindows.filter { !$0.isFiveHourWindow }
+        let deltas = weekly.compactMap { window -> Double? in
+            let points = quotaHistoryDays.compactMap { day in quotaValue(window, on: day).map { (day, $0) } }.sorted { $0.0 < $1.0 }
+            guard let first = points.first?.1, let last = points.last?.1, points.count > 1 else { return nil }
+            return last - first
+        }
+        guard !deltas.isEmpty else { return nil }
+        return deltas.reduce(0, +)
+    }
+    private var quotaFiveHourPeak: (peak: Double, daysAtRisk: Int)? {
+        let fiveHour = quotaPoolWindows.filter(\.isFiveHourWindow)
+        let values = fiveHour.flatMap { window in
+            quotaHistoryDays.compactMap { quotaValue(window, on: $0) }
+        }
+        guard let peak = values.max() else { return nil }
+        let daysAtRisk = Set(fiveHour.flatMap { window in
+            quotaHistoryDays.filter { (quotaValue(window, on: $0) ?? 0) >= 90 }
+        }).count
+        return (peak, daysAtRisk)
+    }
+    private var quotaDaysWithSnapshots: Int { quotaHistoryDays.count }
+    private var quotaNeedsSparseNotice: Bool {
+        quotaDaysWithSnapshots < max(1, Int(ceil(Double(range) * 0.5)))
     }
     @ViewBuilder private func quotaContent(layout: QuotaDashboardLayout) -> some View {
-        let poolWindows = selectedQuotaPoolWindows
-        let historyDays = selectedQuotaHistoryDays
+        let poolWindows = quotaPoolWindows
+        let historyDays = quotaHistoryDays
+        let weeklyDelta = quotaWeeklyDelta
+        let peak = quotaFiveHourPeak
         HStack(spacing: 10) {
-            kpi(qtext("额度消耗", "Quota used"), value: selectedQuotaLatestSummary.isEmpty ? "—" : selectedQuotaLatestSummary, detail: qtext("同一账号的额度池", "Pools from the same account"))
-            kpi(qtext("额度池", "Quota pools"), value: String(poolWindows.count), detail: selectedQuotaPoolNames.isEmpty ? qtext("暂无快照", "No snapshots") : selectedQuotaPoolNames)
+            kpi(qtext("周期增量", "Period change"), value: weeklyDelta.map { String(format: "%+.1fpp", $0) } ?? "—", detail: qtext("所有 7d 池的期初到期末", "All 7d pools, first to last snapshot"))
+            kpi(qtext("5h 峰值", "5h peak"), value: peak.map { String(format: "%.1f%%", $0.peak) } ?? "—", detail: peak.map { qtext("≥90%：\($0.daysAtRisk) 天", "≥90%: \($0.daysAtRisk) days") } ?? qtext("暂无 5h 快照", "No 5h snapshots"))
         }.frame(height: 78)
         HStack {
             Text(qtext("额度使用历史", "Usage history")).font(.subheadline.bold())
             Spacer()
-            Text(qtext("当前账号 · 各额度池已用百分比", "Active account · used percentage by pool")).font(.caption)
+            Text(qtext("账号页中标记为当前的账号 · \(poolWindows.count) 个池", "Active account from Accounts · \(poolWindows.count) pools")).font(.caption)
         }.frame(height: 24)
+        HStack(spacing: 8) {
+            Text(qtext("日期", "Date")).frame(width: 52, alignment: .leading)
+            ForEach(poolWindows) { window in
+                VStack(alignment: .leading, spacing: 0) {
+                    Circle().fill(quotaColor(for: window)).frame(width: 6, height: 6)
+                    Text(quotaShortName(for: window)).lineLimit(2).minimumScaleFactor(0.75)
+                }.frame(maxWidth: .infinity, alignment: .leading)
+            }
+            Text(qtext("7d Δ", "7d Δ")).frame(width: 42, alignment: .trailing)
+        }.font(.system(size: 9, weight: .semibold)).foregroundStyle(.secondary).frame(height: 28)
+        if quotaNeedsSparseNotice {
+            Text(qtext("历史仅在应用刷新当日记录；当前范围已有 \(quotaDaysWithSnapshots) 天快照。", "Snapshots are recorded only on refresh days; this range has \(quotaDaysWithSnapshots) recorded days."))
+                .font(.caption2).foregroundStyle(.secondary).lineLimit(2)
+        }
         let pageCount = max(1, (historyDays.count + layout.rows - 1) / layout.rows)
         let safe = min(page, pageCount - 1)
         if historyDays.isEmpty {
             VStack(alignment: .leading, spacing: 4) {
                 Text(qtext("暂无可用的历史快照", "No usage snapshots in this range"))
                     .font(.callout.weight(.semibold))
-                Text(qtext("下方图表会在刷新当前账号后显示；当前快照仍显示在上方。", "Refresh the active account to populate the chart; the current snapshot remains above."))
+                Text(qtext("刷新账号页中的当前账号后，历史会从当天开始累积。", "Refresh the active account in Accounts to start accumulating history."))
                     .font(.caption).foregroundStyle(.secondary)
             }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
         }
         ForEach(Array(historyDays.dropFirst(safe * layout.rows).prefix(layout.rows)), id: \.self) { day in
-            HStack {
-                Text(day.formatted(.dateTime.month().day())).frame(maxWidth: .infinity, alignment: .leading)
+            Button {
+                let values = poolWindows.compactMap { window in quotaValue(window, on: day).map { (quotaShortName(for: window), $0) } }
+                detail = QuotaDetailRequest(total: QuotaAggregate(), title: day.formatted(.dateTime.month().day()), quotaValues: values)
+            } label: {
                 HStack(spacing: 8) {
-                    ForEach(Array(poolWindows.enumerated()), id: \.element.id) { index, window in
-                        if let used = data.quotaTrends[window.windowName]?[day] {
-                            Text(String(format: "%.1f%%", used)).foregroundStyle(quotaColor(for: window, index: index))
-                        }
+                    Text(day.formatted(.dateTime.month().day())).frame(width: 52, alignment: .leading)
+                    ForEach(poolWindows) { window in
+                        if let used = quotaValue(window, on: day) {
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(String(format: "%.1f%%", used)).foregroundStyle(quotaColor(for: window))
+                                if let delta = quotaDelta(window, on: day), delta < 0, window.isFiveHourWindow {
+                                    Text(qtext("重置", "Reset")).font(.system(size: 8)).foregroundStyle(.secondary)
+                                }
+                            }.frame(maxWidth: .infinity, alignment: .leading)
+                        } else { Text("—").foregroundStyle(.tertiary).frame(maxWidth: .infinity, alignment: .leading) }
                     }
-                }.monospacedDigit()
-            }.font(.caption).frame(height: 32)
+                    Text(quotaDeltaSummary(on: day)).monospacedDigit().frame(width: 42, alignment: .trailing)
+                }.font(.caption).frame(height: 36).contentShape(Rectangle())
+            }.buttonStyle(.plain)
         }
-        HStack { Spacer(); Text("\(safe + 1) / \(pageCount)").accessibilityLabel(L10n.tr("common.page_format", String(safe + 1), String(pageCount)))
+        HStack { Spacer(); Text(qtext("共 \(historyDays.count) 天记录 · \(poolWindows.count) 个额度池", "\(historyDays.count) days · \(poolWindows.count) pools")).foregroundStyle(.secondary); Spacer(); Text("\(safe + 1) / \(pageCount)").accessibilityLabel(L10n.tr("common.page_format", String(safe + 1), String(pageCount)))
             pagerArrow("chevron.left", label: L10n.tr("common.previous_page"), disabled: safe == 0) { page = max(0, safe - 1) }
             pagerArrow("chevron.right", label: L10n.tr("common.next_page"), disabled: safe + 1 >= pageCount) { page = safe + 1 }
         }.font(.caption).frame(height: 26)
+    }
+    private func quotaDeltaSummary(on day: Date) -> String {
+        let values = quotaPoolWindows.filter { !$0.isFiveHourWindow }.compactMap { quotaDelta($0, on: day) }
+        guard !values.isEmpty else { return "—" }
+        return String(format: "%+.1f", values.reduce(0, +))
     }
     private var dates: [Date] {
         (0..<range).compactMap { calendar.date(byAdding: .day, value: $0, to: start) }
             .filter { $0 < end }
     }
+    private var quotaTodayComparison: some View {
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(qtext("今日 vs 昨日", "Today vs yesterday")).font(.subheadline.bold())
+                Spacer()
+                Text(qtext("每日仅保留最新一次快照，无日内轨迹", "One final snapshot per day; no intraday trace")).font(.caption2).foregroundStyle(.secondary)
+            }
+            ForEach(quotaPoolWindows) { window in
+                HStack {
+                    Circle().fill(quotaColor(for: window)).frame(width: 7, height: 7)
+                    Text(quotaShortName(for: window)).font(.caption)
+                    Spacer()
+                    let current = quotaValue(window, on: today)
+                    let previous = quotaValue(window, on: yesterday)
+                    if let current {
+                        Text(String(format: "%.1f%%", current)).monospacedDigit()
+                        if let previous {
+                            Text(String(format: "%+.1fpp", current - previous)).foregroundStyle((current - previous) < 0 ? .secondary : quotaColor(for: window)).monospacedDigit()
+                        }
+                    } else {
+                        Text("—").foregroundStyle(.secondary)
+                    }
+                }.frame(height: 24)
+            }
+            Spacer(minLength: 0)
+        }
+    }
     private var trend: some View {
         let days = dates
-        let poolWindows = selectedQuotaPoolWindows
+        let poolWindows = quotaPoolWindows
         let values = days.map { day -> Double? in
-            if isQuota { return data.quotaTrends[selectedQuotaWindowID]?[day] }
             guard let total = data.days[day]?.total, total.reported > 0 else { return nil }
             return sortUSD ? total.reference.usd : Double(total.tokens.total)
         }
-        let chartYMax = isQuota ? 100.0 : max(1.0, values.compactMap { $0 }.max() ?? 1.0)
+        let quotaValues = poolWindows.flatMap { window in days.compactMap { quotaValue(window, on: $0) } }
+        let chartYMax = isQuota
+            ? min(100, max(10, ceil((quotaValues.max() ?? 0) * 1.2)))
+            : max(1.0, values.compactMap { $0 }.max() ?? 1.0)
         return VStack(spacing: 4) {
-            if isQuota {
-                Picker(qtext("额度池", "Quota pool"), selection: Binding(get: { quotaWindow.isEmpty ? (data.quotaWindows.first?.windowName ?? "") : quotaWindow }, set: { quotaWindow = $0 })) {
-                    ForEach(data.quotaWindows) { Text($0.displayName).tag($0.windowName) }
-                }.font(.caption)
-            }
             HStack {
                 if let hoveredDay, let index = days.firstIndex(where: { calendar.isDate($0, inSameDayAs: hoveredDay) }) {
                     let quotaSummary = poolWindows.compactMap { window in
-                        data.quotaTrends[window.windowName]?[days[index]].map { "\(window.displayName) \(String(format: "%.1f%%", $0))" }
+                        quotaValue(window, on: days[index]).map { "\(quotaShortName(for: window)) \(String(format: "%.1f%%", $0))" }
                     }.joined(separator: " · ")
                     Text(days[index].formatted(.dateTime.month().day()) + " · " + (isQuota ? (quotaSummary.isEmpty ? "—" : quotaSummary) : (values[index].map {
                         if sortUSD { return String(format: "$%.2f", $0) }
                         return String(format: "%.3f%@ Token", $0 / (tokenUnit == "B" ? 1e9 : 1e6), tokenUnit == "B" ? "B" : "M")
                     } ?? "—")))
-                } else { Text(isQuota ? qtext("每日额度消耗", "Daily quota usage") : qtext("Token 词元消耗 / 美元", "Token usage / USD")) }
+                } else { Text(isQuota ? qtext("每日额度快照（已用 %）", "Daily quota snapshot (used %)") : qtext("Token 词元消耗 / 美元", "Token usage / USD")) }
                 Spacer()
                 Picker("图表", selection: $trendStyle) {
                     Image(systemName: "chart.bar").tag("bar")
@@ -408,14 +498,14 @@ private struct QuotaDashboard: View {
             }.font(.caption)
             Chart(Array(days.enumerated()), id: \.element) { index, day in
                 if isQuota {
-                    ForEach(Array(poolWindows.enumerated()), id: \.element.id) { poolIndex, window in
-                        if let value = data.quotaTrends[window.windowName]?[day] {
+                    ForEach(poolWindows) { window in
+                        if let value = quotaValue(window, on: day) {
                             if trendStyle == "line" {
-                                LineMark(x: .value("日期", day), y: .value("用量", value), series: .value("额度池", window.windowName)).foregroundStyle(quotaColor(for: window, index: poolIndex)).interpolationMethod(.linear)
-                                PointMark(x: .value("日期", day), y: .value("用量", value)).foregroundStyle(quotaColor(for: window, index: poolIndex)).symbol(Circle()).symbolSize(20)
+                                LineMark(x: .value("日期", day), y: .value("用量", value), series: .value("额度池", window.windowName)).foregroundStyle(quotaColor(for: window)).lineStyle(StrokeStyle(lineWidth: window.isFiveHourWindow ? 2.5 : 1.5, dash: window.isFiveHourWindow ? [] : [5, 3])).interpolationMethod(.linear).opacity(window.isFiveHourWindow ? 1 : 0.78)
+                                PointMark(x: .value("日期", day), y: .value("用量", value)).foregroundStyle(quotaColor(for: window)).symbol(Circle()).symbolSize(20).opacity(window.isFiveHourWindow ? 1 : 0.78)
                             } else {
                                 BarMark(x: .value("日期", day, unit: .day), y: .value("用量", value))
-                                    .foregroundStyle(quotaColor(for: window, index: poolIndex)).position(by: .value("额度池", window.windowName)).cornerRadius(2)
+                                    .foregroundStyle(quotaColor(for: window)).position(by: .value("额度池", window.windowName)).cornerRadius(2).opacity(window.isFiveHourWindow ? 1 : 0.78)
                             }
                         }
                     }
@@ -432,9 +522,9 @@ private struct QuotaDashboard: View {
             .chartYScale(domain: 0...chartYMax)
             .chartYAxis {
                 if isQuota {
-                    AxisMarks(values: [0, 25, 50, 75, 100]) { value in
+                    AxisMarks(values: .automatic(desiredCount: 4)) { value in
                         AxisGridLine().foregroundStyle(.secondary.opacity(0.16))
-                        AxisValueLabel { if let percent = value.as(Int.self) { Text("\(percent)%").font(.caption2) } }
+                        AxisValueLabel { if let percent = value.as(Double.self) { Text(String(format: "%.0f%%", percent)).font(.caption2) } }
                     }
                 } else {
                     AxisMarks(values: .automatic(desiredCount: 3))
@@ -461,6 +551,7 @@ private struct QuotaDetailRequest: Identifiable {
     let title: String?
     var trend = false
     var members: [String] = []
+    var quotaValues: [(String, Double)] = []
 }
 
 private struct QuotaDetails: View {
@@ -469,6 +560,7 @@ private struct QuotaDetails: View {
     let total: QuotaAggregate
     let modelName: String?
     var members: [String] = []
+    var quotaValues: [(String, Double)] = []
     private var pageCount: Int { 3 + (members.count + 5) / 6 }
     @State private var page = 0
     let onClose: () -> Void
@@ -476,11 +568,18 @@ private struct QuotaDetails: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack { Text(modelName ?? qtext("数据说明", "Data details")).font(.headline).lineLimit(2); Spacer(); Button(qtext("关闭", "Close")) { onClose() } }
             if data.source == "Antigravity" {
-                row(qtext("Token 词元消耗", "Token usage"), qtext("来源未提供", "Not provided"))
-                row(qtext("等效 API 消费金额（美元）", "Equivalent API consumption (USD)"), qtext("无法估算", "Unavailable"))
-                row(qtext("额度窗口", "Quota windows"), String(data.quotaWindows.count))
+                if quotaValues.isEmpty {
+                    row(qtext("Token 词元消耗", "Token usage"), qtext("来源未提供", "Not provided"))
+                    row(qtext("等效 API 消费金额（美元）", "Equivalent API consumption (USD)"), qtext("无法估算", "Unavailable"))
+                    row(qtext("额度窗口", "Quota windows"), String(data.quotaWindows.count))
+                } else {
+                    row(qtext("快照日期", "Snapshot date"), modelName ?? "—")
+                    ForEach(Array(quotaValues.enumerated()), id: \.offset) { _, item in
+                        row(item.0, String(format: "%.1f%%", item.1))
+                    }
+                }
                 Text(qtext("此数据源仅提供额度百分比及重置时间，没有逐次请求的 Token 或价格数据。未知不等于零。", "This source reports quota percentages and resets, not per-request tokens or pricing. Unknown does not mean zero.")).font(.callout)
-                Text(qtext("历史图按日期展示最近一次额度快照，不能视为每日实际消耗；重置后百分比可能下降。", "History shows the latest quota snapshot per day, not daily consumption; resets can reduce the percentage.")).font(.callout).foregroundStyle(.secondary)
+                Text(qtext("历史图按日期展示最近一次额度快照，不能视为每日实际消耗；5h 额度重置后百分比可能下降。", "History shows the latest quota snapshot per day, not daily consumption; 5h percentages can fall after a reset.")).font(.callout).foregroundStyle(.secondary)
             } else if page == 0 {
                 if data.source == "Cursor" { row("Cursor-metered", qmoney(total.metered)) }
                 row(qtext("输入 Token", "Input tokens"), QuotaTokenFormatter.format(total.tokens.input, unit: tokenUnit))
