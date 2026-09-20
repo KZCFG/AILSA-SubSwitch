@@ -149,7 +149,7 @@ struct AccountCardExpandedUsageSection: View {
             ForEach(presentation.quotaFamilies) { family in
                 AccountQuotaFamilySection(
                     family: family,
-                    fillStyle: presentation.usageProgressFillStyle
+                    fillStyle: family.fillStyle
                 )
             }
 

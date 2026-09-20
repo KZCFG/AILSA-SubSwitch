@@ -17,13 +17,13 @@
   <a href="CONTRIBUTING.md">Contribute</a>
 </p>
 
-Keep your coding accounts and their remaining quota in one place. See which
+Keep your coding accounts and their remaining usage in one place. See which
 account is ready, switch to it, and understand where your recorded usage went—
 without leaving the menu bar.
 
 AILSA SubSwitch is designed to be one of the most user-focused and visually
 considered products in its category. The project treats interaction details,
-readability and visual polish as product features, so quota information stays
+readability and visual polish as product features, so usage information stays
 clear without making the menu bar feel like an operations console.
 
 The open-source project includes at least two free progress-bar skins. Future
@@ -41,7 +41,7 @@ preserved in this repository.
 - **Switch accounts.** Save local sign-ins for Codex / ChatGPT, Antigravity and
   Cursor, see the active account, and switch from an account card. More service
   providers are planned for future releases.
-- **Read the actual limits.** View provider-reported quota windows and reset
+- **Read the actual limits.** View provider-reported usage windows and reset
   times, with Codex reset-credit counts and expirations when reported.
 - **Follow usage over time.** Explore Today, 7-day and 30-day views, model
   breakdowns, and an intraday point-and-line chart with hover details and
@@ -49,7 +49,7 @@ preserved in this repository.
 - **Understand reference costs.** Read token records from local Codex sessions
   or the OpenCodex ledger, including supported non-OpenAI routes. Keep API
   reference estimates separate from provider-reported amounts and billing.
-- **Make it yours.** Choose M/B token units, visible quota windows, restart
+- **Make it yours.** Choose M/B token units, visible usage windows, restart
   behavior after switching, and the interface language. Open usage in its own
   window when you need more room.
 
@@ -58,30 +58,30 @@ preserved in this repository.
 | Capability | Codex / ChatGPT | Antigravity | Cursor |
 | --- | --- | --- | --- |
 | Local account import and switching | Yes | Yes | Yes |
-| Quota and reset times | Provider-reported | Native quota families | Provider-reported |
-| Token / USD details | Local sessions or OpenCodex records | Not exposed by the supported quota source | Usage events reported by Cursor |
-| History | Recorded usage | Locally captured quota snapshots | Reported usage events |
+| Usage and reset times | Provider-reported | Native usage families | Provider-reported |
+| Token / USD details | Local sessions or OpenCodex records | Not exposed by the supported usage source | Usage events reported by Cursor |
+| History | Recorded usage | Locally captured usage snapshots | Reported usage events |
 | Smart switching | Supported | Available when native credential access permits | Manual switching |
 
 Unknown usage or pricing remains unknown. **API reference cost is not your
 subscription bill, credit balance, or a promise of what a provider will charge.**
-Antigravity quota percentages are not converted into invented token totals.
+Antigravity usage percentages are not converted into invented token totals.
 
-We expect to add Grok and Kimi quota monitoring in **1.0.1**, followed by
-Alibaba and DeepSeek quota and usage monitoring in **1.0.2**.
+We expect to add Grok and Kimi usage monitoring in **1.0.1**, followed by
+Alibaba and DeepSeek usage monitoring in **1.0.2**.
 
 ## Preview
 
 Actual SwiftUI components, rendered with **synthetic demo accounts and usage**.
 The sample numbers are illustrative, not provider prices or a real account's bill.
 
-![Account cards with remaining quota and reset-credit details](docs/assets/accounts-demo.png)
+![Account cards with remaining usage and reset-credit details](docs/assets/accounts-demo.png)
 
 ![Usage dashboard with model breakdown and an intraday chart](docs/assets/usage-demo.png)
 
-Compact cards keep quota-family names visible and show Codex reset-credit details:
+Compact cards keep usage-family names visible and show Codex reset-credit details:
 
-![Compact cards with labeled quota rings and reset-credit expiry](docs/assets/compact-demo.png)
+![Compact cards with labeled usage rings and reset-credit expiry](docs/assets/compact-demo.png)
 
 Regenerate these previews with `bash scripts/render_docs.sh`; the renderer does
 not load your live account library.
@@ -98,7 +98,7 @@ AILSA SubSwitch.
 3. Click its menu bar icon. In **Accounts**, select a provider and import the
    current sign-in. Sign into another account in the provider's own app and
    import that account to save it for later switching.
-4. Open **Quota Management** for recorded usage. Use **Settings** to choose
+4. Open **Usage Management** for recorded usage. Use **Settings** to choose
    which limits are visible, the compact ring order, progress skin, reset-credit
    date format, and whether provider apps restart after a switch.
 
@@ -115,14 +115,14 @@ stored separately. This version does not install updates in the background.
 
 AILSA SubSwitch does not operate an account-sync service or collect analytics. It reads
 local account/usage files and contacts the relevant providers for sign-in and
-quota information. Some saved profiles contain credentials; they are not public
+usage information. Some saved profiles contain credentials; they are not public
 project files and should never be attached to an issue.
 
 | Source | Used for |
 | --- | --- |
-| Codex local authentication and session metadata | Switching, quota, recorded token usage |
+| Codex local authentication and session metadata | Switching, usage, recorded token usage |
 | OpenCodex local usage ledger, when present | Model/provider usage and separately identified reference estimates |
-| Antigravity native session and quota source | Google account switching and quota snapshots |
+| Antigravity native session and usage source | Google account switching and usage snapshots |
 | Cursor local profile and usage API | Cursor switching and usage events |
 
 Read [Privacy & data](docs/PRIVACY.md) for storage locations, network behavior and
@@ -141,7 +141,7 @@ cd AILSA-SubSwitch
 bash scripts/build_app.sh
 ```
 
-Output: `build/1.0.0-2026091812/AILSA SubSwitch.app`, an arm64 ZIP, SHA-256 checksum,
+Output: `build/1.0.0-20260920/AILSA SubSwitch.app`, an arm64 ZIP, SHA-256 checksum,
 and source manifest. Check [build and release notes](docs/release-macos.md) for
 custom output locations and signing details.
 

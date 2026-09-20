@@ -177,6 +177,19 @@ bundle_build_number() {
   /usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$1/Contents/Info.plist"
 }
 
+build_is_newer() {
+  local candidate="$1"
+  local installed="$2"
+  # Historical builds use YYYYMMDDNN while date-only releases use YYYYMMDD.
+  # Normalize both to a date plus a two-digit sequence before comparing so a
+  # new date-only build is not rejected as numerically smaller than yesterday's
+  # sequenced build.
+  if [[ "${#candidate}" -eq 8 ]]; then candidate="${candidate}00"; fi
+  if [[ "${#installed}" -eq 8 ]]; then installed="${installed}00"; fi
+  [[ "$candidate" =~ ^[0-9]+$ && "$installed" =~ ^[0-9]+$ ]] || return 1
+  (( 10#$candidate > 10#$installed ))
+}
+
 collect_prune_targets() {
   local root
   local item
@@ -225,7 +238,7 @@ install_replacement() {
     verify_app_bundle "$installed_app"
     installed_build="$(bundle_build_number "$installed_app")"
     if [[ "$new_build" =~ ^[0-9]+$ && "$installed_build" =~ ^[0-9]+$ ]] \
-      && (( new_build <= installed_build )); then
+      && ! build_is_newer "$new_build" "$installed_build"; then
       fail "New build ($new_build) must be newer than installed build ($installed_build)"
     fi
   fi

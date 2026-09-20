@@ -748,7 +748,12 @@ enum AntigravityNativeOAuthClientResolver {
     private static let supportedBinaries = [
         BinaryProfile(version: "2.12.2", sha256: "ff6c9e32ac5d8712476b80e6ce9644a73b5689de991810fc906efa3c0254650e", consumerAddress: 0x1029b8f72, gcpAddress: 0x1029b8f95),
         BinaryProfile(version: "2.13.0", sha256: "5aa1a93c49bc0149cab4e3d8ae811223041a1564a1e0fd822e9b6badb443b5aa", consumerAddress: 0x102a16e3a, gcpAddress: 0x102a16e5d),
-        BinaryProfile(version: "2.14.0", sha256: "978c3352f64c2c6bd627640392539aa29c1123b7f95b1fdde024ded96f30cf31", consumerAddress: 0x102aeb6f4, gcpAddress: 0x102aeb717)
+        BinaryProfile(version: "2.14.0", sha256: "978c3352f64c2c6bd627640392539aa29c1123b7f95b1fdde024ded96f30cf31", consumerAddress: 0x102aeb6f4, gcpAddress: 0x102aeb717),
+        // Antigravity 2.15.0 (the currently shipped macOS build). The two
+        // adjacent references are the public consumer and GCP OAuth secrets
+        // embedded by the native language server. Keep the hash and addresses
+        // together so an unrelated binary can never be treated as compatible.
+        BinaryProfile(version: "2.15.0", sha256: "bc21e4e26f86e8de001a9257750fbc59dcf912fbf2707f73bd050e86eff6502f", consumerAddress: 0x102b36249, gcpAddress: 0x102b3626c)
     ]
     private static let languageServerURL = URL(
         fileURLWithPath: "/Applications/Antigravity.app/Contents/Resources/bin/language_server"
@@ -763,13 +768,13 @@ enum AntigravityNativeOAuthClientResolver {
     }
 
     static func credentials(for profile: AntigravityOAuthProfile) throws -> AntigravityOAuthClientCredentials {
-        let binary = try verifyKnownBinary()
         let data: Data
         do {
             data = try Data(contentsOf: languageServerURL, options: [.mappedIfSafe])
         } catch {
             throw unavailableProfileError()
         }
+        let binary = try verifyCompatibleBinary(data: data)
 
         let reference: SecretReference
         switch profile {
@@ -795,10 +800,10 @@ enum AntigravityNativeOAuthClientResolver {
         )
     }
 
-    private static func verifyKnownBinary() throws -> BinaryProfile {
+    private static func verifyCompatibleBinary(data: Data) throws -> BinaryProfile {
         guard let info = NSDictionary(contentsOf: appInfoURL),
               let version = info["CFBundleShortVersionString"] as? String,
-              let binary = supportedBinaries.first(where: { $0.version == version })
+              !version.isEmpty
         else {
             throw unavailableProfileError()
         }
@@ -813,12 +818,91 @@ enum AntigravityNativeOAuthClientResolver {
             throw unavailableProfileError()
         }
         let digest = result.stdout.split(whereSeparator: { $0 == " " || $0 == "\t" }).first
+        if let binary = supportedBinaries.first(where: { $0.version == version }),
+           result.status == 0,
+           digest?.lowercased() == binary.sha256 {
+            return binary
+        }
+
+        // New Antigravity builds change the language-server layout more often
+        // than its loopback quota protocol. Accept a new build only after the
+        // app's own code signature, arm64 Mach-O header, and both native OAuth
+        // client references have been verified. This keeps forward
+        // compatibility without accepting an arbitrary executable or guessing
+        // a nearby string as a client secret.
         guard result.status == 0,
-              digest?.lowercased() == binary.sha256
+              isSignedNativeBinary(),
+              let references = discoverSecretReferences(in: data),
+              references.count == 2
         else {
             throw unavailableProfileError()
         }
-        return binary
+        return BinaryProfile(
+            version: version,
+            sha256: digest.map(String.init) ?? "",
+            consumerAddress: references[0],
+            gcpAddress: references[1]
+        )
+    }
+
+    private static func isSignedNativeBinary() -> Bool {
+        guard let result = try? CommandRunner.run(
+            "/usr/bin/codesign",
+            arguments: ["--verify", "--strict", "--verbose=0", languageServerURL.path],
+            timeout: 20
+        ) else { return false }
+        return result.status == 0
+    }
+
+    /// Finds exactly the two native Google OAuth client secrets in a signed
+    /// language-server binary and returns their Mach-O virtual addresses. The
+    /// value itself never leaves this process or enters logs/errors.
+    private static func discoverSecretReferences(in data: Data) -> [UInt64]? {
+        let prefix = Array("GOCSPX-".utf8)
+        let allowed = Set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-".utf8)
+        var addresses: [UInt64] = []
+        var offset = 0
+        while offset + 35 <= data.count {
+            guard data[offset] == prefix[0] else { offset += 1; continue }
+            guard Array(data[offset..<(offset + prefix.count)]) == prefix else { offset += 1; continue }
+            let end = offset + 35
+            let body = data[(offset + prefix.count)..<end]
+            guard body.count == 28,
+                  body.allSatisfy({ allowed.contains($0) }),
+                  end == data.count || data[end] == 0
+            else { offset += 1; continue }
+            guard let address = virtualAddress(forFileOffset: UInt64(offset), in: data) else {
+                return nil
+            }
+            addresses.append(address)
+            offset = end
+        }
+        return addresses
+    }
+
+    private static func virtualAddress(forFileOffset offset: UInt64, in data: Data) -> UInt64? {
+        guard littleEndian32(data, at: 0) == 0xfeedfacf,
+              let commandCount = littleEndian32(data, at: 16)
+        else { return nil }
+        var cursor = 32
+        for _ in 0..<commandCount {
+            guard let command = littleEndian32(data, at: cursor),
+                  let commandSize = littleEndian32(data, at: cursor + 4),
+                  commandSize >= 8,
+                  cursor <= data.count - Int(commandSize)
+            else { return nil }
+            if command == 0x19,
+               commandSize >= 72,
+               let vmAddress = littleEndian64(data, at: cursor + 24),
+               let fileOffset = littleEndian64(data, at: cursor + 40),
+               let fileSize = littleEndian64(data, at: cursor + 48),
+               offset >= fileOffset,
+               offset < fileOffset + fileSize {
+                return vmAddress + (offset - fileOffset)
+            }
+            cursor += Int(commandSize)
+        }
+        return nil
     }
 
     private static func unavailableProfileError() -> AppError {

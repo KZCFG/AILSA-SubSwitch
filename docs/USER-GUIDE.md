@@ -37,13 +37,13 @@ Antigravity and Cursor depend on their installed native applications and local
 session formats. If authentication has expired, sign in through the provider
 again and re-import or reauthenticate. ASS does not bypass authentication.
 
-## Read quota
+## Read usage
 
-Cards display the quota windows available from each provider, with remaining or
+Cards display the usage windows available from each provider, with remaining or
 used percentages and reset times. Missing data is not a full allowance. Codex
 reset credits and expiration dates appear when the provider reports them.
 
-Use Settings → Quota Display to choose which windows to show. This changes the
+Use Settings → Usage Display to choose which windows to show. This changes the
 presentation only; it does not alter your plan or its limits.
 
 Smart switching is a toggle for supported providers. Antigravity requires native
@@ -53,7 +53,7 @@ currently uses manual switching.
 
 ## Explore usage
 
-**Quota Management** separates providers and defaults to **Today**. Choose 7 or
+**Usage Management** separates providers and defaults to **Today**. Choose 7 or
 30 days for a longer view. Open the expand button for a standalone window.
 
 - Model rows scroll inside their own rounded panel. Click a row for details.
@@ -70,8 +70,8 @@ source separate from the local Codex-session fallback. It does not sum both
 sources together. Supported external model routes can appear when records
 identify their actual model/provider and usage.
 
-Antigravity's supported source exposes quota rather than itemized token billing.
-Its quota history begins with locally captured observations. Do not compare
+Antigravity's supported source exposes usage percentages rather than itemized token billing.
+Its usage history begins with locally captured observations. Do not compare
 that chart directly with a token chart from a different provider.
 
 ## Understand USD values
@@ -88,14 +88,14 @@ for the inputs read by each provider.
 
 ## Compact cards and display preferences
 
-In **Settings → Quota Display**, select Codex, Antigravity or Cursor:
+In **Settings → Usage Display**, select Codex, Antigravity or Cursor:
 
-- **Quota windows** controls which limits are visible; it does not change usage or switching policy.
+- **Usage windows** controls which limits are visible; it does not change usage or switching policy.
 - **Compact rings** (Codex and Antigravity) selects the first and second ring. Set
   a provider default or choose an individual account. Selecting the other ring's
-  quota swaps positions; choose Hidden to omit a ring. Restore automatic selection
-  or use provider defaults to remove an override. Hidden quotas remain hidden;
-  an unavailable selected quota shows a dash instead of another quota's value.
+  usage window swaps positions; choose Hidden to omit a ring. Restore automatic selection
+  or use provider defaults to remove an override. Hidden usage windows remain hidden;
+  an unavailable selected usage window shows a dash instead of another usage window's value.
 - **Progress skin** offers Official logo colors and AILSA SubSwitch default
   (black, white and gray). It applies to this provider's bars and rings and follows
   light/dark appearance. Existing installations retain official colors initially.
@@ -108,9 +108,9 @@ of Used/Remaining percentages. Countdowns update every second; missing dates sta
 unknown and expired dates are labeled as expired.
 
 For a newly reset 5-hour or 1-week window, the countdown waits for explicit
-evidence that a model request was observed in that window. Reading quota alone
+evidence that a model request was observed in that window. Reading usage alone
 does not activate a usage window, and legacy unverified markers are cleared.
-**Settings → General → Automatic quota checks** can check the current
+**Settings → General → Automatic usage checks** can check the current
 Codex or Antigravity account after switching, or all accounts during configured
 work hours while the app is running. Work hours use local time; matching start
 and end times means all day. These checks do not send model requests or activate
@@ -135,7 +135,7 @@ feedback and third-party notices. Version 1.0.0 has no update controls.
 | --- | --- |
 | No menu bar icon | Check macOS menu bar visibility and any menu-bar manager's hidden items; confirm only one ASS copy is running. |
 | Empty account list | Import a session after signing in to the corresponding provider app. |
-| Quota is stale or unavailable | Refresh, check provider authentication/network access, and inspect the displayed error. |
+| Usage is stale or unavailable | Refresh, check provider authentication/network access, and inspect the displayed error. |
 | No OpenCodex token history | The ledger must exist locally and contain supported usage records; ASS cannot reconstruct missing usage. |
 | Repeated Gemini Keychain prompts | Approve only the expected app/item. Development signatures can invalidate prior grants. Stable signing is deferred; do not grant access to all apps. |
 | Cursor switch fails | Let Cursor close normally; unsaved work or a still-running process can block replacement. |
@@ -166,4 +166,4 @@ selection shows the shortest visible window from each family, Gemini first.
 Reset credits use Arabic numbers (Reset 1, Reset 2, and so on), one per line.
 Settings → General offers countdown or expiry-date display and **d / h / m / s**
 or Chinese countdown units. Countdown labels update each second; this does not
-poll provider APIs each second or imply that an expired quota has refreshed.
+poll provider APIs each second or imply that an expired usage snapshot has refreshed.

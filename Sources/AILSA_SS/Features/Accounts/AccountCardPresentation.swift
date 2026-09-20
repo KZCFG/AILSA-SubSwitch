@@ -26,6 +26,19 @@ struct AccountQuotaFamilyPresentation: Equatable, Identifiable {
     let id: String
     let title: String
     let windows: [AccountWindowPresentation]
+    let fillStyle: UsageProgressFillStyle
+
+    init(
+        id: String,
+        title: String,
+        windows: [AccountWindowPresentation],
+        fillStyle: UsageProgressFillStyle = .antigravityClaude
+    ) {
+        self.id = id
+        self.title = title
+        self.windows = windows
+        self.fillStyle = fillStyle
+    }
 }
 
 struct AccountCompactQuotaPresentation: Equatable, Identifiable {
@@ -264,7 +277,8 @@ struct AccountCardPresentation: Equatable {
             return AccountQuotaFamilyPresentation(
                 id: family.id,
                 title: UsageQuotaDisplayName.family(family),
-                windows: windows
+                windows: windows,
+                fillStyle: Self.progressStyle(forFamilyID: family.id)
             )
         }
 
@@ -318,6 +332,10 @@ struct AccountCardPresentation: Equatable {
             statusText: statusText(forVerifiedUsage: usage, locale: locale, showStale: showStale),
             isHidden: false
         )
+    }
+
+    private static func progressStyle(forFamilyID id: String) -> UsageProgressFillStyle {
+        id.localizedCaseInsensitiveContains("gemini") ? .antigravityGemini : .antigravityClaude
     }
 
     private struct CodexQuotaResult {

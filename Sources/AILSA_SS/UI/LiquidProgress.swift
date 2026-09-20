@@ -5,6 +5,8 @@ enum UsageProgressFillStyle: Equatable {
     case monochrome
     case codex
     case antigravity
+    case antigravityGemini
+    case antigravityClaude
     case cursor
 }
 
@@ -25,7 +27,11 @@ private struct UsageProgressSkinPreferences: DynamicProperty {
     func resolve(_ style: UsageProgressFillStyle) -> UsageProgressFillStyle {
         switch style {
         case .codex: return UsageProgressSkin.resolve(style, rawValue: codex)
-        case .antigravity: return UsageProgressSkin.resolve(style, rawValue: antigravity)
+        case .antigravity, .antigravityGemini, .antigravityClaude:
+            // The single AntiGravity skin preference controls both native
+            // Gemini and third-party quota families, while their official
+            // palettes remain distinct.
+            return UsageProgressSkin.resolve(style, rawValue: antigravity)
         case .cursor: return UsageProgressSkin.resolve(style, rawValue: cursor)
         case .monochrome: return style
         }
@@ -36,7 +42,8 @@ private enum QuotaBrandPalette {
     static func flatTint(for style: UsageProgressFillStyle, fallback: Color) -> Color {
         switch style {
         case .codex: return Color(red: 0.35, green: 0.32, blue: 1)
-        case .antigravity: return Color(red: 0.22, green: 0.55, blue: 1)
+        case .antigravity, .antigravityGemini: return Color(red: 0.26, green: 0.55, blue: 0.95)
+        case .antigravityClaude: return Color(red: 0.84, green: 0.38, blue: 0.23)
         case .cursor: return Color.gray
         case .monochrome: return fallback
         }
@@ -57,25 +64,28 @@ private enum QuotaBrandPalette {
         guard style != .monochrome else {
             context.fill(fillPath, with: .color(fallback)); return
         }
-        if style == .antigravity {
-            // Preserve the icon's spatial arrangement: green → gold → red
-            // across the top, fading down to its blue legs. A horizontal
-            // rainbow alone incorrectly rotates the logo's vertical colors.
+        if style == .antigravity || style == .antigravityGemini {
+            // Gemini's official mark uses blue, green, yellow and red. Draw
+            // the entire visible fill directly; a destination-in layer here
+            // could escape the clipped path and paint a full green rectangle.
+            let colors = [
+                Color(red: 0.25, green: 0.49, blue: 0.94),
+                Color(red: 0.20, green: 0.66, blue: 0.45),
+                Color(red: 0.96, green: 0.70, blue: 0.18),
+                Color(red: 0.88, green: 0.25, blue: 0.28)
+            ]
+            context.fill(fillPath, with: .linearGradient(
+                Gradient(colors: colors), startPoint: .zero,
+                endPoint: CGPoint(x: totalSize.width, y: 0)))
+            return
+        }
+        if style == .antigravityClaude {
+            // Claude's icon palette: warm coral, orange and rose.
             context.fill(fillPath, with: .linearGradient(Gradient(colors: [
-                Color(red: 0.27, green: 0.60, blue: 1),
-                Color(red: 0.20, green: 0.48, blue: 1)
+                Color(red: 0.96, green: 0.57, blue: 0.34),
+                Color(red: 0.84, green: 0.35, blue: 0.22),
+                Color(red: 0.66, green: 0.20, blue: 0.24)
             ]), startPoint: .zero, endPoint: CGPoint(x: totalSize.width, y: 0)))
-            context.drawLayer { layer in
-                layer.fill(fillPath, with: .linearGradient(Gradient(colors: [
-                    Color(red: 0.34, green: 0.72, blue: 0.43),
-                    Color(red: 1, green: 0.70, blue: 0.13),
-                    Color(red: 1, green: 0.28, blue: 0.29)
-                ]), startPoint: .zero, endPoint: CGPoint(x: totalSize.width, y: 0)))
-                layer.blendMode = .destinationIn
-                layer.fill(Path(CGRect(origin: .zero, size: totalSize)), with: .linearGradient(
-                    Gradient(colors: [.white, .clear]), startPoint: .zero,
-                    endPoint: CGPoint(x: 0, y: totalSize.height)))
-            }
             return
         }
         // Anchor the palette to the entire track, never rotate it with usage.
