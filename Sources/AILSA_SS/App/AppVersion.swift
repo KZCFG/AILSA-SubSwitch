@@ -21,7 +21,9 @@ enum AppVersion {
         let build = info?["CFBundleVersion"] as? String
 
         if let short, !short.isEmpty {
-            if let label = info?["ASSBuildLabel"] as? String, !label.isEmpty, label != short { return "\(short) (\(label))" }
+            if let label = info?["ASSBuildLabel"] as? String, !label.isEmpty, label != short {
+                return label.hasPrefix(short) ? label : "\(short) (\(label))"
+            }
             return short
         }
         if let build, !build.isEmpty {

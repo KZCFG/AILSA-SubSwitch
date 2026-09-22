@@ -22,6 +22,7 @@ read_key() {
 marketing="$(read_key MARKETING_VERSION)"
 build="$(read_key BUILD_NUMBER)"
 label="$(read_key BUILD_LABEL)"
+pbx_label="\"$label\""
 
 pbxproj="$repo_dir/AILSA_SS.xcodeproj/project.pbxproj"
 project_yml="$repo_dir/project.yml"
@@ -29,7 +30,7 @@ project_yml="$repo_dir/project.yml"
 expected_pbx=(
   "MARKETING_VERSION = $marketing;"
   "CURRENT_PROJECT_VERSION = $build;"
-  "ASS_BUILD_LABEL = $label;"
+  "ASS_BUILD_LABEL = $pbx_label;"
 )
 expected_yml=(
   "MARKETING_VERSION: $marketing"
@@ -52,7 +53,7 @@ fi
 sed -i '' \
   -e "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = $marketing;/" \
   -e "s/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = $build;/" \
-  -e "s/ASS_BUILD_LABEL = [^;]*;/ASS_BUILD_LABEL = $label;/" \
+  -e "s/ASS_BUILD_LABEL = [^;]*;/ASS_BUILD_LABEL = $pbx_label;/" \
   "$pbxproj"
 sed -i '' \
   -e "s/MARKETING_VERSION: .*/MARKETING_VERSION: $marketing/" \

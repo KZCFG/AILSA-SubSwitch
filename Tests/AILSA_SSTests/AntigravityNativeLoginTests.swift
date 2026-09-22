@@ -609,3 +609,104 @@ private func quotaSummaryFixtureData() -> Data {
         #"{"response":{"groups":[{"displayName":"Gemini Models","buckets":[{"bucketId":"five","displayName":"Five Hour Limit Remaining","remainingFraction":0.5,"window":"5h"},{"bucketId":"weekly","displayName":"Weekly Limit Remaining","remainingFraction":0.75,"window":"P7D"}]},{"displayName":"Claude and GPT models","buckets":[{"bucketId":"third","displayName":"Other Limit","remainingFraction":1.0,"window":"5h"}]}]}}"#.utf8
     )
 }
+/// Synthetic public IDs and invented secret bytes; no installed credentials.
+final class AntigravityNativeOAuthLayoutTests: XCTestCase {
+    private let base: UInt64 = 0x100000000
+    private let textOffset = 0x2200
+    private let consumerID = 0x800
+    private let gcpID = 0x880
+    // Reverse the old string-order assumption, with no NUL terminators.
+    private let gcpSecret = 0x920
+    private let consumerSecret = 0x943
+
+    func testPackedGoStringsBindByClientIDRegardlessOfStringOrder() {
+        let data = fixture()
+        let refs = AntigravityNativeOAuthClientResolver.discoverSecretReferences(in: data)
+        XCTAssertEqual(refs?[.consumer], base + UInt64(consumerSecret))
+        XCTAssertEqual(refs?[.gcp], base + UInt64(gcpSecret))
+        XCTAssertNotEqual(data[consumerSecret + 35], 0)
+    }
+
+    func testUnreferencedSecretLookingBytesAreIgnored() {
+        var data = fixture()
+        putString("GOCSPX-" + String(repeating: "D", count: 28), at: 0xb00, in: &data)
+        XCTAssertNotNil(AntigravityNativeOAuthClientResolver.discoverSecretReferences(in: data))
+    }
+
+    func testRejectsMissingProfileAndIncorrectStringLength() {
+        var data = fixture()
+        put32(0, at: textOffset + 32 + 28, in: &data)
+        XCTAssertNil(AntigravityNativeOAuthClientResolver.discoverSecretReferences(in: data))
+        data = fixture()
+        put32(0xd2800002 | (34 << 5), at: textOffset + 24, in: &data)
+        XCTAssertNil(AntigravityNativeOAuthClientResolver.discoverSecretReferences(in: data))
+    }
+
+    func testRejectsConflictingBindingsInsteadOfChoosingTheFirst() {
+        var data = fixture()
+        putConfig(client: consumerID, length: 73, secret: gcpSecret, at: textOffset + 64, in: &data)
+        XCTAssertNil(AntigravityNativeOAuthClientResolver.discoverSecretReferences(in: data))
+    }
+
+    func testRejectsWrongArchitectureAndTruncatedMachO() {
+        var data = fixture()
+        put32(0x01000007, at: 4, in: &data)
+        XCTAssertNil(AntigravityNativeOAuthClientResolver.discoverSecretReferences(in: data))
+        XCTAssertNil(AntigravityNativeOAuthClientResolver.discoverSecretReferences(in: Data(fixture().prefix(90))))
+        XCTAssertNil(AntigravityNativeOAuthClientResolver.discoverSecretReferences(in: Data()))
+        data = fixture()
+        put32(UInt32.max, at: 36, in: &data)
+        XCTAssertNil(AntigravityNativeOAuthClientResolver.discoverSecretReferences(in: data))
+    }
+
+    private func fixture() -> Data {
+        var data = Data(repeating: 0x58, count: 0x3000)
+        data.replaceSubrange(0..<184, with: Data(repeating: 0, count: 184))
+        put32(0xfeedfacf, at: 0, in: &data)
+        put32(0x0100000c, at: 4, in: &data)
+        put32(1, at: 16, in: &data)
+        put32(152, at: 20, in: &data)
+        put32(0x19, at: 32, in: &data)
+        put32(152, at: 36, in: &data)
+        putString("__TEXT", at: 40, in: &data)
+        put64(base, at: 56, in: &data)
+        put64(0x3000, at: 64, in: &data)
+        put64(0, at: 72, in: &data)
+        put64(0x3000, at: 80, in: &data)
+        put32(1, at: 96, in: &data)
+        putString("__text", at: 104, in: &data)
+        putString("__TEXT", at: 120, in: &data)
+        put64(base + UInt64(textOffset), at: 136, in: &data)
+        put64(0x100, at: 144, in: &data)
+        put32(UInt32(textOffset), at: 152, in: &data)
+        putString(AntigravityOAuthProfile.consumer.publicClientID, at: consumerID, in: &data)
+        putString(AntigravityOAuthProfile.gcp.publicClientID, at: gcpID, in: &data)
+        putString("GOCSPX-" + String(repeating: "C", count: 28), at: consumerSecret, in: &data)
+        putString("GOCSPX-" + String(repeating: "G", count: 28), at: gcpSecret, in: &data)
+        putConfig(client: consumerID, length: 73, secret: consumerSecret, at: textOffset, in: &data)
+        putConfig(client: gcpID, length: 72, secret: gcpSecret, at: textOffset + 32, in: &data)
+        return data
+    }
+
+    private func putConfig(client: Int, length: UInt32, secret: Int, at offset: Int, in data: inout Data) {
+        for (target, length, field) in [(client, length, UInt32(0)), (secret, UInt32(35), UInt32(16))] {
+            let pc = offset + Int(field)
+            let pageDelta = Int64((target & ~0xfff) - (pc & ~0xfff)) / 4096
+            let imm = UInt32(truncatingIfNeeded: pageDelta) & 0x1fffff
+            put32(0x90000001 | ((imm & 3) << 29) | ((imm >> 2) << 5), at: pc, in: &data)
+            put32(0x91000021 | (UInt32(target & 0xfff) << 10), at: pc + 4, in: &data)
+            put32(0xd2800002 | (length << 5), at: pc + 8, in: &data)
+            put32(0xa9000801 | ((field / 8) << 15), at: pc + 12, in: &data)
+        }
+    }
+
+    private func putString(_ value: String, at offset: Int, in data: inout Data) {
+        data.replaceSubrange(offset..<(offset + value.utf8.count), with: value.utf8)
+    }
+    private func put32(_ value: UInt32, at offset: Int, in data: inout Data) {
+        for i in 0..<4 { data[offset + i] = UInt8(truncatingIfNeeded: value >> (i * 8)) }
+    }
+    private func put64(_ value: UInt64, at offset: Int, in data: inout Data) {
+        for i in 0..<8 { data[offset + i] = UInt8(truncatingIfNeeded: value >> (i * 8)) }
+    }
+}

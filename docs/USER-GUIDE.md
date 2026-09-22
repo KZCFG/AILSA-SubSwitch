@@ -14,7 +14,7 @@ approving. If macOS reports a damaged archive, redownload and verify it first.
 Each package has a SHA-256 file. In the download directory:
 
 ```bash
-shasum -a 256 -c AILSA-SubSwitch-1.0.0-arm64.zip.sha256
+shasum -a 256 -c 'AILSA-SubSwitch-1.0.0(a)-2026092201-arm64.zip.sha256'
 ```
 
 There is no OTA updater in 1.0.0. Quit ASS from Settings before replacing the

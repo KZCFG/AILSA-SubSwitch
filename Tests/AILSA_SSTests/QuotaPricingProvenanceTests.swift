@@ -113,3 +113,55 @@ final class KimiSeptemberPricingTests: XCTestCase {
         XCTAssertEqual(QuotaModelKey(provider: "kimi-code", model: "kimi-for-coding").familyKey.model, "Kimi K2.8 Preview")
     }
 }
+
+final class Grok47PricingTests: XCTestCase {
+    private func estimate(_ model: String = "grok-4.7", input: Int = 100_000,
+                          tier: String? = nil, fast: OpenCodexFastGrantEvidence = .unknown) -> AILSA_SSStandardReferenceEstimate {
+        OpenCodexStandardReferenceEstimator().estimate(OpenCodexStandardReferenceInput(
+            provider: "xai", resolvedModel: model, requestedModel: nil, modelEcho: nil,
+            usageStatus: .reported, usageEstimated: false, streamAborted: false,
+            currency: "USD", apiEquivalentEligibility: nil, tierOutcomeConfirmation: nil,
+            tierOutcomeCanonical: nil, responseServiceTier: tier, fastOutcome: nil,
+            confirmedServiceTier: tier, fastGrantEvidence: fast,
+            tokens: OpenCodexUsageTokens(inputTokens: input, outputTokens: 10_000,
+                totalTokens: input + 10_000, cachedInputTokens: 20_000, cacheReadInputTokens: 20_000,
+                cacheCreationInputTokens: 0, reasoningOutputTokens: nil, totalSemantics: .inputPlusOutput),
+            tokenSemanticIssue: false))
+    }
+
+    func testPublishedRatesMatchGrok46AndApplyCacheDiscount() {
+        XCTAssertEqual(estimate().picoUSD, 230_000_000_000)
+        XCTAssertEqual(estimate().picoUSD, estimate("grok-4.6").picoUSD)
+    }
+
+    func testLongContextBoundaryIncludesExactly200k() {
+        XCTAssertEqual(estimate(input: 199_999).picoUSD, 429_998_000_000)
+        XCTAssertEqual(estimate(input: 200_000).picoUSD, 860_000_000_000)
+    }
+
+    func testBuildIdentityUsesReferencePriceAndGroupsWithGrok47() {
+        let build = estimate("grok-4.7-build")
+        XCTAssertEqual(build.picoUSD, estimate().picoUSD)
+        XCTAssertEqual(build.priceBasis, "user_mapped_official_standard_reference")
+        XCTAssertEqual(QuotaModelKey(provider: "xai", model: "grok-4.7-build").familyKey.model, "Grok 4.7")
+        XCTAssertEqual(QuotaModelKey(provider: "cursor-proxy", model: "grok-4.7").familyKey.model, "Grok 4.7")
+    }
+
+    func testPriorityRequiresConfirmedGrantAndUsesDoubleRates() {
+        XCTAssertEqual(estimate(tier: "priority", fast: .explicitlyGranted).picoUSD, 460_000_000_000)
+        XCTAssertEqual(estimate("grok-4.7-build", input: 200_000, tier: "priority", fast: .explicitlyGranted).picoUSD, 1_720_000_000_000)
+        XCTAssertEqual(estimate(tier: "priority", fast: .unknown).picoUSD, estimate().picoUSD)
+        XCTAssertNil(estimate(fast: .explicitlyGranted).picoUSD)
+    }
+
+    func testNewCatalogEntryDoesNotInvalidateOldAuditDates() throws {
+        let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let url = repo.appendingPathComponent("Sources/AILSA_SS/Resources/AILSA_SS-runtime-pricing-bindings-v1.json")
+        let catalog = try AILSA_SSVerifiedPricingCatalogLoader.load(url: url)
+        let newBindings = catalog.bindings.filter { $0.provider == "xai" && $0.resolvedModel == "grok-4.7" }
+        XCTAssertEqual(newBindings.count, 6)
+        XCTAssertTrue(newBindings.contains { $0.serviceTier == "priority" && $0.inputPicoUSDPerToken == 8_000_000 })
+        XCTAssertTrue(catalog.bindings.contains { $0.provider == "xai" && $0.resolvedModel == "grok-4.6" })
+        XCTAssertFalse(catalog.bindings.contains { $0.resolvedModel == "grok-4.7-build" })
+    }
+}

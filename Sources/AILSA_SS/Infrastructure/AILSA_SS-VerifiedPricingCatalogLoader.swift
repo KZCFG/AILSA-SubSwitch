@@ -44,7 +44,11 @@ enum AILSA_SSVerifiedPricingCatalogLoader {
 
         var acceptedBindings: [OpenCodexPricingCatalog.Binding] = []
         for entry in entries {
-            acceptedBindings.append(contentsOf: bindings(from: entry, auditDate: auditDate))
+            // A newly audited model must not rewrite the audit date of every
+            // older model. Its sources still have to match its own exact date.
+            let entryAuditDate = nonempty(entry["auditDate"]) ?? auditDate
+            guard isISODate(entryAuditDate) else { throw LoadError.malformedProvenance }
+            acceptedBindings.append(contentsOf: bindings(from: entry, auditDate: entryAuditDate))
         }
         guard !acceptedBindings.isEmpty else { throw LoadError.noEligibleBindings }
         let canonicalized = try canonicalizeExactDuplicates(acceptedBindings)

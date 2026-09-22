@@ -218,7 +218,7 @@ done
 # ---------------------------------------------------------------------------
 zip_path=""
 if [[ "$skip_zip" -eq 0 ]]; then
-  zip_path="$output_root/AILSA-SubSwitch-${marketing_version}-${target_triple%%-*}.zip"
+  zip_path="$output_root/AILSA-SubSwitch-${build_label}-${build_number}-${target_triple%%-*}.zip"
   /usr/bin/ditto -c -k --sequesterRsrc --keepParent "$app_bundle" "$zip_path"
   # Standard `shasum -c` format: "<hash>  <basename>"
   (cd "$(dirname "$zip_path")" && shasum -a 256 "$(basename "$zip_path")" > "$(basename "$zip_path").sha256")

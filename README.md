@@ -70,6 +70,12 @@ Antigravity usage percentages are not converted into invented token totals.
 We expect to add Grok and Kimi usage monitoring in **1.0.1**, followed by
 Alibaba and DeepSeek usage monitoring in **1.0.2**.
 
+**1.0.0(a)** adds Grok 4.7 model grouping and official API reference pricing for
+recorded usage, including cached input, long context and confirmed Priority
+processing. This is separate from the planned Grok subscription monitor.
+It also fixes Antigravity 2.15.1 OAuth configuration detection, with structural
+validation for newer Google-signed builds. See the [update notes](docs/RELEASE-1.0.0a.md).
+
 ## Preview
 
 Actual SwiftUI components, rendered with **synthetic demo accounts and usage**.
@@ -141,7 +147,7 @@ cd AILSA-SubSwitch
 bash scripts/build_app.sh
 ```
 
-Output: `build/1.0.0-2026092006/AILSA SubSwitch.app`, an arm64 ZIP, SHA-256 checksum,
+Output: `build/1.0.0(a)-2026092201/AILSA SubSwitch.app`, an arm64 ZIP, SHA-256 checksum,
 and source manifest. Check [build and release notes](docs/release-macos.md) for
 custom output locations and signing details.
 

@@ -152,7 +152,12 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
             return unavailable(.unknownPrice)
         }
 
-        if input.fastGrantEvidence == .explicitlyGranted {
+        // Grok 4.7's published Priority multiplier is explicitly verified. A
+        // requested Fast flag alone is never enough to apply this price.
+        let grokPriority = leafID == "grok-4.7"
+            && input.fastGrantEvidence == .explicitlyGranted
+            && ["priority", "fast"].contains(input.confirmedServiceTier ?? "")
+        if input.fastGrantEvidence == .explicitlyGranted && !grokPriority {
             let context = contextAssumption(
                 input: input,
                 fastGranted: true,
@@ -198,9 +203,14 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
             inputTokens: inputTokens,
             threshold: leaf.threshold
         )
-        guard let rate = selected.rate else {
+        guard let standardRate = selected.rate else {
             return unavailable(.overThresholdNoLongLeaf, leaf: leafID, context: context)
         }
+        let rate = grokPriority ? Rate(
+            inputPicoUSDPerToken: standardRate.inputPicoUSDPerToken * 2,
+            cacheReadPicoUSDPerToken: standardRate.cacheReadPicoUSDPerToken * 2,
+            outputPicoUSDPerToken: standardRate.outputPicoUSDPerToken * 2
+        ) : standardRate
         guard let amount = Self.picoUSD(
             inputTokens: inputTokens,
             cacheReadTokens: cacheReadTokens,
@@ -213,7 +223,9 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         return AILSA_SSStandardReferenceEstimate(
             status: .referenceEstimate,
             picoUSD: amount,
-            priceBasis: Self.userReferenceAliases[resolvedModel] == nil ? Self.priceBasis : "user_mapped_official_standard_reference",
+            priceBasis: grokPriority
+                ? (Self.userReferenceAliases[resolvedModel] == nil ? "official_priority_reference" : "user_mapped_official_priority_reference")
+                : (Self.userReferenceAliases[resolvedModel] == nil ? Self.priceBasis : "user_mapped_official_standard_reference"),
             leaf: leafID,
             contextLadder: selected.ladder,
             estimatePartial: cacheBreakdownMissing,
@@ -273,6 +285,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
     /// vendor-confirmed catalog or request de-duplication.
     private static let userReferenceAliases: [String: String] = [
         "kimi-for-coding": "kimi-k2.7-code", // User requested 2026-09-17: Preview uses previous ID price.
+        "grok-4.7-build": "grok-4.7",
         "grok-4.6-build": "grok-4.6", "grok-4.5-build": "grok-4.5",
         "claude-fable-5-1-thinking": "claude-fable-5-1",
         "claude-fable-5.1-thinking": "claude-fable-5-1",
@@ -281,7 +294,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         "deepseek-v4-flash": "deepseek-flash"
     ]
     private static let crossProviderReferences: Set<String> = [
-        "grok-4.6", "grok-4.5", "gemini-3.8-flash", "deepseek-flash",
+        "grok-4.7", "grok-4.6", "grok-4.5", "gemini-3.8-flash", "deepseek-flash",
         "claude-fable-5-1", "k3", "kimi-k3"
     ]
     private static func referenceLeaf(id: String, occurredAt: Date?) -> Leaf? {
@@ -305,6 +318,8 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
     }
 
     private static let aliases: [String: String] = [
+        "xai/grok-4.7": "grok-4.7",
+        "cursor-proxy/grok-4.7": "grok-4.7",
         "xai/grok-4.6": "grok-4.6",
         "cursor-proxy/grok-4.6": "grok-4.6",
         "kimi-code/k3": "k3",
@@ -329,6 +344,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         "gpt-5.5": ["openai"],
         "gpt-5.4": ["openai"],
         "gpt-5.4-mini": ["openai"],
+        "grok-4.7": ["xai", "cursor-proxy"],
         "grok-4.6": ["xai", "cursor-proxy"],
         "grok-4.5": ["xai", "cursor-proxy"],
         "k3": ["kimi-code"],
@@ -384,6 +400,13 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
             short: Rate(inputPicoUSDPerToken: 750_000, cacheReadPicoUSDPerToken: 75_000, outputPicoUSDPerToken: 4_500_000),
             long: nil,
             threshold: .allContexts
+        ),
+        // https://docs.x.ai/developers/pricing, verified 2026-09-22.
+        // The >= 200k ladder applies to all tokens, including cached input.
+        "grok-4.7": Leaf(
+            short: Rate(inputPicoUSDPerToken: 2_000_000, cacheReadPicoUSDPerToken: 500_000, outputPicoUSDPerToken: 6_000_000),
+            long: Rate(inputPicoUSDPerToken: 4_000_000, cacheReadPicoUSDPerToken: 1_000_000, outputPicoUSDPerToken: 12_000_000),
+            threshold: .promptTokensGreaterThanOrEqual(200_000)
         ),
         "grok-4.6": Leaf(
             short: Rate(inputPicoUSDPerToken: 2_000_000, cacheReadPicoUSDPerToken: 500_000, outputPicoUSDPerToken: 6_000_000),

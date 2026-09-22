@@ -733,11 +733,10 @@ struct AntigravityOAuthClientCredentials: Sendable {
     let clientSecret: String
 }
 
-/// Resolves the native OAuth client secret from the exact public configuration
-/// reference in the known Antigravity language-server binary.  The file is
-/// verified before it is mapped, no strings are searched, and the secret never
-/// leaves memory or enters an error/log/store payload.  Any version/hash/layout
-/// mismatch fails closed and requires a fresh native sign-in instead.
+/// Resolves native OAuth configuration from a known binary or a Google-signed
+/// arm64 build whose code explicitly pairs each client ID with its secret.
+/// Go strings are pointer/length pairs, not NUL-terminated C strings. Secrets
+/// stay in memory and never enter an error, log, account store, or release.
 enum AntigravityNativeOAuthClientResolver {
     private struct BinaryProfile {
         let version: String
@@ -749,7 +748,7 @@ enum AntigravityNativeOAuthClientResolver {
         BinaryProfile(version: "2.12.2", sha256: "ff6c9e32ac5d8712476b80e6ce9644a73b5689de991810fc906efa3c0254650e", consumerAddress: 0x1029b8f72, gcpAddress: 0x1029b8f95),
         BinaryProfile(version: "2.13.0", sha256: "5aa1a93c49bc0149cab4e3d8ae811223041a1564a1e0fd822e9b6badb443b5aa", consumerAddress: 0x102a16e3a, gcpAddress: 0x102a16e5d),
         BinaryProfile(version: "2.14.0", sha256: "978c3352f64c2c6bd627640392539aa29c1123b7f95b1fdde024ded96f30cf31", consumerAddress: 0x102aeb6f4, gcpAddress: 0x102aeb717),
-        // Antigravity 2.15.0 (the currently shipped macOS build). The two
+        // Antigravity 2.15.0. The two
         // adjacent references are the public consumer and GCP OAuth secrets
         // embedded by the native language server. Keep the hash and addresses
         // together so an unrelated binary can never be treated as compatible.
@@ -833,72 +832,123 @@ enum AntigravityNativeOAuthClientResolver {
         guard result.status == 0,
               isSignedNativeBinary(),
               let references = discoverSecretReferences(in: data),
-              references.count == 2
+              let consumer = references[.consumer],
+              let gcp = references[.gcp]
         else {
             throw unavailableProfileError()
         }
         return BinaryProfile(
             version: version,
             sha256: digest.map(String.init) ?? "",
-            consumerAddress: references[0],
-            gcpAddress: references[1]
+            consumerAddress: consumer,
+            gcpAddress: gcp
         )
     }
 
     private static func isSignedNativeBinary() -> Bool {
         guard let result = try? CommandRunner.run(
             "/usr/bin/codesign",
-            arguments: ["--verify", "--strict", "--verbose=0", languageServerURL.path],
+            arguments: ["--verify", "--strict", "--verbose=0", "-R",
+                        "=anchor apple generic and certificate leaf[subject.OU] = \"EQHXZ8M8AV\"",
+                        languageServerURL.path],
             timeout: 20
         ) else { return false }
         return result.status == 0
     }
 
-    /// Finds exactly the two native Google OAuth client secrets in a signed
-    /// language-server binary and returns their Mach-O virtual addresses. The
-    /// value itself never leaves this process or enters logs/errors.
-    private static func discoverSecretReferences(in data: Data) -> [UInt64]? {
-        let prefix = Array("GOCSPX-".utf8)
+    /// Recognizes the arm64 Go initialization of oauth2.Config.ClientID and
+    /// ClientSecret: ADRP/ADD/MOVZ/STP for the two consecutive string fields.
+    /// Field offsets and explicit lengths bind the secret to a known public
+    /// client ID; string order/proximity and a GOCSPX prefix alone prove nothing.
+    /// Internal visibility permits synthetic Mach-O regression fixtures.
+    static func discoverSecretReferences(in data: Data) -> [AntigravityOAuthProfile: UInt64]? {
+        guard let text = textSection(in: data), text.range.count >= 32 else { return nil }
+        var references: [AntigravityOAuthProfile: UInt64] = [:]
         let allowed = Set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-".utf8)
-        var addresses: [UInt64] = []
-        var offset = 0
-        while offset + 35 <= data.count {
-            guard data[offset] == prefix[0] else { offset += 1; continue }
-            guard Array(data[offset..<(offset + prefix.count)]) == prefix else { offset += 1; continue }
-            let end = offset + 35
-            let body = data[(offset + prefix.count)..<end]
-            guard body.count == 28,
-                  body.allSatisfy({ allowed.contains($0) }),
-                  end == data.count || data[end] == 0
-            else { offset += 1; continue }
-            guard let address = virtualAddress(forFileOffset: UInt64(offset), in: data) else {
-                return nil
-            }
-            addresses.append(address)
-            offset = end
+        for offset in stride(from: text.range.lowerBound + 12, through: text.range.upperBound - 20, by: 4) {
+            guard let store = littleEndian32(data, at: offset), store & 0xffc00000 == 0xa9000000,
+                  let client = stringField(at: offset, fieldOffset: 0, text: text, data: data),
+                  let secret = stringField(at: offset + 16, fieldOffset: 16, text: text, data: data),
+                  client.baseRegister == secret.baseRegister, client.baseRegister != 31,
+                  secret.length == 35,
+                  client.length == 72 || client.length == 73,
+                  let clientBytes = machOBytes(atVirtualAddress: client.address, length: client.length, from: data),
+                  let profile = [AntigravityOAuthProfile.consumer, .gcp].first(where: {
+                      clientBytes == Data($0.publicClientID.utf8)
+                  }),
+                  let secretBytes = machOBytes(atVirtualAddress: secret.address, length: secret.length, from: data),
+                  secretBytes.starts(with: Data("GOCSPX-".utf8)),
+                  secretBytes.dropFirst(7).allSatisfy({ allowed.contains($0) })
+            else { continue }
+            if let existing = references[profile], existing != secret.address { return nil }
+            references[profile] = secret.address
         }
-        return addresses
+        guard references.count == 2, references[.consumer] != references[.gcp] else { return nil }
+        return references
     }
 
-    private static func virtualAddress(forFileOffset offset: UInt64, in data: Data) -> UInt64? {
+    private struct CodeSection {
+        let address: UInt64
+        let range: Range<Int>
+    }
+
+    private struct StringField {
+        let address: UInt64
+        let length: Int
+        let baseRegister: UInt32
+    }
+
+    private static func stringField(at offset: Int, fieldOffset: UInt32, text: CodeSection, data: Data) -> StringField? {
+        guard let adrp = littleEndian32(data, at: offset - 12), adrp & 0x9f000000 == 0x90000000,
+              let add = littleEndian32(data, at: offset - 8), add & 0xffc00000 == 0x91000000,
+              let mov = littleEndian32(data, at: offset - 4), mov & 0xffe00000 == 0xd2800000,
+              let store = littleEndian32(data, at: offset), store & 0xffc00000 == 0xa9000000,
+              ((store >> 15) & 0x7f) * 8 == fieldOffset,
+              adrp & 31 == add & 31, adrp & 31 == (add >> 5) & 31,
+              store & 31 == add & 31, (store >> 10) & 31 == mov & 31
+        else { return nil }
+        var pageDelta = Int64(((adrp >> 5) & 0x7ffff) << 2 | ((adrp >> 29) & 3))
+        if pageDelta & (1 << 20) != 0 { pageDelta -= 1 << 21 }
+        guard let pc = Int64(exactly: text.address + UInt64(offset - 12 - text.range.lowerBound)) else { return nil }
+        let page = (pc & ~0xfff).addingReportingOverflow(pageDelta * 4096)
+        let target = page.partialValue.addingReportingOverflow(Int64((add >> 10) & 0xfff))
+        guard !page.overflow, !target.overflow, target.partialValue >= 0 else { return nil }
+        return StringField(address: UInt64(target.partialValue), length: Int((mov >> 5) & 0xffff), baseRegister: (store >> 5) & 31)
+    }
+
+    private static func textSection(in data: Data) -> CodeSection? {
         guard littleEndian32(data, at: 0) == 0xfeedfacf,
-              let commandCount = littleEndian32(data, at: 16)
+              littleEndian32(data, at: 4) == 0x0100000c, // CPU_TYPE_ARM64
+              let commandCount = littleEndian32(data, at: 16),
+              let commandBytes = littleEndian32(data, at: 20),
+              data.count >= 32, Int(commandBytes) <= data.count - 32
         else { return nil }
         var cursor = 32
+        let commandsEnd = 32 + Int(commandBytes)
         for _ in 0..<commandCount {
             guard let command = littleEndian32(data, at: cursor),
                   let commandSize = littleEndian32(data, at: cursor + 4),
                   commandSize >= 8,
-                  cursor <= data.count - Int(commandSize)
+                  Int(commandSize) <= commandsEnd - cursor
             else { return nil }
             if command == 0x19,
                commandSize >= 72,
-               let vmAddress = littleEndian64(data, at: cursor + 24),
-               let fileOffset = littleEndian64(data, at: cursor + 40),
-               let fileSize = littleEndian64(data, at: cursor + 48),
-               offset >= fileOffset,
-               offset < fileOffset + fileSize {
-                return vmAddress + (offset - fileOffset)
+               let sectionCount = littleEndian32(data, at: cursor + 64) {
+                guard sectionCount <= (commandSize - 72) / 80 else { return nil }
+                for index in 0..<Int(sectionCount) {
+                    let section = cursor + 72 + index * 80
+                    let name = data[section..<(section + 16)].prefix(while: { $0 != 0 })
+                    let segment = data[(section + 16)..<(section + 32)].prefix(while: { $0 != 0 })
+                    guard name == Data("__text".utf8), segment == Data("__TEXT".utf8) else { continue }
+                    guard let address = littleEndian64(data, at: section + 32),
+                          let size = littleEndian64(data, at: section + 40),
+                          let fileOffset = littleEndian32(data, at: section + 48),
+                          Int(fileOffset) <= data.count, size <= UInt64(data.count - Int(fileOffset)),
+                          address <= UInt64(Int64.max) - size,
+                          fileOffset % 4 == 0, size % 4 == 0
+                    else { return nil }
+                    return CodeSection(address: address, range: Int(fileOffset)..<(Int(fileOffset) + Int(size)))
+                }
             }
             cursor += Int(commandSize)
         }
@@ -909,9 +959,7 @@ enum AntigravityNativeOAuthClientResolver {
         .unauthorized(L10n.tr("error.antigravity.native_oauth_profile_unavailable"))
     }
 
-    /// Maps a fixed Mach-O virtual address through a 64-bit segment command.
-    /// The parser has no string-search fallback: an unknown binary layout is a
-    /// hard failure instead of a chance to borrow a nearby client secret.
+    /// Maps a validated Mach-O virtual address through a 64-bit segment command.
     private static func machOBytes(
         atVirtualAddress address: UInt64,
         length: Int,
@@ -945,6 +993,8 @@ enum AntigravityNativeOAuthClientResolver {
                 if !difference.overflow,
                    relative <= fileSize,
                    UInt64(length) <= fileSize - relative,
+                   fileOffset <= UInt64(data.count),
+                   relative <= UInt64(data.count) - fileOffset,
                    let start = Int(exactly: fileOffset + relative),
                    start >= 0,
                    start <= data.count - length {

@@ -3084,6 +3084,335 @@
       "uncertainty": [
         "configured_selected_not_in_catalog"
       ]
+    },
+    {
+      "bindingId": "xai/grok-4.7:xai:grok-4.7",
+      "provider": "xai",
+      "resolvedModel": "grok-4.7",
+      "referenceAPIModel": "grok-4.7",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "xai-price",
+          "url": "https://docs.x.ai/developers/pricing",
+          "verifiedOn": "2026-09-22",
+          "note": "Global USD per 1M tokens; long context starts at >= 200000 prompt tokens; Priority is 2x."
+        },
+        {
+          "id": "xai47",
+          "url": "https://docs.x.ai/developers/models/grok-4.7",
+          "verifiedOn": "2026-09-22",
+          "note": "Grok 4.7 model details."
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard-short",
+          "condition": {
+            "prompt_tokens_lt": 200000
+          },
+          "inputUSDPerMillionTokens": "2",
+          "outputUSDPerMillionTokens": "6",
+          "cacheReadUSDPerMillionTokens": "0.5",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens"
+          ],
+          "source": [
+            {
+              "id": "xai-price",
+              "url": "https://docs.x.ai/developers/pricing",
+              "verifiedOn": "2026-09-22",
+              "note": "Global USD per 1M tokens; long context starts at >= 200000 prompt tokens; Priority is 2x."
+            },
+            {
+              "id": "xai47",
+              "url": "https://docs.x.ai/developers/models/grok-4.7",
+              "verifiedOn": "2026-09-22",
+              "note": "Grok 4.7 model details."
+            }
+          ]
+        },
+        {
+          "id": "standard-long",
+          "condition": {
+            "prompt_tokens_gte": 200000
+          },
+          "inputUSDPerMillionTokens": "4",
+          "outputUSDPerMillionTokens": "12",
+          "cacheReadUSDPerMillionTokens": "1.0",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens"
+          ],
+          "source": [
+            {
+              "id": "xai-price",
+              "url": "https://docs.x.ai/developers/pricing",
+              "verifiedOn": "2026-09-22",
+              "note": "Global USD per 1M tokens; long context starts at >= 200000 prompt tokens; Priority is 2x."
+            },
+            {
+              "id": "xai47",
+              "url": "https://docs.x.ai/developers/models/grok-4.7",
+              "verifiedOn": "2026-09-22",
+              "note": "Grok 4.7 model details."
+            }
+          ]
+        },
+        {
+          "id": "fast-short",
+          "condition": {
+            "prompt_tokens_lt": 200000,
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ]
+          },
+          "inputUSDPerMillionTokens": "4",
+          "outputUSDPerMillionTokens": "12",
+          "cacheReadUSDPerMillionTokens": "1",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier"
+          ],
+          "source": [
+            {
+              "id": "xai-price",
+              "url": "https://docs.x.ai/developers/pricing",
+              "verifiedOn": "2026-09-22",
+              "note": "Global USD per 1M tokens; long context starts at >= 200000 prompt tokens; Priority is 2x."
+            },
+            {
+              "id": "xai47",
+              "url": "https://docs.x.ai/developers/models/grok-4.7",
+              "verifiedOn": "2026-09-22",
+              "note": "Grok 4.7 model details."
+            }
+          ]
+        },
+        {
+          "id": "fast-long",
+          "condition": {
+            "prompt_tokens_gte": 200000,
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ]
+          },
+          "inputUSDPerMillionTokens": "8",
+          "outputUSDPerMillionTokens": "24",
+          "cacheReadUSDPerMillionTokens": "2",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier"
+          ],
+          "source": [
+            {
+              "id": "xai-price",
+              "url": "https://docs.x.ai/developers/pricing",
+              "verifiedOn": "2026-09-22",
+              "note": "Global USD per 1M tokens; long context starts at >= 200000 prompt tokens; Priority is 2x."
+            },
+            {
+              "id": "xai47",
+              "url": "https://docs.x.ai/developers/models/grok-4.7",
+              "verifiedOn": "2026-09-22",
+              "note": "Grok 4.7 model details."
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "API reference only; provider subscription billing may differ"
+      ],
+      "pricingNotes": {
+        "long_scope": "All tokens once prompt reaches >= 200000, following the official pricing table.",
+        "priority_rates": "2x standard, only with vendor-confirmed priority/fast tier.",
+        "regional_uplift": "Global reference only; US regional inference adds 10%.",
+        "build_alias": "grok-4.7-build is display/reference-only, not an exact verified binding."
+      },
+      "auditDate": "2026-09-22"
+    },
+    {
+      "bindingId": "cursor-proxy/grok-4.7:cursor-proxy:grok-4.7",
+      "provider": "cursor-proxy",
+      "resolvedModel": "grok-4.7",
+      "referenceAPIModel": "grok-4.7",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "xai-price",
+          "url": "https://docs.x.ai/developers/pricing",
+          "verifiedOn": "2026-09-22",
+          "note": "Global USD per 1M tokens; long context starts at >= 200000 prompt tokens; Priority is 2x."
+        },
+        {
+          "id": "xai47",
+          "url": "https://docs.x.ai/developers/models/grok-4.7",
+          "verifiedOn": "2026-09-22",
+          "note": "Grok 4.7 model details."
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard-short",
+          "condition": {
+            "prompt_tokens_lt": 200000
+          },
+          "inputUSDPerMillionTokens": "2",
+          "outputUSDPerMillionTokens": "6",
+          "cacheReadUSDPerMillionTokens": "0.5",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens"
+          ],
+          "source": [
+            {
+              "id": "xai-price",
+              "url": "https://docs.x.ai/developers/pricing",
+              "verifiedOn": "2026-09-22",
+              "note": "Global USD per 1M tokens; long context starts at >= 200000 prompt tokens; Priority is 2x."
+            },
+            {
+              "id": "xai47",
+              "url": "https://docs.x.ai/developers/models/grok-4.7",
+              "verifiedOn": "2026-09-22",
+              "note": "Grok 4.7 model details."
+            }
+          ]
+        },
+        {
+          "id": "standard-long",
+          "condition": {
+            "prompt_tokens_gte": 200000
+          },
+          "inputUSDPerMillionTokens": "4",
+          "outputUSDPerMillionTokens": "12",
+          "cacheReadUSDPerMillionTokens": "1.0",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens"
+          ],
+          "source": [
+            {
+              "id": "xai-price",
+              "url": "https://docs.x.ai/developers/pricing",
+              "verifiedOn": "2026-09-22",
+              "note": "Global USD per 1M tokens; long context starts at >= 200000 prompt tokens; Priority is 2x."
+            },
+            {
+              "id": "xai47",
+              "url": "https://docs.x.ai/developers/models/grok-4.7",
+              "verifiedOn": "2026-09-22",
+              "note": "Grok 4.7 model details."
+            }
+          ]
+        },
+        {
+          "id": "fast-short",
+          "condition": {
+            "prompt_tokens_lt": 200000,
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ]
+          },
+          "inputUSDPerMillionTokens": "4",
+          "outputUSDPerMillionTokens": "12",
+          "cacheReadUSDPerMillionTokens": "1",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier"
+          ],
+          "source": [
+            {
+              "id": "xai-price",
+              "url": "https://docs.x.ai/developers/pricing",
+              "verifiedOn": "2026-09-22",
+              "note": "Global USD per 1M tokens; long context starts at >= 200000 prompt tokens; Priority is 2x."
+            },
+            {
+              "id": "xai47",
+              "url": "https://docs.x.ai/developers/models/grok-4.7",
+              "verifiedOn": "2026-09-22",
+              "note": "Grok 4.7 model details."
+            }
+          ]
+        },
+        {
+          "id": "fast-long",
+          "condition": {
+            "prompt_tokens_gte": 200000,
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ]
+          },
+          "inputUSDPerMillionTokens": "8",
+          "outputUSDPerMillionTokens": "24",
+          "cacheReadUSDPerMillionTokens": "2",
+          "cacheWriteUSDPerMillionTokens": null,
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier"
+          ],
+          "source": [
+            {
+              "id": "xai-price",
+              "url": "https://docs.x.ai/developers/pricing",
+              "verifiedOn": "2026-09-22",
+              "note": "Global USD per 1M tokens; long context starts at >= 200000 prompt tokens; Priority is 2x."
+            },
+            {
+              "id": "xai47",
+              "url": "https://docs.x.ai/developers/models/grok-4.7",
+              "verifiedOn": "2026-09-22",
+              "note": "Grok 4.7 model details."
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "API reference only; provider subscription billing may differ"
+      ],
+      "pricingNotes": {
+        "long_scope": "All tokens once prompt reaches >= 200000, following the official pricing table.",
+        "priority_rates": "2x standard, only with vendor-confirmed priority/fast tier.",
+        "regional_uplift": "Global reference only; US regional inference adds 10%.",
+        "build_alias": "grok-4.7-build is display/reference-only, not an exact verified binding."
+      },
+      "auditDate": "2026-09-22"
+    }
+  ],
+  "modelUpdates": [
+    {
+      "model": "grok-4.7",
+      "auditDate": "2026-09-22",
+      "note": "Model-specific addition; the baseline catalog audit date is unchanged."
     }
   ]
 }

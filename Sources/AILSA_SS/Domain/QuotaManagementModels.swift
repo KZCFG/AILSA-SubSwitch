@@ -410,6 +410,7 @@ struct QuotaModelKey: Hashable, Sendable {
         if name == "kimi-for-coding-highspeed" { return Self(provider: provider, model: "Kimi K2.7 Code HighSpeed") }
         if name == "k3[1m]" { return Self(provider: "", model: "Kimi K3") }
         let families: [(String, String)] = [
+            ("grok-4.7", "Grok 4.7"),
             ("grok-4.6", "Grok 4.6"), ("grok-4.5", "Grok 4.5"),
             ("gemini-3.8-flash", "Gemini 3.8 Flash"),
             ("deepseek-v4-flash", "DeepSeek Flash"), ("deepseek-flash", "DeepSeek Flash"),
