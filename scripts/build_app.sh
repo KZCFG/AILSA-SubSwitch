@@ -48,6 +48,10 @@ read_version_key() {
 marketing_version="$(read_version_key MARKETING_VERSION)"
 build_number="$(read_version_key BUILD_NUMBER)"
 build_label="$(read_version_key BUILD_LABEL)"
+# GitHub rewrites parentheses in uploaded asset names. Keep the visible label
+# in the bundle, but use a portable asset basename so its checksum still works.
+archive_label="$(printf '%s' "$build_label" | tr -cd 'A-Za-z0-9._-')"
+[[ -n "$archive_label" ]] || { printf 'Empty archive label\n' >&2; exit 2; }
 
 # Bundle identity is intentionally unchanged so existing account data and
 # keychain items keep working. Override only if you know what you are doing.
@@ -218,7 +222,7 @@ done
 # ---------------------------------------------------------------------------
 zip_path=""
 if [[ "$skip_zip" -eq 0 ]]; then
-  zip_path="$output_root/AILSA-SubSwitch-${build_label}-${build_number}-${target_triple%%-*}.zip"
+  zip_path="$output_root/AILSA-SubSwitch-${archive_label}-${build_number}-${target_triple%%-*}.zip"
   /usr/bin/ditto -c -k --sequesterRsrc --keepParent "$app_bundle" "$zip_path"
   # Standard `shasum -c` format: "<hash>  <basename>"
   (cd "$(dirname "$zip_path")" && shasum -a 256 "$(basename "$zip_path")" > "$(basename "$zip_path").sha256")

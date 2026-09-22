@@ -31,8 +31,9 @@ separately completing and verifying Apple's process.
 Edit `VERSION`, then run `bash scripts/sync_version.sh`. Marketing version is
 1.0.0; `ASSBuildLabel` supplies the visible revision `1.0.0(a)`, while the numeric
 bundle build remains `2026092201` (date plus revision). Build numbers remain
-monotonically increasing. Archive names include the visible revision and build
-number. The application identifier
+monotonically increasing. Archive names include the revision and build number,
+with parentheses removed (`1.0.0a`) so GitHub preserves the checksum filename.
+The application identifier
 is `com.ailsa.subswitch`; the widget is `com.ailsa.subswitch.widgets`.
 
 The existing `CodexToolsSwift` data directory, provider credential identifiers,
