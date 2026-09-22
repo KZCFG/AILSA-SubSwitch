@@ -6,7 +6,7 @@ interactive without changing the Accounts, Antigravity, or Cursor layouts.
 ## Codex historical hover
 
 - Hovering a 7-day bar or line point now selects that date as the active usage
-  context. The range control changes from `7 天` to the hovered date.
+  context. The range control changes from `7 days` to the hovered date.
 - The Token total, equivalent API consumption amount, and model breakdown above
   the chart are recalculated from the hovered date. Moving away restores the
   complete 7-day range.
@@ -14,12 +14,12 @@ interactive without changing the Accounts, Antigravity, or Cursor layouts.
 
 ## 30-day grouping
 
-- Codex 30-day usage now has an explicit **按天 / 按周** control.
+- Codex 30-day usage now has an explicit **Daily / Weekly** control.
 - Daily mode keeps one point per day. Weekly mode combines the full 30-day
   window into four periods, retaining all records while keeping the chart at a
   readable density.
 - Hover labels follow the selected mode: a date in daily mode and a localized
-  month-week label such as `9月第4周` in weekly mode. The Token, equivalent API
+  month-week label such as `September week 4` in weekly mode. The Token, equivalent API
   amount, and model rows follow the same period.
 
 ## Validation

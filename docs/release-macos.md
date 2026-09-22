@@ -57,4 +57,8 @@ and artifacts, create a version tag, and attach the ZIP plus checksum to a GitHu
 release. The repository homepage must accurately state whether the package is
 published, signed and notarized. Do not attach private build logs or account data.
 
+Write GitHub release titles and notes in English, including control names and
+date examples. Document the user-visible changes, fixes, and validation for each
+revision.
+
 Future stable signing and OTA work is deferred in [ROADMAP.md](ROADMAP.md).
