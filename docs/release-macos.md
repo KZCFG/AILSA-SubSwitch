@@ -28,11 +28,21 @@ separately completing and verifying Apple's process.
 
 ## Version and identity
 
-Edit `VERSION`, then run `bash scripts/sync_version.sh`. Marketing version is
-1.0.0; `ASSBuildLabel` supplies the visible revision `1.0.0(a)`, while the numeric
-bundle build remains `2026092201` (date plus revision). Build numbers remain
-monotonically increasing. Archive names include the revision and build number,
-with parentheses removed (`1.0.0a`) so GitHub preserves the checksum filename.
+Edit `VERSION`, then run `bash scripts/sync_version.sh`.
+
+- Change the numeric marketing version for a larger feature release.
+- For small updates to the same release, advance the lowercase suffix in parentheses:
+  `1.0.0(a)`, `1.0.0(b)`, `1.0.0(c)`, and so on. Start the suffix sequence again when
+  the numeric version changes. Letters denote maintenance revisions, not alpha
+  or beta release status.
+- Keep `CFBundleShortVersionString` numeric (`1.0.0` for this release);
+  `ASSBuildLabel` supplies the full visible version (`1.0.0(a)`).
+- Advance the internal `YYYYMMDDNN` build number for every packaged revision.
+  The current build is `2026092202`; build numbers must increase monotonically.
+- Use the same visible version in the app and GitHub release title. Use the
+  portable tag `v1.0.0-a`; archive names omit parentheses so GitHub preserves the
+  checksum filename: `AILSA-SubSwitch-1.0.0a-2026092202-arm64.zip`.
+
 The application identifier
 is `com.ailsa.subswitch`; the widget is `com.ailsa.subswitch.widgets`.
 

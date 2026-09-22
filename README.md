@@ -98,8 +98,8 @@ not load your live account library.
 for each provider you want to use. Provider subscriptions are separate from
 AILSA SubSwitch.
 
-1. Download the macOS ZIP from [Releases](https://github.com/KZCFG/AILSA-SubSwitch/releases) once the
-   1.0.0 package is published. You do not need Xcode to use a prebuilt package.
+1. Download the macOS ZIP from the [1.0.0(a) release](https://github.com/KZCFG/AILSA-SubSwitch/releases/tag/v1.0.0-a).
+   You do not need Xcode to use a prebuilt package.
 2. Move **AILSA SubSwitch.app** to **Applications** and open it.
 3. Click its menu bar icon. In **Accounts**, select a provider and import the
    current sign-in. Sign into another account in the provider's own app and
@@ -147,7 +147,7 @@ cd AILSA-SubSwitch
 bash scripts/build_app.sh
 ```
 
-Output: `build/1.0.0(a)-2026092201/AILSA SubSwitch.app`, an arm64 ZIP, SHA-256 checksum,
+Output: `build/1.0.0(a)-2026092202/AILSA SubSwitch.app`, an arm64 ZIP, SHA-256 checksum,
 and source manifest. Check [build and release notes](docs/release-macos.md) for
 custom output locations and signing details.
 
@@ -166,8 +166,10 @@ the tests it actually executes. See [Contributing](CONTRIBUTING.md).
 
 ## Status and limitations
 
-- 1.0.0 release preparation; publication and release artifacts are tracked in
+- 1.0.0(a) is distributed through GitHub Releases; validation and coverage are tracked in
   [the release checklist](docs/RELEASE-CHECKLIST.md).
+- Small updates advance the suffix: `(a)`, `(b)`, `(c)`, ...; larger feature releases
+  change the numeric version. Internal build numbers retain the date plus revision.
 - Apple Silicon is the validated packaging target. Intel builds and widgets
   on clean machines need additional validation.
 - Provider endpoints and local sign-in formats can change. Expired sign-ins

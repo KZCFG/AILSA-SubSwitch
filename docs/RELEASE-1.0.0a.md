@@ -1,6 +1,6 @@
 # AILSA SubSwitch 1.0.0(a)
 
-Build: **2026092201**. This revision updates model pricing and Antigravity
+Build: **2026092202**. This revision updates model pricing and Antigravity
 compatibility without changing the account or usage dashboard layouts.
 
 ## Grok 4.7
@@ -50,7 +50,18 @@ sources. The harness is not Apple's XCTest runtime.
 
 ## Distribution
 
-The visible app version is `1.0.0(a)` and the monotonic build is `2026092201`.
+The visible app version is `1.0.0(a)` and the monotonic build is `2026092202`.
 The app and widget retain their bundle identifiers and existing local data.
-Packages are ad-hoc signed and are not notarized. Source publication and the
-binary draft are separate from the remaining stable-release acceptance checks.
+Small updates advance the lowercase suffix in parentheses (`1.0.0(b)`, `1.0.0(c)`, and so on);
+larger feature releases change the numeric version. Letters identify maintenance
+revisions, not alpha or beta status. The internal build keeps the date-plus-revision
+format. This final packaging revision changes version metadata and documentation;
+the application source is unchanged from the tested `2026092201` candidate.
+
+Download the Apple Silicon ZIP and its SHA-256 checksum from this release.
+Quit AILSA SubSwitch and replace the application in Applications to update.
+Packages are ad-hoc signed and are not notarized; macOS may require first-open
+approval in System Settings > Privacy & Security. There is no automatic updater.
+Clean-machine/widget coverage, other hardware and display configurations, and
+native XCTest remain outside the validated scope; see the
+[release checklist](RELEASE-CHECKLIST.md).

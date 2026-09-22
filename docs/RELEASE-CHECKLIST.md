@@ -14,7 +14,35 @@ separate steps.
 - [x] Publish a clean source snapshot to KZCFG/AILSA-SubSwitch; verify remote readback.
 - [x] Enable private vulnerability reporting.
 
-## Binary candidate: 1.0.0 (2026091805)
+## Current release: 1.0.0(a) (2026092202)
+
+The maintainer authorized publishing the (a) revision on September 22, 2026.
+The final package uses the public version `1.0.0(a)`; its application
+source is unchanged from the verified `2026092201` candidate.
+
+- Application test evidence: 328 passed, 0 failed across 43 classes in the CLT
+  asserting harness on `2026092201`. This is not Apple's XCTest runtime.
+- Antigravity 2.15.1: both native OAuth profiles resolved without a version-table
+  entry; all three saved accounts refreshed successfully. A subsequent read-only
+  check confirmed current native quota retrieval and no stored account errors.
+  The expired-grant observations below describe the September 18 candidate.
+- Earlier Today / 7-day / 30-day visual acceptance remains applicable to the
+  unchanged dashboard source; no new display or clean-machine coverage is claimed.
+- Final packaging checks cover version metadata, source manifest, archive checksum,
+  app/widget signatures, bundled resources, and absence of local account files.
+- Distribution uses an ad-hoc-signed Apple Silicon ZIP with a checksum. Developer
+  ID signing, notarization, native XCTest, clean-machine/widget installation and
+  other display/menu-bar-manager configurations remain outside validated coverage.
+
+Small releases use `1.0.0(a)`, `1.0.0(b)`, `1.0.0(c)`, and so on. Larger feature releases
+change the numeric version; every package retains an increasing date-based build.
+See [version policy](release-macos.md#version-and-identity) and the
+[1.0.0(a) release notes](RELEASE-1.0.0a.md).
+
+## Historical candidate: 1.0.0 (2026091805)
+
+The checklist below is retained as the September 18 evidence record. Unchecked
+items were not verified on that build and are not retroactively marked as passed.
 
 - [x] Direct source build of application and widget on Apple Silicon.
 - [x] CLT asserting harness: 299 passed, 0 failed across 38 classes.
