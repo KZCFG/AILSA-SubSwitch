@@ -4,5 +4,5 @@
 # Feature milestones change MARKETING_VERSION; maintenance revisions append
 # (a), (b), (c), ... in BUILD_LABEL. BUILD_NUMBER remains YYYYMMDDNN for every build.
 MARKETING_VERSION=1.0.0
-BUILD_NUMBER=2026092202
-BUILD_LABEL=1.0.0(a)
+BUILD_NUMBER=2026092301
+BUILD_LABEL=1.0.0(b)

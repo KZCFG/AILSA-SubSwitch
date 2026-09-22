@@ -14,20 +14,23 @@ separate steps.
 - [x] Publish a clean source snapshot to KZCFG/AILSA-SubSwitch; verify remote readback.
 - [x] Enable private vulnerability reporting.
 
-## Current release: 1.0.0(a) (2026092202)
+## Current release: 1.0.0(b) (2026092301)
 
-The maintainer authorized publishing the (a) revision on September 22, 2026.
-The final package uses the public version `1.0.0(a)`; its application
-source is unchanged from the verified `2026092201` candidate.
+The maintainer authorized publishing the (b) revision on September 23, 2026.
+The final package uses the public version `1.0.0(b)` and includes the Codex
+historical hover and 30-day grouping fixes described in the release notes.
 
-- Application test evidence: 328 passed, 0 failed across 43 classes in the CLT
-  asserting harness on `2026092201`. This is not Apple's XCTest runtime.
+- Application test evidence: **330 passed, 0 failed across 44 classes** in the
+  full CLT asserting harness. This is not Apple's XCTest runtime.
 - Antigravity 2.15.1: both native OAuth profiles resolved without a version-table
   entry; all three saved accounts refreshed successfully. A subsequent read-only
   check confirmed current native quota retrieval and no stored account errors.
   The expired-grant observations below describe the September 18 candidate.
-- Earlier Today / 7-day / 30-day visual acceptance remains applicable to the
-  unchanged dashboard source; no new display or clean-machine coverage is claimed.
+- Codex 7-day hover now drives the range title, KPI cards, model rows and USD
+  amount from the hovered date. Codex 30-day charts support daily or four-period
+  weekly aggregation; hover labels use dates or month-week labels accordingly.
+- Earlier Today / provider visual acceptance remains applicable; no new
+  clean-machine coverage is claimed.
 - Final packaging checks cover version metadata, source manifest, archive checksum,
   app/widget signatures, bundled resources, and absence of local account files.
 - Distribution uses an ad-hoc-signed Apple Silicon ZIP with a checksum. Developer
@@ -37,6 +40,11 @@ source is unchanged from the verified `2026092201` candidate.
 Small releases use `1.0.0(a)`, `1.0.0(b)`, `1.0.0(c)`, and so on. Larger feature releases
 change the numeric version; every package retains an increasing date-based build.
 See [version policy](release-macos.md#version-and-identity) and the
+[1.0.0(b) release notes](RELEASE-1.0.0b.md).
+
+## Historical release: 1.0.0(a) (2026092202)
+
+The previous public release and its acceptance record remain available at
 [1.0.0(a) release notes](RELEASE-1.0.0a.md).
 
 ## Historical candidate: 1.0.0 (2026091805)

@@ -34,6 +34,17 @@ private func qpercent(_ numerator: Int, _ denominator: Int) -> String {
     denominator > 0 ? "\(Int((Double(numerator) / Double(denominator) * 100).rounded()))%" : "—"
 }
 
+extension QuotaHistoryGrouping {
+    var title: String {
+        switch self {
+        case .day: return qtext("按天", "Daily")
+        case .week: return qtext("按周", "Weekly")
+        }
+    }
+}
+
+private typealias QuotaTrendPeriod = QuotaHistoryPeriod
+
 struct QuotaManagementPageView: View {
     @ObservedObject var model: QuotaManagementPageModel
     var isStandalone = false
@@ -146,6 +157,7 @@ struct QuotaManagementPageView: View {
 /// Navigation state a provider keeps while another provider is shown.
 struct QuotaDashboardUIState: Equatable {
     var range = 1
+    var historyGrouping: QuotaHistoryGrouping = .day
     var selectedDay: Date?
     var page = 0
     var chartPage = 0
@@ -159,6 +171,7 @@ private struct QuotaDashboard: View {
     @Binding var ui: QuotaDashboardUIState
     @AppStorage("ass.tokenUnit") private var tokenUnit = "M"
     private var range: Int { get { ui.range } nonmutating set { ui.range = newValue } }
+    private var historyGrouping: QuotaHistoryGrouping { get { ui.historyGrouping } nonmutating set { ui.historyGrouping = newValue } }
     private var selectedDay: Date? { get { ui.selectedDay } nonmutating set { ui.selectedDay = newValue } }
     private var page: Int { get { ui.page } nonmutating set { ui.page = newValue } }
     private var chartPage: Int { get { ui.chartPage } nonmutating set { ui.chartPage = newValue } }
@@ -176,9 +189,55 @@ private struct QuotaDashboard: View {
     private var start: Date { selectedDay ?? calendar.date(byAdding: .day, value: -(range - 1), to: today)! }
     private var end: Date { calendar.date(byAdding: .day, value: 1, to: selectedDay ?? today)! }
     private var isQuota: Bool { data.source == "Antigravity" }
+
+    private var trendPeriods: [QuotaTrendPeriod] {
+        let grouping: QuotaHistoryGrouping = range == 30 && !isQuota && selectedDay == nil
+            ? historyGrouping
+            : .day
+        return QuotaHistoryPeriodBuilder.build(start: start, end: end, grouping: grouping, calendar: calendar)
+    }
+
+    private func period(for day: Date?) -> QuotaTrendPeriod? {
+        guard let day else { return nil }
+        return trendPeriods.first { calendar.isDate($0.anchor, inSameDayAs: day) }
+    }
+
+    private func periodLabel(_ period: QuotaTrendPeriod) -> String {
+        guard range == 30 && !isQuota && historyGrouping == .week else {
+            return period.anchor.formatted(.dateTime.month().day().locale(L10n.currentLocale))
+        }
+        let components = calendar.dateComponents([.month, .day], from: period.anchor)
+        let month = period.anchor.formatted(.dateTime.month(.wide).locale(L10n.currentLocale))
+        let weekOfMonth = max(1, ((components.day ?? 1) - 1) / 7 + 1)
+        return qtext("\(month)第\(weekOfMonth)周", "\(month) week \(weekOfMonth)")
+    }
+
+    private func rangeTitle(_ value: Int) -> String {
+        guard value == range, value > 1, let period = period(for: hoveredDay) else {
+            return value == 1
+                ? (hoveredMinute != nil && range == 1 ? qtext("瞬时", "Instant") : qtext("今日", "Today"))
+                : "\(value) " + qtext("天", "days")
+        }
+        return periodLabel(period)
+    }
+
+    private func bucket(for period: QuotaTrendPeriod) -> QuotaBucket {
+        data.bucket(from: period.start, until: period.end)
+    }
+
+    private var displayedBucket: QuotaBucket {
+        if range > 1, let period = period(for: hoveredDay) {
+            return bucket(for: period)
+        }
+        if let hoveredMinute, range == 1 && !isQuota {
+            return data.intradayBucket(from: hoveredMinute, intervalMinutes: interval)
+        }
+        return data.bucket(from: start, until: end)
+    }
+
     var body: some View {
         // At most 30 small day buckets and model rows; no records or I/O in body.
-        let bucket = hoveredMinute.flatMap { range == 1 && !isQuota ? data.intradayBucket(from: $0, intervalMinutes: interval) : nil } ?? data.bucket(from: start, until: end)
+        let bucket = displayedBucket
         let layout = QuotaDashboardLayout(height: availableHeight, provider: provider, range: range)
         let families = bucket.models.reduce(into: [QuotaModelKey: QuotaAggregate]()) { result, entry in
             result[entry.key.familyKey, default: QuotaAggregate()].merge(entry.value)
@@ -195,7 +254,15 @@ private struct QuotaDashboard: View {
                 ASSegmentedControl(
                     selection: Binding(get: { range }, set: { range = $0; selectedDay = nil; hoveredMinute = nil; page = 0; chartPage = 0 }),
                     values: [1, 7, 30],
-                    title: { $0 == 1 ? (hoveredMinute != nil && range == 1 ? qtext("瞬时", "Instant") : qtext("今日", "Today")) : "\($0) " + qtext("天", "days") })
+                    title: { rangeTitle($0) })
+                if range == 30 && !isQuota {
+                    ASSegmentedControl(
+                        selection: Binding(get: { historyGrouping }, set: { historyGrouping = $0; hoveredDay = nil; page = 0 }),
+                        values: QuotaHistoryGrouping.allCases,
+                        title: { $0.title })
+                        .frame(width: 144)
+                        .accessibilityLabel(qtext("30 天图表聚合方式", "30-day chart grouping"))
+                }
                 if let day = selectedDay {
                     Button { selectedDay = nil; page = 0 } label: {
                         Text(day.formatted(.dateTime.month(.twoDigits).day(.twoDigits)) + " ×").font(.caption)
@@ -271,6 +338,7 @@ private struct QuotaDashboard: View {
             }.font(.caption).foregroundStyle(.secondary).frame(height: 26)
         }
         .onChange(of: hoveredMinute) { _, _ in page = 0 }
+        .onChange(of: hoveredDay) { _, _ in page = 0 }
         .onChange(of: detail?.id) { _, _ in
             guard let request = detail else { return }
             modal.present(onClose: { detail = nil }) {
@@ -539,11 +607,13 @@ private struct QuotaDashboard: View {
         .frame(height: 18)
     }
     private var trend: some View {
-        let days = dates
+        let periods = trendPeriods
+        let days = periods.map(\.anchor)
         let poolWindows = quotaPoolWindows
-        let values = days.map { day -> Double? in
-            guard let total = data.days[day]?.total, total.reported > 0 else { return nil }
-            return sortUSD ? total.reference.usd : Double(total.tokens.total)
+        let periodBuckets = periods.map { bucket(for: $0) }
+        let values = periodBuckets.map { bucket -> Double? in
+            guard bucket.total.reported > 0 else { return nil }
+            return sortUSD ? bucket.total.reference.usd : Double(bucket.total.tokens.total)
         }
         let quotaValues = poolWindows.flatMap { window in days.compactMap { quotaValue(window, on: $0) } }
         let chartYMax = isQuota
@@ -551,14 +621,17 @@ private struct QuotaDashboard: View {
             : max(1.0, values.compactMap { $0 }.max() ?? 1.0)
         return VStack(spacing: 4) {
             HStack {
-                if let hoveredDay, let index = days.firstIndex(where: { calendar.isDate($0, inSameDayAs: hoveredDay) }) {
+                if let hoveredDay, let index = periods.firstIndex(where: { calendar.isDate($0.anchor, inSameDayAs: hoveredDay) }) {
                     let quotaSummary = poolWindows.compactMap { window in
                         quotaValue(window, on: days[index]).map { "\(quotaShortName(for: window)) \(String(format: "%.1f%%", $0))" }
                     }.joined(separator: " · ")
-                    Text(days[index].formatted(.dateTime.month().day()) + " · " + (isQuota ? (quotaSummary.isEmpty ? "—" : quotaSummary) : (values[index].map {
-                        if sortUSD { return String(format: "$%.2f", $0) }
-                        return String(format: "%.3f%@ Token", $0 / (tokenUnit == "B" ? 1e9 : 1e6), tokenUnit == "B" ? "B" : "M")
-                    } ?? "—")))
+                    let periodTotal = periodBuckets[index].total
+                    let usageSummary = isQuota
+                        ? (quotaSummary.isEmpty ? "—" : quotaSummary)
+                        : (sortUSD
+                           ? qmoney(periodTotal.reference)
+                           : (periodTotal.reported > 0 ? qtokens(periodTotal.tokens.total) : "—"))
+                    Text(periodLabel(periods[index]) + " · " + usageSummary)
                 } else {
                     Label(isQuota ? qtext("每日额度快照（已用 %）", "Daily quota snapshot (used %)") : qtext("Token 词元消耗 / 美元", "Token usage / USD"),
                           systemImage: isQuota ? "chart.xyaxis.line" : "chart.bar")
@@ -570,7 +643,8 @@ private struct QuotaDashboard: View {
                 }.labelsHidden().pickerStyle(.segmented).frame(width: 70)
             }.font(.caption)
             if isQuota { quotaLegend }
-            Chart(Array(days.enumerated()), id: \.element) { index, day in
+            Chart(Array(periods.enumerated()), id: \.element.id) { index, period in
+                let day = period.anchor
                 if isQuota {
                     ForEach(poolWindows) { window in
                         if let value = quotaValue(window, on: day) {
@@ -609,7 +683,11 @@ private struct QuotaDashboard: View {
                     Color.clear.contentShape(Rectangle()).onContinuousHover { phase in
                         switch phase {
                         case .active(let location):
-                            if let frame = proxy.plotFrame { hoveredDay = proxy.value(atX: location.x - geometry[frame].minX) }
+                            if let frame = proxy.plotFrame,
+                               let rawDate: Date = proxy.value(atX: location.x - geometry[frame].minX),
+                               let nearest = periods.min(by: { abs($0.anchor.timeIntervalSince(rawDate)) < abs($1.anchor.timeIntervalSince(rawDate)) }) {
+                                hoveredDay = nearest.anchor
+                            }
                         case .ended: hoveredDay = nil
                         }
                     }

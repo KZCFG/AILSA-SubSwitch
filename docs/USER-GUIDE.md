@@ -14,14 +14,15 @@ approving. If macOS reports a damaged archive, redownload and verify it first.
 Each package has a SHA-256 file. In the download directory:
 
 ```bash
-shasum -a 256 -c AILSA-SubSwitch-1.0.0a-2026092202-arm64.zip.sha256
+shasum -a 256 -c AILSA-SubSwitch-1.0.0b-2026092301-arm64.zip.sha256
 ```
 
 There is no OTA updater in 1.0.0. Quit ASS from Settings before replacing the
 application with a newer download. Replacing the app does not erase its separate
 account store. Keep only one installed copy to avoid launching an older build.
 
-Small updates use letter revisions such as **1.0.0(a)**, **1.0.0(b)**, and **1.0.0(c)**.
+This update is **1.0.0(b)**. Small updates use letter revisions such as
+**1.0.0(a)**, **1.0.0(b)**, and **1.0.0(c)**.
 Larger feature releases change the numeric version. The date-based build number
 identifies the exact package.
 

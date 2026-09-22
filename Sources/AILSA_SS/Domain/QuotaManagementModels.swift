@@ -1,5 +1,58 @@
 import Foundation
 
+enum QuotaHistoryGrouping: String, CaseIterable, Hashable, Sendable {
+    case day
+    case week
+}
+
+struct QuotaHistoryPeriod: Equatable, Identifiable, Sendable {
+    let start: Date
+    let end: Date
+    /// The day represented by the point. Daily points use their day; weekly
+    /// points use the last day in the period so hover labels read naturally.
+    let anchor: Date
+
+    var id: Date { anchor }
+}
+
+enum QuotaHistoryPeriodBuilder {
+    static func build(
+        start: Date,
+        end: Date,
+        grouping: QuotaHistoryGrouping,
+        calendar: Calendar = .current
+    ) -> [QuotaHistoryPeriod] {
+        guard start < end else { return [] }
+        if grouping == .week {
+            let dayCount = max(1, calendar.dateComponents([.day], from: start, to: end).day ?? 30)
+            let periodCount = 4
+            let baseLength = dayCount / periodCount
+            let remainder = dayCount % periodCount
+            var cursor = start
+            return (0..<periodCount).compactMap { index in
+                // Keep four visual periods while still covering the complete
+                // range. Extra days are placed at the end so the last period
+                // always ends on the current day.
+                let length = baseLength + (index >= periodCount - remainder ? 1 : 0)
+                guard let next = calendar.date(byAdding: .day, value: length, to: cursor),
+                      let anchor = calendar.date(byAdding: .day, value: -1, to: next)
+                else { return nil }
+                let period = QuotaHistoryPeriod(start: cursor, end: next, anchor: anchor)
+                cursor = next
+                return period
+            }
+        }
+        var cursor = start
+        var periods: [QuotaHistoryPeriod] = []
+        while cursor < end,
+              let next = calendar.date(byAdding: .day, value: 1, to: cursor) {
+            periods.append(QuotaHistoryPeriod(start: cursor, end: min(next, end), anchor: cursor))
+            cursor = next
+        }
+        return periods
+    }
+}
+
 /// The dashboard keeps quota information and local usage accounting separate.
 /// A subscription reserve is not an API bill, and a locally-derived API-equivalent
 /// estimate must never be displayed as an actual charge.
