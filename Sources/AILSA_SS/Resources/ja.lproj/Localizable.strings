@@ -18,8 +18,8 @@
 "quota.section.overview" = "Overview";
 "quota.section.breakdown" = "Breakdown";
 "quota.section.ranking" = "Ranking";
-"quota.metric.tokens" = "Tokens";
-"quota.metric.api_equivalent_cost" = "API-equivalent cost";
+"quota.metric.tokens" = "トークン使用量";
+"quota.metric.api_equivalent_cost" = "API 換算利用額（USD）";
 "quota.summary.today_tokens" = "Today";
 "quota.summary.thirty_day_tokens" = "30 days";
 "quota.summary.api_equivalent" = "API-equivalent";
@@ -488,3 +488,6 @@
 "settings.opencodex.dashboard" = "OpenCodex dashboard";
 
 "settings.opencodex.dashboard.detail" = "Open the local dashboard in your browser to manage accounts and models. Start OpenCodex first.";
+
+"settings.quota_chart_metric.title" = "使用量グラフの表示";
+"settings.quota_chart_metric.detail" = "今日・7 日・30 日のグラフに適用します。USD は画面の API 換算額で、サブスクリプションの請求額ではありません。Antigravity は引き続き利用枠の割合を表示します。";

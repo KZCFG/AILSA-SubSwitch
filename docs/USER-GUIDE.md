@@ -14,14 +14,14 @@ approving. If macOS reports a damaged archive, redownload and verify it first.
 Each package has a SHA-256 file. In the download directory:
 
 ```bash
-shasum -a 256 -c AILSA-SubSwitch-1.0.0b-2026092301-arm64.zip.sha256
+shasum -a 256 -c AILSA-SubSwitch-1.0.0c-2026092302-arm64.zip.sha256
 ```
 
 There is no OTA updater in 1.0.0. Quit ASS from Settings before replacing the
 application with a newer download. Replacing the app does not erase its separate
 account store. Keep only one installed copy to avoid launching an older build.
 
-This update is **1.0.0(b)**. Small updates use letter revisions such as
+This update is **1.0.0(c)**. Small updates use letter revisions such as
 **1.0.0(a)**, **1.0.0(b)**, and **1.0.0(c)**.
 Larger feature releases change the numeric version. The date-based build number
 identifies the exact package.
@@ -66,7 +66,13 @@ currently uses manual switching.
   horizontal trackpad gestures to move across the time axis.
 - Hovering a sample temporarily shows that sample's totals and model breakdown.
   Leaving the chart restores the selected period.
-- Settings offers M or B token units. They only change formatting.
+- **Settings → Usage Display → Usage chart display** selects **Token usage** or
+  **Equivalent API consumption (USD)** for Today, 7-day and 30-day charts,
+  including daily and weekly grouping. The saved choice updates open usage
+  windows immediately and is independent of model-list sorting.
+- Settings also offers M or B token units. They only change Token formatting.
+- USD charts use the same amounts as the summary cards. Unpriced records stay
+  unavailable; Antigravity continues to show quota percentages.
 - Reopening the usage window refreshes data; cached content can remain visible
   during a refresh. Cursor's first usage request can take longer.
 

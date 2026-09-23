@@ -26,6 +26,18 @@ enum QuotaTokenFormatter {
         return String(format: "%.3f%@", Double(value) / divisor, unit == "B" ? "B" : "M")
     }
 }
+extension QuotaChartMetric {
+    func formatted(_ value: Double, tokenUnit: String) -> String {
+        switch self {
+        case .tokens:
+            let unit = tokenUnit == "B" ? "B" : "M"
+            return String(format: "%.3f%@", value / (unit == "B" ? 1e9 : 1e6), unit)
+        case .apiEquivalentCost:
+            return value.formatted(.currency(code: "USD").locale(Locale(identifier: "en_US"))
+                .precision(.fractionLength(2...4)))
+        }
+    }
+}
 private func qmoney(_ value: QuotaMoney) -> String {
     guard let usd = value.usd else { return "—" }
     return usd.formatted(.currency(code: "USD").locale(Locale(identifier: "en_US")))
@@ -164,12 +176,13 @@ struct QuotaDashboardUIState: Equatable {
     var sortUSD = false
 }
 
-private struct QuotaDashboard: View {
+struct QuotaDashboard: View {
     let data: QuotaDashboardSnapshot
     let provider: QuotaManagementProvider
     let availableHeight: Double
     @Binding var ui: QuotaDashboardUIState
     @AppStorage("ass.tokenUnit") private var tokenUnit = "M"
+    @AppStorage(QuotaChartMetric.defaultsKey) private var chartMetric: QuotaChartMetric = .tokens
     private var range: Int { get { ui.range } nonmutating set { ui.range = newValue } }
     private var historyGrouping: QuotaHistoryGrouping { get { ui.historyGrouping } nonmutating set { ui.historyGrouping = newValue } }
     private var selectedDay: Date? { get { ui.selectedDay } nonmutating set { ui.selectedDay = newValue } }
@@ -323,7 +336,7 @@ private struct QuotaDashboard: View {
             }
             if layout.showsTrend {
                 if range == 1 && selectedDay == nil && !isQuota {
-                    QuotaIntradayChart(minutes: data.minuteTokens, now: data.scannedAt, hovered: $hoveredMinute).frame(height: layout.trendHeight)
+                    QuotaIntradayChart(minutes: data.minuteBuckets, now: data.scannedAt, metric: chartMetric, hovered: $hoveredMinute).frame(height: layout.trendHeight)
                 } else if isQuota && range == 1 && selectedDay == nil {
                     quotaTodayComparison.frame(height: layout.trendHeight)
                 } else { trend.frame(height: layout.trendHeight) }
@@ -339,6 +352,7 @@ private struct QuotaDashboard: View {
         }
         .onChange(of: hoveredMinute) { _, _ in page = 0 }
         .onChange(of: hoveredDay) { _, _ in page = 0 }
+        .onChange(of: chartMetric) { _, _ in hoveredMinute = nil; hoveredDay = nil }
         .onChange(of: detail?.id) { _, _ in
             guard let request = detail else { return }
             modal.present(onClose: { detail = nil }) {
@@ -611,29 +625,23 @@ private struct QuotaDashboard: View {
         let days = periods.map(\.anchor)
         let poolWindows = quotaPoolWindows
         let periodBuckets = periods.map { bucket(for: $0) }
-        let values = periodBuckets.map { bucket -> Double? in
-            guard bucket.total.reported > 0 else { return nil }
-            return sortUSD ? bucket.total.reference.usd : Double(bucket.total.tokens.total)
-        }
+        let values = periodBuckets.map { chartMetric.value(in: $0.total) }
         let quotaValues = poolWindows.flatMap { window in days.compactMap { quotaValue(window, on: $0) } }
         let chartYMax = isQuota
             ? min(100, max(10, ceil((quotaValues.max() ?? 0) * 1.2)))
-            : max(1.0, values.compactMap { $0 }.max() ?? 1.0)
+            : max(chartMetric == .tokens ? 1 : 0.000001, values.compactMap { $0 }.max() ?? 1.0) * 1.05
         return VStack(spacing: 4) {
             HStack {
                 if let hoveredDay, let index = periods.firstIndex(where: { calendar.isDate($0.anchor, inSameDayAs: hoveredDay) }) {
                     let quotaSummary = poolWindows.compactMap { window in
                         quotaValue(window, on: days[index]).map { "\(quotaShortName(for: window)) \(String(format: "%.1f%%", $0))" }
                     }.joined(separator: " · ")
-                    let periodTotal = periodBuckets[index].total
                     let usageSummary = isQuota
                         ? (quotaSummary.isEmpty ? "—" : quotaSummary)
-                        : (sortUSD
-                           ? qmoney(periodTotal.reference)
-                           : (periodTotal.reported > 0 ? qtokens(periodTotal.tokens.total) : "—"))
+                        : (values[index].map { chartMetric.formatted($0, tokenUnit: tokenUnit) } ?? "—")
                     Text(periodLabel(periods[index]) + " · " + usageSummary)
                 } else {
-                    Label(isQuota ? qtext("每日额度快照（已用 %）", "Daily quota snapshot (used %)") : qtext("Token 词元消耗 / 美元", "Token usage / USD"),
+                    Label(isQuota ? qtext("每日额度快照（已用 %）", "Daily quota snapshot (used %)") : L10n.tr(chartMetric.titleKey),
                           systemImage: isQuota ? "chart.xyaxis.line" : "chart.bar")
                 }
                 Spacer()
@@ -668,6 +676,14 @@ private struct QuotaDashboard: View {
             }
             .chartXAxis { AxisMarks(values: .automatic(desiredCount: min(6, max(2, days.count))) ) }
             .chartYScale(domain: 0...chartYMax)
+            .overlay {
+                if !isQuota && values.allSatisfy({ $0 == nil }) {
+                    Text(chartMetric == .tokens
+                         ? qtext("此范围暂无 Token 记录", "No token records in this range")
+                         : qtext("此范围暂无可用的美元金额", "No priced records in this range"))
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
             .chartYAxis {
                 if isQuota {
                     AxisMarks(values: .automatic(desiredCount: 4)) { value in
@@ -675,7 +691,14 @@ private struct QuotaDashboard: View {
                         AxisValueLabel { if let percent = value.as(Double.self) { Text(String(format: "%.0f%%", percent)).font(.caption2) } }
                     }
                 } else {
-                    AxisMarks(values: .automatic(desiredCount: 3))
+                    AxisMarks(values: .automatic(desiredCount: 3)) { value in
+                        AxisGridLine()
+                        AxisValueLabel {
+                            if let amount = value.as(Double.self) {
+                                Text(chartMetric.formatted(amount, tokenUnit: tokenUnit)).font(.caption2)
+                            }
+                        }
+                    }
                 }
             }
             .chartOverlay { proxy in

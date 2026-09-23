@@ -97,6 +97,7 @@ enum QuotaChartMetric: String, CaseIterable, Identifiable, Sendable {
     case tokens
     case apiEquivalentCost
 
+    static let defaultsKey = "ass.quotaChartMetric"
     var id: String { rawValue }
 
     var titleKey: String {
@@ -105,6 +106,52 @@ enum QuotaChartMetric: String, CaseIterable, Identifiable, Sendable {
             "quota.metric.tokens"
         case .apiEquivalentCost:
             "quota.metric.api_equivalent_cost"
+        }
+    }
+
+    /// Match the dashboard's Token and reference-USD totals. Do not mix
+    /// confirmed-tier estimates or provider charges into this pricing basis.
+    func value(in aggregate: QuotaAggregate) -> Double? {
+        switch self {
+        case .tokens:
+            return aggregate.reported > 0 ? Double(aggregate.tokens.total) : nil
+        case .apiEquivalentCost:
+            return aggregate.reference.usd
+        }
+    }
+}
+
+struct QuotaIntradayPoint: Identifiable, Equatable {
+    let date: Date
+    let value: Double?
+    var id: Date { date }
+}
+
+enum QuotaIntradaySeries {
+    static func points(
+        minutes: [Date: QuotaBucket], now: Date, intervalMinutes: Int,
+        metric: QuotaChartMetric, calendar: Calendar = .current
+    ) -> [QuotaIntradayPoint] {
+        let start = calendar.startOfDay(for: now)
+        let first = start.timeIntervalSince1970
+        let step = Double(max(1, intervalMinutes) * 60)
+        let grouped = minutes.reduce(into: [Date: QuotaBucket]()) { result, item in
+            guard item.key >= start && item.key <= now else { return }
+            let date = Date(timeIntervalSince1970: first + floor((item.key.timeIntervalSince1970 - first) / step) * step)
+            result[date, default: QuotaBucket()].merge(item.value)
+        }
+        guard grouped.values.contains(where: { metric.value(in: $0.total) != nil }) else { return [] }
+        return stride(from: first, through: now.timeIntervalSince1970, by: step).map {
+            let date = Date(timeIntervalSince1970: $0)
+            // An empty interval has no usage. Recorded but unpriced usage is
+            // unknown, not a zero-dollar event.
+            let value: Double?
+            if let bucket = grouped[date] {
+                value = metric.value(in: bucket.total)
+            } else {
+                value = 0
+            }
+            return QuotaIntradayPoint(date: date, value: value)
         }
     }
 }

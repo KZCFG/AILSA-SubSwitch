@@ -4,13 +4,13 @@ import AppKit
 
 /// Compact minute aggregates only; no ledger reads on the UI thread.
 struct QuotaIntradayChart: View {
-    let minutes: [Date: Int]
+    let minutes: [Date: QuotaBucket]
     let now: Date
+    let metric: QuotaChartMetric
     @Binding var hovered: Date?
     @AppStorage("ass.intradayMinutes") private var interval = 5
     @AppStorage("ass.tokenUnit") private var tokenUnit = "M"
     @State private var scrollPosition = Calendar.current.startOfDay(for: Date())
-    private struct Point: Identifiable { let date: Date; let tokens: Int; var id: Date { date } }
     private var step: Double { Double(max(1, interval) * 60) }
     private func text(_ chinese: String, _ english: String) -> String {
         L10n.currentLocale.identifier.hasPrefix("zh") ? chinese : english
@@ -19,38 +19,35 @@ struct QuotaIntradayChart: View {
     private var end: Date { Calendar.current.date(byAdding: .day, value: 1, to: start)! }
     // 48 evenly spaced marks is the same density as a full day at 30 minutes.
     private var visibleSeconds: Double { min(end.timeIntervalSince(start), step * 48) }
-    private var points: [Point] {
-        guard !minutes.isEmpty else { return [] }
-        let first = start.timeIntervalSince1970
-        let grouped = minutes.reduce(into: [Date: Int]()) { result, item in
-            guard item.key >= start && item.key <= now else { return }
-            let date = Date(timeIntervalSince1970: first + floor((item.key.timeIntervalSince1970 - first) / step) * step)
-            result[date, default: 0] += item.value
-        }
-        return stride(from: first, through: now.timeIntervalSince1970, by: step).map {
-            let date = Date(timeIntervalSince1970: $0)
-            return Point(date: date, tokens: grouped[date] ?? 0)
-        }
+    private var points: [QuotaIntradayPoint] {
+        QuotaIntradaySeries.points(minutes: minutes, now: now, intervalMinutes: interval, metric: metric)
     }
     var body: some View {
         let values = points
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(hovered.map { $0.formatted(.dateTime.hour().minute().locale(L10n.currentLocale)) + text(" · 瞬时用量（\(interval)分钟）", " · Instant usage (\(interval) min)") } ?? text("今日 Token 趋势", "Today's token trend"))
+                Text(hovered.map { date in
+                    let amount = values.first(where: { $0.date == date })?.value
+                    return date.formatted(.dateTime.hour().minute().locale(L10n.currentLocale))
+                        + " · " + (amount.map { metric.formatted($0, tokenUnit: tokenUnit) } ?? "—")
+                        + text("（\(interval) 分钟）", " (\(interval) min)")
+                } ?? L10n.tr(metric.titleKey))
                 Spacer()
                 Picker(text("间隔", "Interval"), selection: $interval) {
                     ForEach([1, 5, 10, 30, 60], id: \.self) { Text($0 == 60 ? text("1 小时", "1 hour") : text("\($0) 分钟", "\($0) min")).tag($0) }
                 }.labelsHidden().frame(width: 95)
             }.font(.caption)
             if values.isEmpty {
-                Text(text("暂无分钟级记录", "No minute-level records")).font(.caption).foregroundStyle(.secondary)
+                Text(metric == .tokens ? text("暂无分钟级记录", "No minute-level records") : text("暂无可用的分钟级美元金额", "No priced minute-level records")).font(.caption).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 Chart(values) { point in
-                    LineMark(x: .value(text("时间", "Time"), point.date), y: .value("Token", point.tokens))
-                        .foregroundStyle(.indigo).lineStyle(StrokeStyle(lineWidth: 1.5)).interpolationMethod(.linear)
-                    PointMark(x: .value(text("时间", "Time"), point.date), y: .value("Token", point.tokens))
-                        .foregroundStyle(.indigo).symbol(Circle()).symbolSize(18)
+                    if let amount = point.value {
+                        LineMark(x: .value(text("时间", "Time"), point.date), y: .value(L10n.tr(metric.titleKey), amount))
+                            .foregroundStyle(.indigo).lineStyle(StrokeStyle(lineWidth: 1.5)).interpolationMethod(.linear)
+                        PointMark(x: .value(text("时间", "Time"), point.date), y: .value(L10n.tr(metric.titleKey), amount))
+                            .foregroundStyle(.indigo).symbol(Circle()).symbolSize(18)
+                    }
                     if hovered == point.date {
                         RuleMark(x: .value(text("时间", "Time"), point.date)).foregroundStyle(.secondary.opacity(0.4))
                     }
@@ -63,7 +60,7 @@ struct QuotaIntradayChart: View {
                 .chartYAxis {
                     AxisMarks(values: .automatic(desiredCount: 3)) { value in
                         AxisGridLine()
-                        AxisValueLabel { if let tokens = value.as(Int.self) { Text(QuotaTokenFormatter.format(tokens, unit: tokenUnit)) } }
+                        AxisValueLabel { if let amount = value.as(Double.self) { Text(metric.formatted(amount, tokenUnit: tokenUnit)) } }
                     }
                 }
                 .chartOverlay { proxy in
@@ -97,6 +94,7 @@ struct QuotaIntradayChart: View {
         }
         .onAppear { scrollPosition = max(start, now.addingTimeInterval(-visibleSeconds)); hovered = nil }
         .onChange(of: interval) { _, _ in scrollPosition = max(start, now.addingTimeInterval(-visibleSeconds)); hovered = nil }
+        .onChange(of: metric) { _, _ in hovered = nil }
         .onChange(of: scrollPosition) { _, _ in hovered = nil }
         .onDisappear { hovered = nil }
     }

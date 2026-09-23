@@ -18,8 +18,8 @@
 "quota.section.overview" = "Overview";
 "quota.section.breakdown" = "Breakdown";
 "quota.section.ranking" = "Ranking";
-"quota.metric.tokens" = "Tokens";
-"quota.metric.api_equivalent_cost" = "API-equivalent cost";
+"quota.metric.tokens" = "Utilisation des tokens";
+"quota.metric.api_equivalent_cost" = "Consommation API équivalente (USD)";
 "quota.summary.today_tokens" = "Today";
 "quota.summary.thirty_day_tokens" = "30 days";
 "quota.summary.api_equivalent" = "API-equivalent";
@@ -470,3 +470,6 @@
 "settings.opencodex.dashboard" = "OpenCodex dashboard";
 
 "settings.opencodex.dashboard.detail" = "Open the local dashboard in your browser to manage accounts and models. Start OpenCodex first.";
+
+"settings.quota_chart_metric.title" = "Affichage du graphique";
+"settings.quota_chart_metric.detail" = "Pour Aujourd’hui, 7 jours et 30 jours. USD indique le montant API équivalent, pas une facture d’abonnement. Antigravity conserve les pourcentages de quota.";

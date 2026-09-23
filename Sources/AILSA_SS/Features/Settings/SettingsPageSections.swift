@@ -262,6 +262,7 @@ private struct SettingsSwitchBehaviorSection: View {
 }
 
 private struct SettingsQuotaDisplaySection: View {
+    @AppStorage(QuotaChartMetric.defaultsKey) private var quotaChartMetric: QuotaChartMetric = .tokens
     @ObservedObject var model: SettingsPageModel
     @State private var selectedProvider: AccountProvider = .codex
     @State private var pageIndex = 0
@@ -313,6 +314,22 @@ private struct SettingsQuotaDisplaySection: View {
     }
     var body: some View {
         VStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 5) {
+                Picker(L10n.tr("settings.quota_chart_metric.title"), selection: $quotaChartMetric) {
+                    ForEach(QuotaChartMetric.allCases) { metric in
+                        Text(L10n.tr(metric.titleKey)).tag(metric)
+                    }
+                }
+                .pickerStyle(.menu)
+                .font(.system(size: 13, weight: .medium))
+                .accessibilityIdentifier("settings.quotaChartMetric")
+                Text(L10n.tr("settings.quota_chart_metric.detail"))
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+            .cardSurface(cornerRadius: LayoutRules.cardRadius)
             SettingsQuotaProviderPicker(providers: AccountProvider.allCases, selection: $selectedProvider)
             ASSegmentedControl(selection: $pane,
                 values: selectedProvider == .cursor ? ["windows", "skin"] : ["windows", "rings", "skin"],

@@ -18,8 +18,8 @@
 "quota.section.overview" = "概览";
 "quota.section.breakdown" = "明细";
 "quota.section.ranking" = "排行";
-"quota.metric.tokens" = "Token";
-"quota.metric.api_equivalent_cost" = "API 等价费用";
+"quota.metric.tokens" = "Token 词元消耗";
+"quota.metric.api_equivalent_cost" = "等效 API 消费金额（美元）";
 "quota.summary.today_tokens" = "今天";
 "quota.summary.thirty_day_tokens" = "30 天";
 "quota.summary.api_equivalent" = "API 等价";
@@ -496,3 +496,6 @@
 "settings.opencodex.dashboard" = "打开 OpenCodex 后台";
 
 "settings.opencodex.dashboard.detail" = "在浏览器中打开本机后台，管理账号与模型；请先启动 OpenCodex。";
+
+"settings.quota_chart_metric.title" = "额度管理图表显示";
+"settings.quota_chart_metric.detail" = "适用于今日、7 天和 30 天图表。美元金额采用页面中的等效 API 消费金额，并非订阅账单；Antigravity 仍显示额度百分比。";

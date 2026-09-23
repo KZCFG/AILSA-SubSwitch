@@ -14,7 +14,30 @@ separate steps.
 - [x] Publish a clean source snapshot to KZCFG/AILSA-SubSwitch; verify remote readback.
 - [x] Enable private vulnerability reporting.
 
-## Current release: 1.0.0(b) (2026092301)
+## Current release: 1.0.0(c) (2026092302)
+
+This revision adds the saved chart-metric preference in Settings → Usage Display.
+Token and reference-USD charts use the same aggregates as their summary cards;
+Antigravity retains its percentage-based presentation.
+
+- **334 passed, 0 failed across 45 classes** in the full CLT asserting harness,
+  including interval boundaries, unpriced and zero-priced records, monetary
+  overflow and daily/weekly aggregation. This is not Apple's XCTest runtime.
+- Native offscreen rendering with synthetic data covers 14 chart states: both
+  metrics for Today, and bar/line charts for 7 days, 30 days by day and 30 days
+  by week. Live preference changes reach the existing views; an isolated
+  preferences store retains the selected mode.
+- The Settings → Usage Display control fits the existing panel at 544 × 670 pt.
+  The General settings layout and public promotional images are unchanged.
+- All 11 localization catalogs pass property-list validation.
+- Packaging checks verify the version, clean source manifest, ZIP checksum,
+  app/widget signatures, runtime resources and absence of local account files.
+- Distribution remains ad-hoc signed for Apple Silicon and is not notarized.
+  These synthetic checks do not claim live-provider or clean-machine acceptance.
+
+See [1.0.0(c) release notes](RELEASE-1.0.0c.md) for user-visible changes.
+
+## Historical release: 1.0.0(b) (2026092301)
 
 The maintainer authorized publishing the (b) revision on September 23, 2026.
 The final package uses the public version `1.0.0(b)` and includes the Codex
