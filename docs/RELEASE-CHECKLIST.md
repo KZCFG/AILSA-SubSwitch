@@ -14,7 +14,27 @@ separate steps.
 - [x] Publish a clean source snapshot to KZCFG/AILSA-SubSwitch; verify remote readback.
 - [x] Enable private vulnerability reporting.
 
-## Current release: 1.0.0(c) (2026092302)
+## Current release: 1.0.0(d) (2026092801)
+
+This revision adds the Grok Build Fast reference mapping and no other features.
+
+- **339 passed, 0 failed across 45 classes** in the full CLT asserting harness.
+  Coverage includes cache discounts, the 200,000-token threshold, explicit
+  Priority grants, unknown identity, deduplication and unaffected model records.
+  This is not Apple's XCTest runtime.
+- A frozen historical ledger was replayed through the production reader before
+  and after the change. All Token counts and unrelated model amounts match;
+  only Grok Build Fast receives the missing reference amount.
+- The confirmed-tier catalog is unchanged. Unknown pricing stays unavailable.
+- Packaging checks verify matching app/widget versions, clean source manifest,
+  ZIP checksum, ad-hoc signatures and exclusion of private configuration/data.
+- Distribution remains ad-hoc signed for Apple Silicon and is not notarized.
+  Native XCTest, clean-machine installation and live-provider acceptance are
+  outside this revision's validation scope.
+
+See [1.0.0(d) release notes](RELEASE-1.0.0d.md) for user-visible changes.
+
+## Historical release: 1.0.0(c) (2026092302)
 
 This revision adds the saved chart-metric preference in Settings → Usage Display.
 Token and reference-USD charts use the same aggregates as their summary cards;

@@ -286,6 +286,9 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
     private static let userReferenceAliases: [String: String] = [
         "kimi-for-coding": "kimi-k2.7-code", // User requested 2026-09-17: Preview uses previous ID price.
         "grok-4.7-build": "grok-4.7",
+        // Build's Fast route shares the user-selected Grok 4.7 reference.
+        // Its name does not prove that the vendor granted Priority pricing.
+        "grok-4.7-build-fast": "grok-4.7",
         "grok-4.6-build": "grok-4.6", "grok-4.5-build": "grok-4.5",
         "claude-fable-5-1-thinking": "claude-fable-5-1",
         "claude-fable-5.1-thinking": "claude-fable-5-1",

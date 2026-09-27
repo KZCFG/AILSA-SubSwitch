@@ -154,6 +154,64 @@ final class Grok47PricingTests: XCTestCase {
         XCTAssertNil(estimate(fast: .explicitlyGranted).picoUSD)
     }
 
+    func testBuildFastUsesGrok47ReferenceWithoutInferringPriority() {
+        let fast = estimate("grok-4.7-build-fast", tier: "priority")
+        XCTAssertEqual(fast.picoUSD, 230_000_000_000)
+        XCTAssertEqual(fast.priceBasis, "user_mapped_official_standard_reference")
+        XCTAssertEqual(fast.leaf, "grok-4.7")
+        XCTAssertNil(fast.fastGranted)
+        XCTAssertEqual(QuotaModelKey(provider: "xai", model: "grok-4.7-build-fast").familyKey,
+                       QuotaModelKey(provider: "xai", model: "grok-4.7").familyKey)
+    }
+
+    func testBuildFastKeepsLongContextBoundaryAndConfirmedPriorityRates() {
+        XCTAssertEqual(estimate("grok-4.7-build-fast", input: 199_999).picoUSD, 429_998_000_000)
+        XCTAssertEqual(estimate("grok-4.7-build-fast", input: 200_000).picoUSD, 860_000_000_000)
+        XCTAssertEqual(estimate("grok-4.7-build-fast", input: 200_000, tier: "priority", fast: .explicitlyGranted).picoUSD, 1_720_000_000_000)
+    }
+
+    func testBuildFastLedgerBackfillPreservesTokensDeduplicationAndOtherModels() throws {
+        let fast = #"{"requestId":"fast","timestamp":"2026-09-27T10:00:00Z","provider":"xai","resolvedModel":"grok-4.7-build-fast","requestedModel":"xai/grok-4.7-build-fast","configuredServiceTier":"default","apiEquivalentEligibility":"not_eligible_unknown_identity","tierOutcome":{"confirmation":"unknown","fastOutcome":"unknown"},"usageStatus":"reported","usage":{"inputTokens":100000,"outputTokens":10000,"cachedInputTokens":20000,"totalTokens":110000}}"#
+        let other = fast.replacingOccurrences(of: #""requestId":"fast""#, with: #""requestId":"other""#)
+            .replacingOccurrences(of: "grok-4.7-build-fast", with: "grok-4.6")
+            .replacingOccurrences(of: #""apiEquivalentEligibility":"not_eligible_unknown_identity","#, with: "")
+        let missing = #"{"requestId":"missing","timestamp":"2026-09-27T11:00:00Z","provider":"xai","requestedModel":"xai/grok-4.7-build-fast","usageStatus":"unreported"}"#
+        let reader = AILSA_SSLedgerMeteringReader(pricingCatalog: .empty)
+        let analytics = reader.read(data: Data([fast, fast, other, missing].joined(separator: "\n").utf8))
+        XCTAssertEqual(analytics.records.count, 3)
+        XCTAssertEqual(analytics.coverage.ledgerDuplicateRowsDiscarded, 1)
+        let fastRecord = try XCTUnwrap(analytics.records.first { $0.requestID == "fast" })
+        XCTAssertEqual(fastRecord.standardReferenceEstimate.picoUSD, 230_000_000_000)
+        XCTAssertNil(fastRecord.pricing.picoUSD)
+        let otherRecord = try XCTUnwrap(analytics.records.first { $0.requestID == "other" })
+        let otherAlone = try XCTUnwrap(reader.read(data: Data(other.utf8)).records.first)
+        XCTAssertEqual(otherRecord, otherAlone)
+        let now = ISO8601DateFormatter().date(from: "2026-09-27T12:00:00Z")!
+        let snapshot = QuotaDashboardSnapshot.build(.openCodex(analytics), now: now)
+        XCTAssertEqual(snapshot.all.tokens.total, 220_000)
+        XCTAssertEqual(snapshot.all.reference.pico, 460_000_000_000)
+        XCTAssertEqual(snapshot.all.reference.count, 2)
+        XCTAssertEqual(snapshot.all.reported, 2)
+    }
+
+    func testBuildFastNameCannotRepairMissingResolvedIdentity() throws {
+        let row = #"{"requestId":"unresolved","timestamp":"2026-09-27T10:00:00Z","provider":"xai","model":"grok-4.7-build-fast","requestedModel":"xai/grok-4.7-build-fast","usageStatus":"reported","usage":{"inputTokens":100000,"outputTokens":10000,"totalTokens":110000}}"#
+        let record = try XCTUnwrap(AILSA_SSLedgerMeteringReader(pricingCatalog: .empty).read(data: Data(row.utf8)).records.first)
+        XCTAssertEqual(record.standardReferenceEstimate.status, .unknownIdentity)
+        XCTAssertNil(record.standardReferenceEstimate.picoUSD)
+    }
+
+    func testBuildFastConflictingReasoningRetainsTokensButDoesNotInventPrice() throws {
+        let row = #"{"requestId":"conflicting","timestamp":"2026-09-27T10:00:00Z","provider":"xai","resolvedModel":"grok-4.7-build-fast","usageStatus":"reported","usage":{"inputTokens":100000,"outputTokens":100,"cachedInputTokens":20000,"reasoningOutputTokens":200}}"#
+        let record = try XCTUnwrap(AILSA_SSLedgerMeteringReader(pricingCatalog: .empty).read(data: Data(row.utf8)).records.first)
+        XCTAssertEqual(record.standardReferenceEstimate.status, .usageSemanticsConflict)
+        XCTAssertNil(record.standardReferenceEstimate.picoUSD)
+        let contribution = QuotaDashboardSnapshot.contribution(record)
+        XCTAssertEqual(contribution.value.tokens.total, 100_100)
+        XCTAssertEqual(contribution.value.reported, 1)
+        XCTAssertEqual(contribution.value.reference.count, 0)
+    }
+
     func testNewCatalogEntryDoesNotInvalidateOldAuditDates() throws {
         let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         let url = repo.appendingPathComponent("Sources/AILSA_SS/Resources/AILSA_SS-runtime-pricing-bindings-v1.json")
@@ -163,5 +221,6 @@ final class Grok47PricingTests: XCTestCase {
         XCTAssertTrue(newBindings.contains { $0.serviceTier == "priority" && $0.inputPicoUSDPerToken == 8_000_000 })
         XCTAssertTrue(catalog.bindings.contains { $0.provider == "xai" && $0.resolvedModel == "grok-4.6" })
         XCTAssertFalse(catalog.bindings.contains { $0.resolvedModel == "grok-4.7-build" })
+        XCTAssertFalse(catalog.bindings.contains { $0.resolvedModel == "grok-4.7-build-fast" })
     }
 }
