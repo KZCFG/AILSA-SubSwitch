@@ -244,6 +244,18 @@ final class QuotaManagementPageModel: ObservableObject {
         await loadDashboard(for: provider, mode: force ? .full : .cachedIfFresh)
     }
 
+    func makeUsageReport(_ request: UsageReportRequest) async throws -> UsageReport {
+        let service = usageService
+        let now = dateProvider()
+        // Ask for the selected ending day so daily reports retain that day's
+        // minute buckets, even when exporting yesterday or an older date.
+        let anchor = min(now, request.interval().end.addingTimeInterval(-0.001))
+        let snapshot = try await Task.detached(priority: .userInitiated) {
+            try await service.loadDashboard(for: request.provider, now: anchor)
+        }.value
+        return UsageReport.build(snapshot: snapshot, request: request, now: now)
+    }
+
     func loadDashboard(for provider: QuotaManagementProvider, mode: RefreshMode) async {
         guard !loadingProviders.contains(provider) else { return }
         if mode == .cachedIfFresh, let cached = dashboards[provider], dateProvider().timeIntervalSince(cached.scannedAt) < (provider == .cursor ? 300 : 60) { return }

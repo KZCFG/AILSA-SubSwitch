@@ -14,7 +14,26 @@ separate steps.
 - [x] Publish a clean source snapshot to KZCFG/AILSA-SubSwitch; verify remote readback.
 - [x] Enable private vulnerability reporting.
 
-## Current release: 1.0.0(d) (2026092801)
+## Current release: 1.0.0(e) (2026092803)
+
+This revision adds native usage-image export and GPT-6 Sol / Luna pricing.
+
+- **348 passed, 0 failed across 47 classes** in the full CLT asserting harness.
+  This is not Apple's XCTest runtime. New coverage includes official rates,
+  threshold boundaries, rolling periods, DST and historical minute loading.
+- Native offscreen reports cover Daily, Weekly and Monthly, Token and USD,
+  Chinese and English. Export images include aggregates only; no private
+  usage data or personal images enter the repository or release package.
+- Historical replay confirms unchanged Token totals and existing model prices.
+  The new pricing records keep their own audit date and confirmation rules.
+- Packaging checks cover app/widget versions, clean source manifest, ZIP
+  checksum, ad-hoc signatures and exclusion of local credentials/configuration.
+- Native save-dialog interaction on other machines, native XCTest, clean-machine
+  installation, Developer ID signing and notarization remain unverified.
+
+See [1.0.0(e) release notes](RELEASE-1.0.0e.md).
+
+## Historical release: 1.0.0(d) (2026092801)
 
 This revision adds the Grok Build Fast reference mapping and no other features.
 

@@ -334,6 +334,8 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         "openai/gpt-5.6-sol": "gpt-5.6-sol",
         "openai/gpt-5.6-luna": "gpt-5.6-luna",
         "openai/gpt-6-astra": "gpt-6-astra",
+        "openai/gpt-6-sol": "gpt-6-sol",
+        "openai/gpt-6-luna": "gpt-6-luna",
     ]
 
     /// A leaf is identified by the pair, not only a coincidentally identical
@@ -341,6 +343,8 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
     /// just because it echoes a known resolved-model name.
     private static let providersByLeaf: [String: Set<String>] = [
         "gpt-6-astra": ["openai"],
+        "gpt-6-sol": ["openai"],
+        "gpt-6-luna": ["openai"],
         "gpt-5.6-sol": ["openai"],
         "gpt-5.6-terra": ["openai"],
         "gpt-5.6-luna": ["openai"],
@@ -369,6 +373,18 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         "claude-fable-5-1": Leaf(
             short: Rate(inputPicoUSDPerToken: 10_000_000, cacheReadPicoUSDPerToken: 250_000, outputPicoUSDPerToken: 50_000_000),
             long: nil, threshold: .allContexts),
+        // Official model pages checked 2026-09-28. Long context applies to
+        // the full request only above (not at) 272,000 input tokens.
+        "gpt-6-sol": Leaf(
+            short: Rate(inputPicoUSDPerToken: 2_000_000, cacheReadPicoUSDPerToken: 200_000, outputPicoUSDPerToken: 10_000_000),
+            long: Rate(inputPicoUSDPerToken: 4_000_000, cacheReadPicoUSDPerToken: 400_000, outputPicoUSDPerToken: 15_000_000),
+            threshold: .inputTokensGreaterThan(272_000)
+        ),
+        "gpt-6-luna": Leaf(
+            short: Rate(inputPicoUSDPerToken: 100_000, cacheReadPicoUSDPerToken: 10_000, outputPicoUSDPerToken: 500_000),
+            long: Rate(inputPicoUSDPerToken: 200_000, cacheReadPicoUSDPerToken: 20_000, outputPicoUSDPerToken: 750_000),
+            threshold: .inputTokensGreaterThan(272_000)
+        ),
         "gpt-6-astra": Leaf(
             short: Rate(inputPicoUSDPerToken: 10_000_000, cacheReadPicoUSDPerToken: 1_000_000, outputPicoUSDPerToken: 50_000_000),
             long: Rate(inputPicoUSDPerToken: 20_000_000, cacheReadPicoUSDPerToken: 2_000_000, outputPicoUSDPerToken: 75_000_000),

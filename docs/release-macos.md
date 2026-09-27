@@ -36,12 +36,12 @@ Edit `VERSION`, then run `bash scripts/sync_version.sh`.
   the numeric version changes. Letters denote maintenance revisions, not alpha
   or beta release status.
 - Keep `CFBundleShortVersionString` numeric (`1.0.0` for this release);
-  `ASSBuildLabel` supplies the full visible version (`1.0.0(d)`).
+  `ASSBuildLabel` supplies the full visible version (`1.0.0(e)`).
 - Advance the internal `YYYYMMDDNN` build number for every packaged revision.
-  The current build is `2026092801`; build numbers must increase monotonically.
+  The current build is `2026092803`; build numbers must increase monotonically.
 - Use the same visible version in the app and GitHub release title. Use the
-  portable tag `v1.0.0-d`; archive names omit parentheses so GitHub preserves the
-  checksum filename: `AILSA-SubSwitch-1.0.0d-2026092801-arm64.zip`.
+  portable tag `v1.0.0-e`; archive names omit parentheses so GitHub preserves the
+  checksum filename: `AILSA-SubSwitch-1.0.0e-2026092803-arm64.zip`.
 
 The application identifier
 is `com.ailsa.subswitch`; the widget is `com.ailsa.subswitch.widgets`.

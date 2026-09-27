@@ -3406,6 +3406,274 @@
         "build_alias": "grok-4.7-build is display/reference-only, not an exact verified binding."
       },
       "auditDate": "2026-09-22"
+    },
+    {
+      "bindingId": "gpt-6-sol:openai:gpt-6-sol",
+      "provider": "openai",
+      "resolvedModel": "gpt-6-sol",
+      "referenceAPIModel": "gpt-6-sol",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "gpt-6-sol",
+          "url": "https://developers.openai.com/api/docs/models/gpt-6-sol",
+          "verifiedOn": "2026-09-28",
+          "note": "USD per 1M tokens. Above 272000 input tokens, the full request uses 2x input/cache and 1.5x output. Fast mode is 2x applicable rates."
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard-short",
+          "condition": {
+            "input_tokens_lte": 272000
+          },
+          "inputUSDPerMillionTokens": "2.0",
+          "outputUSDPerMillionTokens": "10.0",
+          "cacheReadUSDPerMillionTokens": "0.2",
+          "cacheWriteUSDPerMillionTokens": "2.50",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "gpt-6-sol",
+              "url": "https://developers.openai.com/api/docs/models/gpt-6-sol",
+              "verifiedOn": "2026-09-28",
+              "note": "USD per 1M tokens. Above 272000 input tokens, the full request uses 2x input/cache and 1.5x output. Fast mode is 2x applicable rates."
+            }
+          ]
+        },
+        {
+          "id": "standard-long",
+          "condition": {
+            "input_tokens_gt": 272000
+          },
+          "inputUSDPerMillionTokens": "4.0",
+          "outputUSDPerMillionTokens": "15.00",
+          "cacheReadUSDPerMillionTokens": "0.4",
+          "cacheWriteUSDPerMillionTokens": "5.00",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "gpt-6-sol",
+              "url": "https://developers.openai.com/api/docs/models/gpt-6-sol",
+              "verifiedOn": "2026-09-28",
+              "note": "USD per 1M tokens. Above 272000 input tokens, the full request uses 2x input/cache and 1.5x output. Fast mode is 2x applicable rates."
+            }
+          ]
+        },
+        {
+          "id": "fast-short",
+          "condition": {
+            "input_tokens_lte": 272000,
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ]
+          },
+          "inputUSDPerMillionTokens": "4.0",
+          "outputUSDPerMillionTokens": "20.0",
+          "cacheReadUSDPerMillionTokens": "0.4",
+          "cacheWriteUSDPerMillionTokens": "5.00",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "gpt-6-sol",
+              "url": "https://developers.openai.com/api/docs/models/gpt-6-sol",
+              "verifiedOn": "2026-09-28",
+              "note": "USD per 1M tokens. Above 272000 input tokens, the full request uses 2x input/cache and 1.5x output. Fast mode is 2x applicable rates."
+            }
+          ]
+        },
+        {
+          "id": "fast-long",
+          "condition": {
+            "input_tokens_gt": 272000,
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ]
+          },
+          "inputUSDPerMillionTokens": "8.0",
+          "outputUSDPerMillionTokens": "30.00",
+          "cacheReadUSDPerMillionTokens": "0.8",
+          "cacheWriteUSDPerMillionTokens": "10.00",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "gpt-6-sol",
+              "url": "https://developers.openai.com/api/docs/models/gpt-6-sol",
+              "verifiedOn": "2026-09-28",
+              "note": "USD per 1M tokens. Above 272000 input tokens, the full request uses 2x input/cache and 1.5x output. Fast mode is 2x applicable rates."
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "Reference pricing is not subscription billing; actual upstream tier must be confirmed."
+      ],
+      "pricingNotes": {
+        "long_scope": "Full request, strictly above 272000 input tokens.",
+        "fast_rate_status": "2x applicable rates, with vendor-confirmed Fast grant.",
+        "regional_uplift": "Global reference; regional processing adds 10% where available."
+      },
+      "auditDate": "2026-09-28"
+    },
+    {
+      "bindingId": "gpt-6-luna:openai:gpt-6-luna",
+      "provider": "openai",
+      "resolvedModel": "gpt-6-luna",
+      "referenceAPIModel": "gpt-6-luna",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "gpt-6-luna",
+          "url": "https://developers.openai.com/api/docs/models/gpt-6-luna",
+          "verifiedOn": "2026-09-28",
+          "note": "USD per 1M tokens. Above 272000 input tokens, the full request uses 2x input/cache and 1.5x output. Fast mode is 2x applicable rates."
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard-short",
+          "condition": {
+            "input_tokens_lte": 272000
+          },
+          "inputUSDPerMillionTokens": "0.10",
+          "outputUSDPerMillionTokens": "0.50",
+          "cacheReadUSDPerMillionTokens": "0.01",
+          "cacheWriteUSDPerMillionTokens": "0.125",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "gpt-6-luna",
+              "url": "https://developers.openai.com/api/docs/models/gpt-6-luna",
+              "verifiedOn": "2026-09-28",
+              "note": "USD per 1M tokens. Above 272000 input tokens, the full request uses 2x input/cache and 1.5x output. Fast mode is 2x applicable rates."
+            }
+          ]
+        },
+        {
+          "id": "standard-long",
+          "condition": {
+            "input_tokens_gt": 272000
+          },
+          "inputUSDPerMillionTokens": "0.20",
+          "outputUSDPerMillionTokens": "0.750",
+          "cacheReadUSDPerMillionTokens": "0.02",
+          "cacheWriteUSDPerMillionTokens": "0.250",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "gpt-6-luna",
+              "url": "https://developers.openai.com/api/docs/models/gpt-6-luna",
+              "verifiedOn": "2026-09-28",
+              "note": "USD per 1M tokens. Above 272000 input tokens, the full request uses 2x input/cache and 1.5x output. Fast mode is 2x applicable rates."
+            }
+          ]
+        },
+        {
+          "id": "fast-short",
+          "condition": {
+            "input_tokens_lte": 272000,
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ]
+          },
+          "inputUSDPerMillionTokens": "0.20",
+          "outputUSDPerMillionTokens": "1.00",
+          "cacheReadUSDPerMillionTokens": "0.02",
+          "cacheWriteUSDPerMillionTokens": "0.250",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "gpt-6-luna",
+              "url": "https://developers.openai.com/api/docs/models/gpt-6-luna",
+              "verifiedOn": "2026-09-28",
+              "note": "USD per 1M tokens. Above 272000 input tokens, the full request uses 2x input/cache and 1.5x output. Fast mode is 2x applicable rates."
+            }
+          ]
+        },
+        {
+          "id": "fast-long",
+          "condition": {
+            "input_tokens_gt": 272000,
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ]
+          },
+          "inputUSDPerMillionTokens": "0.40",
+          "outputUSDPerMillionTokens": "1.500",
+          "cacheReadUSDPerMillionTokens": "0.04",
+          "cacheWriteUSDPerMillionTokens": "0.500",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "gpt-6-luna",
+              "url": "https://developers.openai.com/api/docs/models/gpt-6-luna",
+              "verifiedOn": "2026-09-28",
+              "note": "USD per 1M tokens. Above 272000 input tokens, the full request uses 2x input/cache and 1.5x output. Fast mode is 2x applicable rates."
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "Reference pricing is not subscription billing; actual upstream tier must be confirmed."
+      ],
+      "pricingNotes": {
+        "long_scope": "Full request, strictly above 272000 input tokens.",
+        "fast_rate_status": "2x applicable rates, with vendor-confirmed Fast grant.",
+        "regional_uplift": "Global reference; regional processing adds 10% where available."
+      },
+      "auditDate": "2026-09-28"
     }
   ],
   "modelUpdates": [
@@ -3413,6 +3681,16 @@
       "model": "grok-4.7",
       "auditDate": "2026-09-22",
       "note": "Model-specific addition; the baseline catalog audit date is unchanged."
+    },
+    {
+      "model": "gpt-6-sol",
+      "auditDate": "2026-09-28",
+      "note": "Model-specific addition; baseline and other model audit dates unchanged."
+    },
+    {
+      "model": "gpt-6-luna",
+      "auditDate": "2026-09-28",
+      "note": "Model-specific addition; baseline and other model audit dates unchanged."
     }
   ]
 }

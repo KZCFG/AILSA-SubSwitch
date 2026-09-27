@@ -70,6 +70,11 @@ Antigravity usage percentages are not converted into invented token totals.
 We expect to add Grok and Kimi usage monitoring in **1.0.1**, followed by
 Alibaba and DeepSeek usage monitoring in **1.0.2**.
 
+**1.0.0(e)** adds shareable Daily, Weekly and Monthly usage PNGs with a native
+save dialog, and official GPT-6 Sol / Luna reference pricing. Open Codex or
+Cursor usage and choose **Export usage image** in the toolbar. See the
+[update notes](docs/RELEASE-1.0.0e.md).
+
 **1.0.0(d)** recognizes Grok Build Fast usage as part of **Grok 4.7**, including
 its equivalent API reference amount in existing history. A Fast route name
 alone does not apply Priority pricing. See the [update notes](docs/RELEASE-1.0.0d.md).
@@ -112,7 +117,7 @@ not load your live account library.
 for each provider you want to use. Provider subscriptions are separate from
 AILSA SubSwitch.
 
-1. Download the macOS ZIP from the [1.0.0(d) release](https://github.com/KZCFG/AILSA-SubSwitch/releases/tag/v1.0.0-d).
+1. Download the macOS ZIP from the [1.0.0(e) release](https://github.com/KZCFG/AILSA-SubSwitch/releases/tag/v1.0.0-e).
    You do not need Xcode to use a prebuilt package.
 2. Move **AILSA SubSwitch.app** to **Applications** and open it.
 3. Click its menu bar icon. In **Accounts**, select a provider and import the
@@ -161,7 +166,7 @@ cd AILSA-SubSwitch
 bash scripts/build_app.sh
 ```
 
-Output: `build/1.0.0(d)-2026092801/AILSA SubSwitch.app`, an arm64 ZIP, SHA-256 checksum,
+Output: `build/1.0.0(e)-2026092803/AILSA SubSwitch.app`, an arm64 ZIP, SHA-256 checksum,
 and source manifest. Check [build and release notes](docs/release-macos.md) for
 custom output locations and signing details.
 
@@ -180,7 +185,7 @@ the tests it actually executes. See [Contributing](CONTRIBUTING.md).
 
 ## Status and limitations
 
-- 1.0.0(d) is distributed through GitHub Releases; validation and coverage are tracked in
+- 1.0.0(e) is distributed through GitHub Releases; validation and coverage are tracked in
   [the release checklist](docs/RELEASE-CHECKLIST.md).
 - Small updates advance the suffix: `(a)`, `(b)`, `(c)`, ...; larger feature releases
   change the numeric version. Internal build numbers retain the date plus revision.

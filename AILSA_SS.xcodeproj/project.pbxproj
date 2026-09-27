@@ -175,6 +175,10 @@
 		5DAC97464AD04B3480333ACB /* QuotaCountdownState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2357B18057314DF498B2DA93F /* QuotaCountdownState.swift */; };
 		623DD5E1C9334D38846FCF68 /* QuotaCountdownStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C776802C474B4B14BF3E6D47 /* QuotaCountdownStateTests.swift */; };
 		67E8085567484C0D879933E8 /* AILSA_SS-AuthSyncServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F07730BDBA47A297C79B70 /* AILSA_SS-AuthSyncServiceTests.swift */; };
+		381020180FEB201566A716E8 /* UsageReportModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 611A481EF8933FAF9AA76445 /* UsageReportModels.swift */; };
+		883006D4A67E1C5F246576CD /* UsageReportExportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDCA3A1D3A325F9F77175C36 /* UsageReportExportSheet.swift */; };
+		192F1BDF84DBE029330E7BB0 /* UsageReportRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B31FABA6AE274F2D10B952 /* UsageReportRenderer.swift */; };
+		135315B89DCABE814194BA31 /* UsageReportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A71B2EC3DF01CE08D72F83B6 /* UsageReportTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -382,6 +386,10 @@
 		2357B18057314DF498B2DA93F /* QuotaCountdownState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaCountdownState.swift; sourceTree = "<group>"; };
 		C776802C474B4B14BF3E6D47 /* QuotaCountdownStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaCountdownStateTests.swift; sourceTree = "<group>"; };
 		C5F07730BDBA47A297C79B70 /* AILSA_SS-AuthSyncServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AILSA_SS-AuthSyncServiceTests.swift; sourceTree = "<group>"; };
+		611A481EF8933FAF9AA76445 /* UsageReportModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageReportModels.swift; sourceTree = "<group>"; };
+		BDCA3A1D3A325F9F77175C36 /* UsageReportExportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageReportExportSheet.swift; sourceTree = "<group>"; };
+		E1B31FABA6AE274F2D10B952 /* UsageReportRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageReportRenderer.swift; sourceTree = "<group>"; };
+		A71B2EC3DF01CE08D72F83B6 /* UsageReportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageReportTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -579,6 +587,7 @@
 				D1A1D1A1D1A1D1A1D1A1D1A1 /* AntigravityAccountsModels.swift */,
 				752E8541A7159097F4D1AF83 /* AppModels.swift */,
 				D901D901D901D901D901D901 /* QuotaManagementModels.swift */,
+				611A481EF8933FAF9AA76445 /* UsageReportModels.swift */,
 				AFCFDB4F5D787C28D8651A35 /* SettingsModels.swift */,
 			);
 			path = Domain;
@@ -639,6 +648,8 @@
 				B24B50076D2D73A4DCFB09A5 /* QuotaIntradayChart.swift */,
 				D903D903D903D903D903D903 /* QuotaManagementPageModel.swift */,
 				D904D904D904D904D904D904 /* QuotaManagementPageView.swift */,
+				E1B31FABA6AE274F2D10B952 /* UsageReportRenderer.swift */,
+				BDCA3A1D3A325F9F77175C36 /* UsageReportExportSheet.swift */,
 			);
 			path = QuotaManagement;
 			sourceTree = "<group>";
@@ -672,6 +683,7 @@
 				0D1996F591AEC73ED65ED1F9 /* CommandRunnerTimeoutTests.swift */,
 				E6318743D5B32C4FA1244FAD /* LiquidProgressMetricsTests.swift */,
 				D906D906D906D906D906D906 /* LocalQuotaManagementUsageServiceTests.swift */,
+				A71B2EC3DF01CE08D72F83B6 /* UsageReportTests.swift */,
 				251BC10FF4D8538941CDC174 /* LocalizationConsistencyTests.swift */,
 				B209B209B209B209B209B209 /* SettingsControlPresentationTests.swift */,
 				B212B212B212B212B212B212 /* SettingsPageModelTests.swift */,
@@ -886,6 +898,7 @@
 				BAC63D41038D37A503641728 /* CommandRunnerTimeoutTests.swift in Sources */,
 				50922F8C48CF01B728AD262F /* LiquidProgressMetricsTests.swift in Sources */,
 				D915D915D915D915D915D915 /* LocalQuotaManagementUsageServiceTests.swift in Sources */,
+				135315B89DCABE814194BA31 /* UsageReportTests.swift in Sources */,
 				4353553A171096B9C9653258 /* LocalizationConsistencyTests.swift in Sources */,
 				C241C241C241C241C241C241 /* SettingsControlPresentationTests.swift in Sources */,
 				C244C244C244C244C244C244 /* SettingsPageModelTests.swift in Sources */,
@@ -1030,6 +1043,9 @@
 				C0DE0003C0DE0003C0DE0003 /* AILSA_SS-VerifiedPricingCatalogLoader.swift in Sources */,
 				D913D913D913D913D913D913 /* QuotaManagementPageModel.swift in Sources */,
 				D914D914D914D914D914D914 /* QuotaManagementPageView.swift in Sources */,
+				192F1BDF84DBE029330E7BB0 /* UsageReportRenderer.swift in Sources */,
+				883006D4A67E1C5F246576CD /* UsageReportExportSheet.swift in Sources */,
+				381020180FEB201566A716E8 /* UsageReportModels.swift in Sources */,
 				78E8D4EA4736FDD03C4A1F52 /* SettingsModels.swift in Sources */,
 				449122D70F70FCE8CE874FA7 /* AuthParsingSupport.swift in Sources */,
 				875194AEEDE8DE7C2BDB9AD9 /* AuthWorkspaceMetadataExtractor.swift in Sources */,
@@ -1087,7 +1103,7 @@
 				CODE_SIGN_ENTITLEMENTS = AILSA_SS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2026092801;
+				CURRENT_PROJECT_VERSION = 2026092803;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
@@ -1099,7 +1115,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "Sources/AILSA_SS/Info-macOS.plist";
-				ASS_BUILD_LABEL = "1.0.0(d)";
+				ASS_BUILD_LABEL = "1.0.0(e)";
 				INFOPLIST_KEY_CFBundleDisplayName = "AILSA SubSwitch";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1129,7 +1145,7 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = AILSA_SSWidgetsMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026092801;
+				CURRENT_PROJECT_VERSION = 2026092803;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
@@ -1170,7 +1186,7 @@
 				CODE_SIGN_ENTITLEMENTS = AILSA_SS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2026092801;
+				CURRENT_PROJECT_VERSION = 2026092803;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
@@ -1182,7 +1198,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "Sources/AILSA_SS/Info-macOS.plist";
-				ASS_BUILD_LABEL = "1.0.0(d)";
+				ASS_BUILD_LABEL = "1.0.0(e)";
 				INFOPLIST_KEY_CFBundleDisplayName = "AILSA SubSwitch";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1231,7 +1247,7 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = AILSA_SSWidgetsMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026092801;
+				CURRENT_PROJECT_VERSION = 2026092803;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;

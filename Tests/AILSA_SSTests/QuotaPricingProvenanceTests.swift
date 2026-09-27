@@ -224,3 +224,40 @@ final class Grok47PricingTests: XCTestCase {
         XCTAssertFalse(catalog.bindings.contains { $0.resolvedModel == "grok-4.7-build-fast" })
     }
 }
+
+final class GPT6SolLunaPricingTests: XCTestCase {
+    private func estimate(_ model: String, input: Int = 100_000, provider: String = "openai") -> AILSA_SSStandardReferenceEstimate {
+        OpenCodexStandardReferenceEstimator().estimate(OpenCodexStandardReferenceInput(
+            provider: provider, resolvedModel: model, requestedModel: nil, modelEcho: nil,
+            usageStatus: .reported, usageEstimated: false, streamAborted: false,
+            currency: "USD", apiEquivalentEligibility: nil, tierOutcomeConfirmation: nil,
+            tierOutcomeCanonical: nil, responseServiceTier: nil, fastOutcome: nil,
+            confirmedServiceTier: nil, fastGrantEvidence: .unknown,
+            tokens: OpenCodexUsageTokens(inputTokens: input, outputTokens: 10_000,
+                totalTokens: input + 10_000, cachedInputTokens: 20_000, cacheReadInputTokens: 20_000,
+                cacheCreationInputTokens: 0, reasoningOutputTokens: 1_000, totalSemantics: .inputPlusOutput),
+            tokenSemanticIssue: false))
+    }
+    func testOfficialStandardPricesAndCachedInput() {
+        XCTAssertEqual(estimate("gpt-6-sol").picoUSD, 264_000_000_000)
+        XCTAssertEqual(estimate("gpt-6-luna").picoUSD, 13_200_000_000)
+        XCTAssertEqual(estimate("gpt-6-sol").priceBasis, OpenCodexStandardReferenceEstimator.priceBasis)
+        XCTAssertNil(estimate("gpt-6-sol", provider: "unknown-proxy").picoUSD)
+    }
+    func testLongContextStartsStrictlyAbove272kAndPricesWholeRequest() {
+        XCTAssertEqual(estimate("gpt-6-sol", input: 272_000).picoUSD, 608_000_000_000)
+        XCTAssertEqual(estimate("gpt-6-sol", input: 272_001).picoUSD, 1_166_004_000_000)
+        XCTAssertEqual(estimate("gpt-6-luna", input: 272_000).picoUSD, 30_400_000_000)
+        XCTAssertEqual(estimate("gpt-6-luna", input: 272_001).picoUSD, 58_300_200_000)
+    }
+    func testNewCatalogModelsHaveSeparateAuditAndConfirmedFastPrices() throws {
+        let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let catalog = try AILSA_SSVerifiedPricingCatalogLoader.load(url: repo.appendingPathComponent("Sources/AILSA_SS/Resources/AILSA_SS-runtime-pricing-bindings-v1.json"))
+        for (model, input) in [("gpt-6-sol", Int64(8_000_000)), ("gpt-6-luna", Int64(400_000))] {
+            let bindings = catalog.bindings.filter { $0.provider == "openai" && $0.resolvedModel == model }
+            XCTAssertEqual(bindings.count, 6)
+            XCTAssertTrue(bindings.contains { $0.serviceTier == "fast" && $0.inputPicoUSDPerToken == input })
+        }
+        XCTAssertEqual(catalog.provenance?.auditDate, "2026-09-15")
+    }
+}

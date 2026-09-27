@@ -14,14 +14,15 @@ approving. If macOS reports a damaged archive, redownload and verify it first.
 Each package has a SHA-256 file. In the download directory:
 
 ```bash
-shasum -a 256 -c AILSA-SubSwitch-1.0.0d-2026092801-arm64.zip.sha256
+shasum -a 256 -c AILSA-SubSwitch-1.0.0e-2026092803-arm64.zip.sha256
 ```
 
 There is no OTA updater in 1.0.0. Quit ASS from Settings before replacing the
 application with a newer download. Replacing the app does not erase its separate
 account store. Keep only one installed copy to avoid launching an older build.
 
-This update is **1.0.0(d)**. Grok Build Fast records now contribute to the
+This update is **1.0.0(e)**. It adds usage-image exports and GPT-6 Sol / Luna
+reference pricing. Grok Build Fast records now contribute to the
 Grok 4.7 model group and its equivalent API reference amount, including existing
 history. Other model totals and raw Token records remain unchanged. Small updates use letter revisions such as
 **1.0.0(a)**, **1.0.0(b)**, and **1.0.0(c)**.
@@ -180,3 +181,21 @@ Reset credits use Arabic numbers (Reset 1, Reset 2, and so on), one per line.
 Settings → General offers countdown or expiry-date display and **d / h / m / s**
 or Chinese countdown units. Countdown labels update each second; this does not
 poll provider APIs each second or imply that an expired usage snapshot has refreshed.
+
+## Export a usage image
+
+In Codex or Cursor usage, click **Export usage image** in the top-right toolbar.
+Choose Daily for one date, Weekly for the 7 days ending on that date, or Monthly
+for the 30 days ending on that date. These are rolling windows, not calendar
+weeks or months. Select **Generate and save**, then choose a folder and filename
+in the native save dialog. Finder reveals the saved PNG.
+
+Reports use the saved chart metric and Token unit from Settings. Daily charts
+show 30-minute intervals; longer reports show daily totals. Current periods
+include a cutoff time. Historical availability depends on locally retained
+records; an empty period cannot be exported.
+
+The image contains aggregates and model names, with no accounts, credentials,
+request IDs, conversation contents or local paths. API amounts are reference
+estimates, never an actual bill; unpriced or inconsistent records are excluded
+from the monetary sum. Antigravity remains a separate quota-snapshot interface.

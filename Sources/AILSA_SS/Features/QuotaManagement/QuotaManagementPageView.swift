@@ -61,6 +61,7 @@ struct QuotaManagementPageView: View {
     @ObservedObject var model: QuotaManagementPageModel
     var isStandalone = false
     @State private var selectedProvider: QuotaManagementProvider = .codex
+    @State private var exportRequest: UsageReportRequest?
     /// Range/page/sort per provider survive provider switches; hover and
     /// detail state live inside `QuotaDashboard` and reset with `.id`.
     @State private var dashboardStates: [QuotaManagementProvider: QuotaDashboardUIState] = [:]
@@ -122,9 +123,27 @@ struct QuotaManagementPageView: View {
             }
         }
         .appCanvas()
+        .sheet(isPresented: Binding(get: { exportRequest != nil }, set: { if !$0 { exportRequest = nil } })) {
+            if let request = exportRequest {
+                UsageReportExportSheet(model: model, provider: request.provider,
+                    period: request.period, endingOn: request.endingOn)
+            }
+        }
     }
     private var header: some View {
         HStack(spacing: 8) {
+                    if selectedProvider != .antigravity {
+                        Button {
+                            let state = dashboardStates[selectedProvider] ?? QuotaDashboardUIState()
+                            let period: UsageReportPeriod = state.range == 30 ? .monthly : state.range == 7 ? .weekly : .daily
+                            exportRequest = UsageReportRequest(provider: selectedProvider, period: period, endingOn: state.selectedDay ?? Date())
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                                .frame(width: 32, height: 34).contentShape(Rectangle())
+                        }.buttonStyle(.plain).disabled(isLoading)
+                            .help(qtext("导出用量图", "Export usage image"))
+                            .accessibilityLabel(qtext("导出用量图", "Export usage image"))
+                    }
                     if !isStandalone {
                         Button {
                             model.requestExpansion(of: selectedProvider)
