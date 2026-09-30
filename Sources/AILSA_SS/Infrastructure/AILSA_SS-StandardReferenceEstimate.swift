@@ -134,8 +134,11 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         if input.streamAborted { return unavailable(.aborted) }
         guard input.usageStatus == .reported else { return unavailable(.unreported) }
         if input.usageEstimated { return unavailable(.estimatedUsage) }
+        let userReferenceAlias = Self.userReferenceAlias(
+            provider: normalized(input.provider), resolvedModel: normalized(input.resolvedModel)
+        )
         if normalized(input.apiEquivalentEligibility) == "not_eligible_unknown_identity",
-           Self.userReferenceAliases[normalized(input.resolvedModel) ?? ""] == nil {
+           userReferenceAlias == nil {
             return unavailable(.unknownIdentity)
         }
         guard let provider = normalized(input.provider),
@@ -224,8 +227,8 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
             status: .referenceEstimate,
             picoUSD: amount,
             priceBasis: grokPriority
-                ? (Self.userReferenceAliases[resolvedModel] == nil ? "official_priority_reference" : "user_mapped_official_priority_reference")
-                : (Self.userReferenceAliases[resolvedModel] == nil ? Self.priceBasis : "user_mapped_official_standard_reference"),
+                ? (userReferenceAlias == nil ? "official_priority_reference" : "user_mapped_official_priority_reference")
+                : (userReferenceAlias == nil ? Self.priceBasis : "user_mapped_official_standard_reference"),
             leaf: leafID,
             contextLadder: selected.ladder,
             estimatePartial: cacheBreakdownMissing,
@@ -296,6 +299,20 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         "kimi-k3-max": "k3", "k3-max": "k3",
         "deepseek-v4-flash": "deepseek-flash"
     ]
+    /// Explicit local deployment -> official API reference equivalence. The
+    /// native route remains intact; this never establishes a vendor charge or
+    /// quality equivalence for the quantized model. Only this exact pair opts in.
+    private static let userReferencePairs: [String: String] = [
+        "atc-deepseek/deepseek-v4.1-flash-exl3": "deepseek-flash"
+    ]
+
+    private static func userReferenceAlias(provider: String?, resolvedModel: String?) -> String? {
+        guard let resolvedModel else { return nil }
+        if let provider, let alias = userReferencePairs["\(provider)/\(resolvedModel)".lowercased()] {
+            return alias
+        }
+        return userReferenceAliases[resolvedModel]
+    }
     private static let crossProviderReferences: Set<String> = [
         "grok-4.7", "grok-4.6", "grok-4.5", "gemini-3.8-flash", "deepseek-flash",
         "claude-fable-5-1", "k3", "kimi-k3"
@@ -309,15 +326,37 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
                                     outputPicoUSDPerToken: fullPrice ? 7_500_000 : 3_750_000), long: nil, threshold: .allContexts)
         }
         if id == "deepseek-flash" {
-            guard let occurredAt else { return nil }
-            var utc = Calendar(identifier: .gregorian); utc.timeZone = TimeZone(secondsFromGMT: 0)!
-            let day = utc.component(.weekday, from: occurredAt), hour = utc.component(.hour, from: occurredAt)
-            let peak = (2...6).contains(day) && ((1..<4).contains(hour) || (6..<10).contains(hour))
+            // DeepSeek-V4.1-Flash is served as deepseek-flash. USD per 1M,
+            // verified 2026-09-30: peak 0.30 / 0.006 / 1.20; off-peak is half.
+            // https://api-docs.deepseek.com/quick_start/pricing
+            guard let occurredAt, let peak = deepSeekPeakHours(at: occurredAt) else { return nil }
             return Leaf(short: Rate(inputPicoUSDPerToken: peak ? 300_000 : 150_000,
                                     cacheReadPicoUSDPerToken: peak ? 6_000 : 3_000,
                                     outputPicoUSDPerToken: peak ? 1_200_000 : 600_000), long: nil, threshold: .allContexts)
         }
         return leaves[id]
+    }
+
+    private static func deepSeekPeakHours(at date: Date) -> Bool? {
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(secondsFromGMT: 0)!
+        let parts = utc.dateComponents([.year, .month, .day, .weekday, .hour], from: date)
+        guard let year = parts.year, let month = parts.month, let day = parts.day,
+              let weekday = parts.weekday, let hour = parts.hour else { return nil }
+        // Half-open UTC windows; weekends stay off-peak even on make-up workdays.
+        guard (2...6).contains(weekday), (1..<4).contains(hour) || (6..<10).contains(hour) else {
+            return false
+        }
+        // Chinese public holidays are off-peak for the full day. All peak
+        // windows are on the same calendar date in UTC and Asia/Shanghai.
+        // Verified 2026-09-30 against the State Council's 2026 holiday schedule:
+        // https://www.gov.cn/gongbao/2025/issue_12406/202511/content_7048922.html
+        // An unpublished calendar must not silently turn a holiday into peak.
+        guard year == 2026 else { return nil }
+        let monthDay = month * 100 + day
+        let holidays = [101...103, 215...223, 404...406, 501...505,
+                        619...621, 925...927, 1001...1007]
+        return !holidays.contains(where: { $0.contains(monthDay) })
     }
 
     private static let aliases: [String: String] = [
@@ -472,7 +511,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
     }
 
     private static func leafID(provider: String, resolvedModel: String) -> String? {
-        if let alias = userReferenceAliases[resolvedModel] { return alias }
+        if let alias = userReferenceAlias(provider: provider, resolvedModel: resolvedModel) { return alias }
         if crossProviderReferences.contains(resolvedModel) { return resolvedModel }
         if let alias = aliases["\(provider)/\(resolvedModel)"] { return alias }
         guard leaves[resolvedModel] != nil,

@@ -261,3 +261,143 @@ final class GPT6SolLunaPricingTests: XCTestCase {
         XCTAssertEqual(catalog.provenance?.auditDate, "2026-09-15")
     }
 }
+
+final class DeepSeekV41LocalPricingTests: XCTestCase {
+    private func row(provider: String = "atc-deepseek", resolved: String? = "DeepSeek-v4.1-Flash-EXL3",
+                     timestamp: String? = "2026-09-30T00:30:00Z", cached: Int? = 40_000,
+                     reasoning: Int = 4_000, status: String = "reported", aborted: Bool = false,
+                     estimated: Bool = false) throws -> String {
+        var usage: [String: Any] = ["inputTokens": 100_000, "outputTokens": 20_000,
+                                   "reasoningOutputTokens": reasoning, "estimated": estimated]
+        if let cached { usage["cachedInputTokens"] = cached }
+        var value: [String: Any] = [
+            "requestId": "local-deepseek", "provider": provider,
+            "model": "DeepSeek-v4.1-Flash-EXL3",
+            "requestedModel": "atc-deepseek/DeepSeek-v4.1-Flash-EXL3",
+            "usageStatus": status, "usage": usage, "streamAborted": aborted,
+            "apiEquivalentEligibility": "not_eligible_unknown_identity"
+        ]
+        if let resolved { value["resolvedModel"] = resolved }
+        if let timestamp { value["timestamp"] = timestamp }
+        return String(decoding: try JSONSerialization.data(withJSONObject: value), as: UTF8.self)
+    }
+
+    private func record(_ value: String) throws -> OpenCodexLedgerMeteringRecord {
+        try XCTUnwrap(AILSA_SSLedgerMeteringReader(pricingCatalog: .empty)
+            .read(data: Data(value.utf8)).records.first)
+    }
+
+    func testLocalReferenceUsesOfficialFlashPriceWithoutClaimingVendorCharges() throws {
+        let result = try record(row())
+        // (60k * $0.15 + 40k * $0.003 + 20k * $0.60) / 1M.
+        XCTAssertEqual(result.standardReferenceEstimate.apiEquivalentUSD, "0.021120000000")
+        XCTAssertEqual(result.standardReferenceEstimate.leaf, "deepseek-flash")
+        XCTAssertEqual(result.standardReferenceEstimate.priceBasis, "user_mapped_official_standard_reference")
+        XCTAssertEqual(result.routeProvider, "atc-deepseek")
+        XCTAssertEqual(result.resolvedModel, "DeepSeek-v4.1-Flash-EXL3")
+        XCTAssertNil(result.pricing.picoUSD)
+        XCTAssertEqual(result.tokens.totalTokens, 120_000, "Derive total from primary tokens when the server omits totalTokens")
+        XCTAssertFalse(result.standardReferenceEstimate.estimatePartial)
+    }
+
+    func testPeakWindowsUseHalfOpenUTCBoundaries() throws {
+        let times: [(String, Int64)] = [
+            ("00:59:59", 21_120_000_000), ("01:00:00", 42_240_000_000),
+            ("03:59:59", 42_240_000_000), ("04:00:00", 21_120_000_000),
+            ("05:59:59", 21_120_000_000), ("06:00:00", 42_240_000_000),
+            ("09:59:59", 42_240_000_000), ("10:00:00", 21_120_000_000)
+        ]
+        for (time, expected) in times {
+            XCTAssertEqual(try record(row(timestamp: "2026-09-30T\(time)Z")).standardReferenceEstimate.picoUSD, expected)
+        }
+    }
+
+    func testHolidayAndWeekendRemainOffPeakIncludingMakeUpWorkdays() throws {
+        for date in ["2026-01-01", "2026-02-16", "2026-04-06", "2026-05-04",
+                     "2026-06-19", "2026-09-25", "2026-10-01", "2026-10-07",
+                     "2026-09-20", "2026-10-10"] {
+            XCTAssertEqual(try record(row(timestamp: "\(date)T02:00:00Z")).standardReferenceEstimate.picoUSD,
+                           21_120_000_000, date)
+        }
+        XCTAssertEqual(try record(row(timestamp: "2026-10-08T02:00:00Z")).standardReferenceEstimate.picoUSD,
+                       42_240_000_000)
+    }
+
+    func testTimezoneOffsetAndHistoricalTimestampChooseSameRate() throws {
+        XCTAssertEqual(try record(row(timestamp: "2026-09-30T09:00:00+08:00")).standardReferenceEstimate.picoUSD,
+                       try record(row(timestamp: "2026-09-30T01:00:00Z")).standardReferenceEstimate.picoUSD)
+        XCTAssertEqual(try record(row(timestamp: "2026-09-29T23:00:00-02:00")).standardReferenceEstimate.picoUSD,
+                       42_240_000_000)
+    }
+
+    func testUnknownFutureHolidayCalendarDoesNotInventPeakAmount() throws {
+        XCTAssertEqual(try record(row(timestamp: "2027-01-01T02:00:00Z")).standardReferenceEstimate.status, .unknownPrice)
+        XCTAssertEqual(try record(row(timestamp: "2027-01-01T12:00:00Z")).standardReferenceEstimate.picoUSD,
+                       21_120_000_000, "Known off-peak hours do not require a holiday calendar")
+    }
+
+    func testCacheAndReasoningAreSubsetsNotAdditionalTokens() throws {
+        for reasoning in [0, 20_000] {
+            let result = try record(row(cached: 100_000, reasoning: reasoning))
+            XCTAssertEqual(result.standardReferenceEstimate.apiEquivalentUSD, "0.012300000000")
+            let contribution = QuotaDashboardSnapshot.contribution(result)
+            XCTAssertEqual(contribution.value.tokens.total, 120_000)
+            XCTAssertEqual(contribution.value.reference.pico, 12_300_000_000)
+        }
+        XCTAssertEqual(try record(row(cached: 0)).standardReferenceEstimate.apiEquivalentUSD, "0.027000000000")
+    }
+
+    func testMissingCacheBreakdownRetainsPartialReference() throws {
+        let result = try record(row(cached: nil))
+        XCTAssertTrue(result.standardReferenceEstimate.estimatePartial)
+        XCTAssertEqual(result.standardReferenceEstimate.apiEquivalentUSD, "0.027000000000")
+    }
+
+    func testLocalAliasRequiresExactProviderAndModelPair() throws {
+        for value in [try row(provider: "unverified-proxy"),
+                      try row(resolved: "DeepSeek-v4.1-Pro-EXL3"),
+                      try row(resolved: "DeepSeek-v4.1-Flash-EXL3-other"),
+                      try row(resolved: "DeepSeek-v4-Flash-EXL3")] {
+            XCTAssertNil(try record(value).standardReferenceEstimate.picoUSD)
+        }
+        XCTAssertEqual(try record(row(resolved: "deepseek-v4.1-flash-exl3")).standardReferenceEstimate.picoUSD,
+                       21_120_000_000)
+    }
+
+    func testRequestedModelCannotRepairMissingResolvedIdentity() throws {
+        XCTAssertEqual(try record(row(resolved: nil)).standardReferenceEstimate.status, .unknownIdentity)
+        XCTAssertEqual(AILSA_SSLedgerMeteringReader(pricingCatalog: .empty)
+            .read(data: Data(try row(timestamp: nil).utf8)).records.count, 0)
+    }
+
+    func testIncompleteUsageDoesNotInventCosts() throws {
+        for value in [try row(status: "unreported"), try row(status: "estimated"),
+                      try row(estimated: true), try row(aborted: true),
+                      try row(cached: 100_001), try row(reasoning: 20_001)] {
+            XCTAssertNil(try record(value).standardReferenceEstimate.picoUSD)
+        }
+    }
+
+    func testExistingOfficialRouteReceivesSameHolidayRule() throws {
+        let official = try record(row(provider: "deepseek", resolved: "deepseek-v4-flash",
+                                      timestamp: "2026-10-01T02:00:00Z"))
+        XCTAssertEqual(official.standardReferenceEstimate.picoUSD, 21_120_000_000)
+    }
+
+    func testHistoryDeduplicationAndModelGroupingPreservePrimaryUsage() throws {
+        let value = try row()
+        let analytics = AILSA_SSLedgerMeteringReader(pricingCatalog: .empty)
+            .read(data: Data([value, value].joined(separator: "\n").utf8))
+        XCTAssertEqual(analytics.records.count, 1)
+        XCTAssertEqual(analytics.coverage.ledgerDuplicateRowsDiscarded, 1)
+        XCTAssertEqual(analytics.coverage.codexSessionRowsAdded, 0)
+        let now = ISO8601DateFormatter().date(from: "2026-09-30T12:00:00Z")!
+        let snapshot = QuotaDashboardSnapshot.build(.openCodex(analytics), now: now)
+        XCTAssertEqual(snapshot.all.tokens.total, 120_000)
+        XCTAssertEqual(snapshot.all.reference.pico, 21_120_000_000)
+        XCTAssertEqual(snapshot.all.reference.count, 1)
+        XCTAssertEqual(QuotaModelKey(provider: "atc-deepseek", model: "DeepSeek-v4.1-Flash-EXL3").familyKey.model,
+                       "DeepSeek V4.1 Flash")
+        XCTAssertEqual(QuotaModelKey(provider: "deepseek", model: "deepseek-v4-flash").familyKey.model, "DeepSeek Flash")
+    }
+}

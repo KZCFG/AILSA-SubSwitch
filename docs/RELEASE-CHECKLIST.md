@@ -14,7 +14,24 @@ separate steps.
 - [x] Publish a clean source snapshot to KZCFG/AILSA-SubSwitch; verify remote readback.
 - [x] Enable private vulnerability reporting.
 
-## Current release: 1.0.0(e) (2026092803)
+## Current release: 1.0.0(f) (2026093001)
+
+This revision adds official API-equivalent pricing for ATC's local DeepSeek V4.1
+Flash model, without changing native usage records or confirmed vendor charges.
+
+- **360 passed, 0 failed across 48 classes** in the full CLT asserting harness
+  on M1. This is not Apple's XCTest runtime.
+- The official Flash price table and the 2026 State Council holiday calendar
+  were checked on September 30, 2026. Request-time UTC boundaries, weekends,
+  holidays, cache discounts, identity checks and missing usage are covered.
+- Private Hub files and local credentials are excluded from the public source
+  and package. The public and locally installed builds are validated separately.
+- Distribution remains ad-hoc signed for Apple Silicon. Native XCTest,
+  clean-machine installation, Developer ID signing and notarization remain unverified.
+
+See [1.0.0(f) release notes](RELEASE-1.0.0f.md).
+
+## Historical release: 1.0.0(e) (2026092803)
 
 This revision adds native usage-image export and GPT-6 Sol / Luna pricing.
 
