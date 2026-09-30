@@ -1066,9 +1066,11 @@ struct AILSA_SSLedgerMeteringReader: Sendable {
             guard double.isFinite,
                   double >= 0,
                   double.rounded(.towardZero) == double,
-                  double <= Double(Int.max)
+                  let integer = Int(exactly: double)
             else { return nil }
-            return Int(double)
+            // Double(Int.max) rounds up to 2^63 on arm64. A <= check can
+            // therefore admit a value that traps in Int(double).
+            return integer
         }
         if let integer = value as? Int, integer >= 0 { return integer }
         if let string = value as? String, let integer = Int(string), integer >= 0 {

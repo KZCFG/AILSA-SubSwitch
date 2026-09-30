@@ -506,6 +506,7 @@ struct QuotaModelKey: Hashable, Sendable {
     /// record's independently audited price; never reprice an entire family.
     var familyKey: Self {
         let name = model.lowercased().replacingOccurrences(of: "_", with: "-")
+        if name == "gpt-6.1-sol" { return Self(provider: provider, model: "GPT-6.1 Sol") }
         if name == "kimi-for-coding" { return Self(provider: provider, model: "Kimi K2.8 Preview") }
         if name == "kimi-for-coding-highspeed" { return Self(provider: provider, model: "Kimi K2.7 Code HighSpeed") }
         if name == "k3[1m]" { return Self(provider: "", model: "Kimi K3") }

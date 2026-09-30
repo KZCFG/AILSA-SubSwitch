@@ -14,7 +14,26 @@ separate steps.
 - [x] Publish a clean source snapshot to KZCFG/AILSA-SubSwitch; verify remote readback.
 - [x] Enable private vulnerability reporting.
 
-## Current release: 1.0.0(f) (2026093001)
+## Current release: 1.0.0(g) (2026100101)
+
+This revision adds GPT-6.1 Sol usage reference pricing.
+
+- M1 CLT validation: **370 tests passed, 0 failed, across 49 classes**, using
+  the asserting XCTest compatibility runner. The separate local build passed
+  **393 tests, 0 failed, across 53 classes**.
+- Official prices were checked on October 1, 2026. Coverage includes cache
+  discounts, the 272,000-token boundary, vendor-confirmed Fast outcomes,
+  unknown identities, invalid usage and unchanged older model prices.
+- Historical replay of **61,380 unique records** preserved all Token totals
+  and all previously priced public model amounts. Only GPT-6.1 Sol gained newly
+  calculated amounts, matching an independent calculation. Package validation
+  covers source manifests, ZIP checksums and matching app/widget versions.
+- Distribution is ad-hoc signed for Apple Silicon. Native XCTest, clean-machine
+  installation, Developer ID signing and notarization remain unverified.
+
+See [1.0.0(g) release notes](RELEASE-1.0.0g.md).
+
+## Historical release: 1.0.0(f) (2026093001)
 
 This revision adds official API-equivalent pricing for ATC's local DeepSeek V4.1
 Flash model, without changing native usage records or confirmed vendor charges.

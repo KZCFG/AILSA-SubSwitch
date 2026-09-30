@@ -3674,6 +3674,142 @@
         "regional_uplift": "Global reference; regional processing adds 10% where available."
       },
       "auditDate": "2026-09-28"
+    },
+    {
+      "bindingId": "gpt-6.1-sol:openai:gpt-6.1-sol",
+      "provider": "openai",
+      "resolvedModel": "gpt-6.1-sol",
+      "referenceAPIModel": "gpt-6.1-sol",
+      "apiEquivalentEligibility": "conditional_on_reported_identity_and_actual_tier",
+      "identityStatus": "exact public model id; actual upstream response not probed",
+      "officialSource": [
+        {
+          "id": "gpt-6.1-sol",
+          "url": "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+          "verifiedOn": "2026-10-01",
+          "note": "USD per 1M tokens: input 2, cache hit 0.10, cache write 2.50, output 10. Above 272000 input tokens: 2x input/cache and 1.5x output for the full request. Fast is 2x applicable rates."
+        }
+      ],
+      "status": "conditional",
+      "rateRules": [
+        {
+          "id": "standard-short",
+          "condition": {
+            "input_tokens_lte": 272000
+          },
+          "inputUSDPerMillionTokens": "2",
+          "outputUSDPerMillionTokens": "10",
+          "cacheReadUSDPerMillionTokens": "0.10",
+          "cacheWriteUSDPerMillionTokens": "2.50",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "gpt-6.1-sol",
+              "url": "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+              "verifiedOn": "2026-10-01",
+              "note": "USD per 1M tokens: input 2, cache hit 0.10, cache write 2.50, output 10. Above 272000 input tokens: 2x input/cache and 1.5x output for the full request. Fast is 2x applicable rates."
+            }
+          ]
+        },
+        {
+          "id": "standard-long",
+          "condition": {
+            "input_tokens_gt": 272000
+          },
+          "inputUSDPerMillionTokens": "4",
+          "outputUSDPerMillionTokens": "15",
+          "cacheReadUSDPerMillionTokens": "0.20",
+          "cacheWriteUSDPerMillionTokens": "5",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "gpt-6.1-sol",
+              "url": "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+              "verifiedOn": "2026-10-01",
+              "note": "USD per 1M tokens: input 2, cache hit 0.10, cache write 2.50, output 10. Above 272000 input tokens: 2x input/cache and 1.5x output for the full request. Fast is 2x applicable rates."
+            }
+          ]
+        },
+        {
+          "id": "fast-short",
+          "condition": {
+            "input_tokens_lte": 272000,
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ]
+          },
+          "inputUSDPerMillionTokens": "4",
+          "outputUSDPerMillionTokens": "20",
+          "cacheReadUSDPerMillionTokens": "0.20",
+          "cacheWriteUSDPerMillionTokens": "5",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "gpt-6.1-sol",
+              "url": "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+              "verifiedOn": "2026-10-01",
+              "note": "USD per 1M tokens: input 2, cache hit 0.10, cache write 2.50, output 10. Above 272000 input tokens: 2x input/cache and 1.5x output for the full request. Fast is 2x applicable rates."
+            }
+          ]
+        },
+        {
+          "id": "fast-long",
+          "condition": {
+            "input_tokens_gt": 272000,
+            "confirmed_service_tier": [
+              "priority",
+              "fast"
+            ]
+          },
+          "inputUSDPerMillionTokens": "8",
+          "outputUSDPerMillionTokens": "30",
+          "cacheReadUSDPerMillionTokens": "0.40",
+          "cacheWriteUSDPerMillionTokens": "10",
+          "requirements": [
+            "confirmed_vendor_service_tier",
+            "confirmed_fast_grant_consistency",
+            "reported_request_input_tokens",
+            "verified_vendor_service_tier",
+            "model_specific_long_context_scope"
+          ],
+          "source": [
+            {
+              "id": "gpt-6.1-sol",
+              "url": "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+              "verifiedOn": "2026-10-01",
+              "note": "USD per 1M tokens: input 2, cache hit 0.10, cache write 2.50, output 10. Above 272000 input tokens: 2x input/cache and 1.5x output for the full request. Fast is 2x applicable rates."
+            }
+          ]
+        }
+      ],
+      "uncertainty": [
+        "Reference pricing is not subscription billing; actual upstream tier must be confirmed.",
+        "Cache-creation charges require non-overlap semantics not provided by the v1 ledger contract.",
+        "Regional processing, Batch and Flex adjustments are not inferred from a requested tier."
+      ],
+      "pricingNotes": {
+        "long_scope": "Full request, strictly above 272000 input tokens.",
+        "fast_rate_status": "2x applicable rates, with vendor-confirmed Fast grant.",
+        "regional_uplift": "Global reference; regional processing adds 10% where available."
+      },
+      "auditDate": "2026-10-01"
     }
   ],
   "modelUpdates": [
@@ -3691,6 +3827,11 @@
       "model": "gpt-6-luna",
       "auditDate": "2026-09-28",
       "note": "Model-specific addition; baseline and other model audit dates unchanged."
+    },
+    {
+      "model": "gpt-6.1-sol",
+      "auditDate": "2026-10-01",
+      "note": "Model-specific addition; older model prices and audit dates unchanged."
     }
   ]
 }

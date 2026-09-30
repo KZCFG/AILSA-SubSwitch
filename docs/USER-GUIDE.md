@@ -14,20 +14,20 @@ approving. If macOS reports a damaged archive, redownload and verify it first.
 Each package has a SHA-256 file. In the download directory:
 
 ```bash
-shasum -a 256 -c AILSA-SubSwitch-1.0.0f-2026093001-arm64.zip.sha256
+shasum -a 256 -c AILSA-SubSwitch-1.0.0g-2026100101-arm64.zip.sha256
 ```
 
 There is no OTA updater in 1.0.0. Quit ASS from Settings before replacing the
 application with a newer download. Replacing the app does not erase its separate
 account store. Keep only one installed copy to avoid launching an older build.
 
-This update is **1.0.0(f)**. ATC's local DeepSeek V4.1 Flash records now appear
-under **DeepSeek V4.1 Flash**, with real reported Token counts and an equivalent
-API reference amount. Rates follow the request timestamp, cache hits and the
-published peak/off-peak calendar. Existing history is recalculated when loaded;
-no sign-in or reimport is needed. This is a reference estimate for local inference,
-not a charge from DeepSeek or a hardware/electricity cost. See the
-[pricing details](RELEASE-1.0.0f.md). Other models retain their existing prices.
+This update is **1.0.0(g)**. **GPT-6.1 Sol** now contributes reported Token
+usage and equivalent API amounts to model breakdowns, Today/7-day/30-day charts
+and image exports. Historical records are recalculated when read, with no need
+to sign in again. Standard pricing is $2.00 input, $0.10 cached input and $10.00
+output per million tokens. Full-request long-context and vendor-confirmed Fast
+prices are supported. These are API reference estimates, not subscription bills.
+See the [pricing details](RELEASE-1.0.0g.md).
 Small updates use letter revisions such as
 **1.0.0(a)**, **1.0.0(b)**, and **1.0.0(c)**.
 Larger feature releases change the numeric version. The date-based build number

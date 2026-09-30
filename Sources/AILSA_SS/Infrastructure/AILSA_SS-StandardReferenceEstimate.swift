@@ -157,10 +157,15 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
 
         // Grok 4.7's published Priority multiplier is explicitly verified. A
         // requested Fast flag alone is never enough to apply this price.
+        // GPT-6.1 Sol's official Fast multiplier is independently verified.
         let grokPriority = leafID == "grok-4.7"
             && input.fastGrantEvidence == .explicitlyGranted
             && ["priority", "fast"].contains(input.confirmedServiceTier ?? "")
-        if input.fastGrantEvidence == .explicitlyGranted && !grokPriority {
+        let gpt61Fast = leafID == "gpt-6.1-sol"
+            && input.fastGrantEvidence == .explicitlyGranted
+            && ["priority", "fast"].contains(input.confirmedServiceTier ?? "")
+        let doubledReference = grokPriority || gpt61Fast
+        if input.fastGrantEvidence == .explicitlyGranted && !doubledReference {
             let context = contextAssumption(
                 input: input,
                 fastGranted: true,
@@ -209,7 +214,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         guard let standardRate = selected.rate else {
             return unavailable(.overThresholdNoLongLeaf, leaf: leafID, context: context)
         }
-        let rate = grokPriority ? Rate(
+        let rate = doubledReference ? Rate(
             inputPicoUSDPerToken: standardRate.inputPicoUSDPerToken * 2,
             cacheReadPicoUSDPerToken: standardRate.cacheReadPicoUSDPerToken * 2,
             outputPicoUSDPerToken: standardRate.outputPicoUSDPerToken * 2
@@ -228,7 +233,8 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
             picoUSD: amount,
             priceBasis: grokPriority
                 ? (userReferenceAlias == nil ? "official_priority_reference" : "user_mapped_official_priority_reference")
-                : (userReferenceAlias == nil ? Self.priceBasis : "user_mapped_official_standard_reference"),
+                : (gpt61Fast ? "official_fast_reference"
+                   : (userReferenceAlias == nil ? Self.priceBasis : "user_mapped_official_standard_reference")),
             leaf: leafID,
             contextLadder: selected.ladder,
             estimatePartial: cacheBreakdownMissing,
@@ -373,6 +379,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         "openai/gpt-5.6-sol": "gpt-5.6-sol",
         "openai/gpt-5.6-luna": "gpt-5.6-luna",
         "openai/gpt-6-astra": "gpt-6-astra",
+        "openai/gpt-6.1-sol": "gpt-6.1-sol",
         "openai/gpt-6-sol": "gpt-6-sol",
         "openai/gpt-6-luna": "gpt-6-luna",
     ]
@@ -382,6 +389,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
     /// just because it echoes a known resolved-model name.
     private static let providersByLeaf: [String: Set<String>] = [
         "gpt-6-astra": ["openai"],
+        "gpt-6.1-sol": ["openai"],
         "gpt-6-sol": ["openai"],
         "gpt-6-luna": ["openai"],
         "gpt-5.6-sol": ["openai"],
@@ -412,6 +420,13 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         "claude-fable-5-1": Leaf(
             short: Rate(inputPicoUSDPerToken: 10_000_000, cacheReadPicoUSDPerToken: 250_000, outputPicoUSDPerToken: 50_000_000),
             long: nil, threshold: .allContexts),
+        // https://developers.openai.com/api/docs/models/gpt-6.1-sol
+        // Verified 2026-10-01: cached input is 5% of input; Fast is 2x.
+        "gpt-6.1-sol": Leaf(
+            short: Rate(inputPicoUSDPerToken: 2_000_000, cacheReadPicoUSDPerToken: 100_000, outputPicoUSDPerToken: 10_000_000),
+            long: Rate(inputPicoUSDPerToken: 4_000_000, cacheReadPicoUSDPerToken: 200_000, outputPicoUSDPerToken: 15_000_000),
+            threshold: .inputTokensGreaterThan(272_000)
+        ),
         // Official model pages checked 2026-09-28. Long context applies to
         // the full request only above (not at) 272,000 input tokens.
         "gpt-6-sol": Leaf(

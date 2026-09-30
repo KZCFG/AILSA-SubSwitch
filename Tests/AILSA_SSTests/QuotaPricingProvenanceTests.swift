@@ -401,3 +401,134 @@ final class DeepSeekV41LocalPricingTests: XCTestCase {
         XCTAssertEqual(QuotaModelKey(provider: "deepseek", model: "deepseek-v4-flash").familyKey.model, "DeepSeek Flash")
     }
 }
+
+final class GPT61SolPricingTests: XCTestCase {
+    private func row(id: String = "sol61", input: Int = 100_000, cached: Int? = 20_000,
+                     provider: String = "openai", resolved: String? = "gpt-6.1-sol",
+                     tier: String? = nil, confirmation: String = "vendor", fast: Bool? = nil,
+                     status: String = "reported", aborted: Bool = false, cacheWrite: Int = 0,
+                     reasoning: Int = 1_000) throws -> String {
+        var usage: [String: Any] = ["inputTokens": input, "outputTokens": 10_000,
+            "reasoningOutputTokens": reasoning, "cacheCreationInputTokens": cacheWrite]
+        if let cached { usage["cachedInputTokens"] = cached }
+        var value: [String: Any] = ["requestId": id, "timestamp": "2026-10-01T01:00:00Z",
+            "provider": provider, "requestedModel": "openai/gpt-6.1-sol",
+            "model": "gpt-6.1-sol", "usageStatus": status, "usage": usage, "streamAborted": aborted]
+        if let resolved { value["resolvedModel"] = resolved }
+        if let tier { value["tierOutcome"] = ["confirmation": confirmation, "canonical": tier] }
+        if let fast { value["fastGranted"] = fast }
+        return String(decoding: try JSONSerialization.data(withJSONObject: value), as: UTF8.self)
+    }
+
+    private func catalog() throws -> OpenCodexPricingCatalog {
+        let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent()
+        return try AILSA_SSVerifiedPricingCatalogLoader.load(url: repo
+            .appendingPathComponent("Sources/AILSA_SS/Resources/AILSA_SS-runtime-pricing-bindings-v1.json"))
+    }
+
+    private func record(_ value: String, catalog: OpenCodexPricingCatalog = .empty) throws -> OpenCodexLedgerMeteringRecord {
+        try XCTUnwrap(AILSA_SSLedgerMeteringReader(pricingCatalog: catalog).read(data: Data(value.utf8)).records.first)
+    }
+
+    func testStandardReferenceUsesFivePercentCacheRateAndPreservesPrimaryTokens() throws {
+        let result = try record(row())
+        XCTAssertEqual(result.standardReferenceEstimate.picoUSD, 262_000_000_000)
+        XCTAssertEqual(result.standardReferenceEstimate.leaf, "gpt-6.1-sol")
+        XCTAssertEqual(result.standardReferenceEstimate.priceBasis, OpenCodexStandardReferenceEstimator.priceBasis)
+        XCTAssertEqual(result.tokens.totalTokens, 110_000)
+        XCTAssertEqual(QuotaDashboardSnapshot.contribution(result).value.tokens.total, 110_000)
+        XCTAssertNil(result.pricing.picoUSD, "Reference pricing does not establish a confirmed vendor tier")
+    }
+
+    func testLongContextPricesFullRequestStrictlyAbove272k() throws {
+        XCTAssertEqual(try record(row(input: 272_000)).standardReferenceEstimate.picoUSD, 606_000_000_000)
+        XCTAssertEqual(try record(row(input: 272_001)).standardReferenceEstimate.picoUSD, 1_162_004_000_000)
+        XCTAssertEqual(try record(row(input: 272_000)).standardReferenceEstimate.contextLadder, "standard-short")
+        XCTAssertEqual(try record(row(input: 272_001)).standardReferenceEstimate.contextLadder, "standard-long")
+    }
+
+    func testFastRequiresVendorConfirmationAndDoublesApplicableRates() throws {
+        let pricing = try catalog()
+        for tier in ["priority", "fast"] {
+            let short = try record(row(tier: tier), catalog: pricing)
+            let long = try record(row(input: 272_001, tier: tier), catalog: pricing)
+            XCTAssertEqual(short.standardReferenceEstimate.picoUSD, 524_000_000_000)
+            XCTAssertEqual(long.standardReferenceEstimate.picoUSD, 2_324_008_000_000)
+            XCTAssertEqual(short.standardReferenceEstimate.priceBasis, "official_fast_reference")
+            XCTAssertEqual(short.pricing.picoUSD, short.standardReferenceEstimate.picoUSD)
+            XCTAssertEqual(long.pricing.picoUSD, long.standardReferenceEstimate.picoUSD)
+        }
+    }
+
+    func testUnconfirmedOrContradictoryFastEvidenceNeverAppliesMultiplier() throws {
+        let pricing = try catalog()
+        for value in [try row(tier: "priority", confirmation: "unknown"),
+                      try row(tier: "priority", fast: false), try row(fast: true)] {
+            let result = try record(value, catalog: pricing)
+            XCTAssertEqual(result.standardReferenceEstimate.picoUSD, 262_000_000_000)
+            XCTAssertNil(result.pricing.picoUSD)
+            XCTAssertNil(result.fastGranted)
+        }
+    }
+
+    func testConfirmedStandardPriceMatchesReference() throws {
+        let result = try record(row(tier: "standard", fast: false), catalog: catalog())
+        XCTAssertEqual(result.pricing.picoUSD, 262_000_000_000)
+        XCTAssertEqual(result.pricing.picoUSD, result.standardReferenceEstimate.picoUSD)
+    }
+
+    func testCacheExtremesAndReasoningAreNotCountedTwice() throws {
+        XCTAssertEqual(try record(row(cached: 0)).standardReferenceEstimate.picoUSD, 300_000_000_000)
+        for reasoning in [0, 10_000] {
+            let result = try record(row(cached: 100_000, reasoning: reasoning))
+            XCTAssertEqual(result.standardReferenceEstimate.picoUSD, 110_000_000_000)
+            XCTAssertEqual(result.tokens.totalTokens, 110_000)
+        }
+        let partial = try record(row(cached: nil))
+        XCTAssertEqual(partial.standardReferenceEstimate.picoUSD, 300_000_000_000)
+        XCTAssertTrue(partial.standardReferenceEstimate.estimatePartial)
+    }
+
+    func testUnknownIdentityAndUnrelatedProviderRemainUnpriced() throws {
+        for value in [try row(provider: "unknown-proxy"), try row(resolved: nil),
+                      try row(resolved: "gpt-6.1-sol-fake")] {
+            XCTAssertNil(try record(value).standardReferenceEstimate.picoUSD)
+        }
+    }
+
+    func testConflictingOrUnavailableUsageDoesNotInventCosts() throws {
+        for value in [try row(status: "unreported"), try row(status: "estimated"), try row(aborted: true),
+                      try row(cached: 100_001), try row(cacheWrite: 1), try row(reasoning: 10_001),
+                      try row(input: Int.max)] {
+            XCTAssertNil(try record(value).standardReferenceEstimate.picoUSD)
+        }
+    }
+
+    func testCatalogAddsSixExactBindingsWithoutRewritingOlderAudits() throws {
+        let pricing = try catalog()
+        let bindings = pricing.bindings.filter { $0.provider == "openai" && $0.resolvedModel == "gpt-6.1-sol" }
+        XCTAssertEqual(bindings.count, 6)
+        XCTAssertTrue(bindings.contains { $0.serviceTier == "standard" && $0.cachedInputPicoUSDPerToken == 100_000 })
+        XCTAssertTrue(bindings.contains { $0.serviceTier == "fast" && $0.inputPicoUSDPerToken == 8_000_000
+            && $0.cachedInputPicoUSDPerToken == 400_000 && $0.outputPicoUSDPerToken == 30_000_000 })
+        XCTAssertEqual(pricing.provenance?.auditDate, "2026-09-15")
+        XCTAssertFalse(pricing.bindings.contains { $0.provider == "unknown-proxy" && $0.resolvedModel == "gpt-6.1-sol" })
+    }
+
+    func testHistoricalRecordsDeduplicateAndKeepSolGenerationsDistinct() throws {
+        let value = try row()
+        let previous = try row(id: "sol6", resolved: "gpt-6-sol")
+        let analytics = AILSA_SSLedgerMeteringReader(pricingCatalog: .empty)
+            .read(data: Data([value, value, previous].joined(separator: "\n").utf8))
+        XCTAssertEqual(analytics.records.count, 2)
+        XCTAssertEqual(analytics.coverage.ledgerDuplicateRowsDiscarded, 1)
+        let snapshot = QuotaDashboardSnapshot.build(.openCodex(analytics), now: Date())
+        XCTAssertEqual(snapshot.all.tokens.total, 220_000)
+        XCTAssertEqual(snapshot.all.reference.pico, 526_000_000_000)
+        let newKey = QuotaModelKey(provider: "openai", model: "gpt-6.1-sol").familyKey
+        let oldKey = QuotaModelKey(provider: "openai", model: "gpt-6-sol").familyKey
+        XCTAssertEqual(newKey.model, "GPT-6.1 Sol")
+        XCTAssertNotEqual(newKey, oldKey)
+    }
+}
