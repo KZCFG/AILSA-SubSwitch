@@ -91,7 +91,10 @@ struct QuotaManagementPageView: View {
                         availableHeight: max(200, Double(geometry.size.height - toolbarHeight - LayoutRules.pagePadding) - 20 - (loadError == nil ? 0 : 24)),
                         ui: Binding(
                             get: { dashboardStates[selectedProvider] ?? QuotaDashboardUIState() },
-                            set: { dashboardStates[selectedProvider] = $0 }))
+                            set: { dashboardStates[selectedProvider] = $0 }),
+                        onSelectRange: {
+                            Task { await model.refreshOnRangeSelection(for: selectedProvider) }
+                        })
                         .id(selectedProvider)
                 } else if isLoading {
                     VStack(spacing: 14) {
@@ -109,7 +112,7 @@ struct QuotaManagementPageView: View {
             .padding(.horizontal, LayoutRules.pagePadding)
             .padding(.top, LayoutRules.pagePadding).padding(.bottom, 10)
         }
-        .task(id: selectedProvider) { await model.loadDashboard(for: selectedProvider) }
+        .task(id: selectedProvider) { await model.refreshOnWindowOpen(provider: selectedProvider) }
         .onAppear {
             if isStandalone {
                 selectedProvider = model.expansionProvider
@@ -200,6 +203,7 @@ struct QuotaDashboard: View {
     let provider: QuotaManagementProvider
     let availableHeight: Double
     @Binding var ui: QuotaDashboardUIState
+    var onSelectRange: () -> Void = {}
     @AppStorage("ass.tokenUnit") private var tokenUnit = "M"
     @AppStorage(QuotaChartMetric.defaultsKey) private var chartMetric: QuotaChartMetric = .tokens
     private var range: Int { get { ui.range } nonmutating set { ui.range = newValue } }
@@ -284,7 +288,10 @@ struct QuotaDashboard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 ASSegmentedControl(
-                    selection: Binding(get: { range }, set: { range = $0; selectedDay = nil; hoveredMinute = nil; page = 0; chartPage = 0 }),
+                    selection: Binding(get: { range }, set: {
+                        range = $0; selectedDay = nil; hoveredDay = nil; hoveredMinute = nil; page = 0; chartPage = 0
+                        onSelectRange()
+                    }),
                     values: [1, 7, 30],
                     title: { rangeTitle($0) })
                 if range == 30 && !isQuota {

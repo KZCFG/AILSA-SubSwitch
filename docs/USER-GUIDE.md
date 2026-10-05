@@ -63,6 +63,18 @@ credential access that can operate quietly; authorization failures leave the
 feature unavailable rather than repeatedly opening a password dialog. Cursor
 currently uses manual switching.
 
+## Automatic refresh
+
+Opening the menu refreshes visible Codex and Antigravity subscriptions.
+Returning to Accounts or selecting a provider also requests fresh data.
+Cursor rechecks the current native account on each presentation. In-flight
+reads are reused; older quota stays visible until a fresh result arrives.
+
+Usage Management refreshes on entry, provider changes and Today / 7-day /
+30-day selections. Its top-right time is the last successful scan, so failed
+requests retain the previous time and show an error. Cursor automatically
+refreshes recent history; its refresh button reloads the complete history.
+
 ## Explore usage
 
 **Usage Management** separates providers and defaults to **Today**. Choose 7 or

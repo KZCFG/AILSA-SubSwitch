@@ -189,7 +189,7 @@ final class AccountsPageModel: ObservableObject {
     }
 
     func isUsageRefreshActive(forAccountID id: String) -> Bool {
-        (!isManualRefreshing && remoteUsageRefreshingAccountIDs.contains(id))
+        remoteUsageRefreshingAccountIDs.contains(id)
             || refreshingAccountIDs.contains(id)
     }
 

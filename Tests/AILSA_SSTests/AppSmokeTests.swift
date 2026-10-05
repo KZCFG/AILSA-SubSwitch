@@ -4,6 +4,77 @@ import Combine
 
 @MainActor
 final class AppSmokeTests: XCTestCase {
+    func testOpeningAccountsRefreshesInactiveSubscriptionsDuringBackgroundRefresh() async throws {
+        let fixture = makeOpeningRefreshFixture()
+        await fixture.model.load()
+        fixture.model.syncRemoteUsageRefreshActivity(refreshingAccountIDs: ["acct-current"])
+
+        await fixture.model.refreshOnWindowOpen()
+
+        let queried = await fixture.usage.queriedAccounts
+        XCTAssertEqual(queried, ["account-next"])
+        let store = try fixture.store.loadStore()
+        XCTAssertEqual(store.accounts.first { $0.id == "acct-next" }?.usage?.fetchedAt, 2_000)
+        XCTAssertTrue(fixture.model.isUsageRefreshActive(forAccountID: "acct-current"))
+        XCTAssertFalse(fixture.model.isManualRefreshing)
+    }
+
+    func testSimultaneousInitialAccountOpenRefreshesEachSubscriptionOnce() async throws {
+        let fixture = makeOpeningRefreshFixture(delay: .milliseconds(60))
+        async let first: Void = fixture.model.refreshOnWindowOpen()
+        async let second: Void = fixture.model.refreshOnWindowOpen()
+        _ = await (first, second)
+
+        let queried = await fixture.usage.queriedAccounts
+        XCTAssertEqual(queried.sorted(), ["account-current", "account-next"])
+        XCTAssertTrue(fixture.model.refreshingAccountIDs.isEmpty)
+        XCTAssertFalse(fixture.model.isManualRefreshing)
+    }
+
+    func testOpeningAccountsBypassesRecentQuotaCacheAndKeepsBothAccounts() async throws {
+        let fixture = makeOpeningRefreshFixture()
+        await fixture.model.refreshOnWindowOpen()
+        let queried = await fixture.usage.queriedAccounts
+        XCTAssertEqual(queried.sorted(), ["account-current", "account-next"])
+        guard case .content(let accounts) = fixture.model.state else {
+            return XCTFail("Expected refreshed account cards")
+        }
+        XCTAssertEqual(accounts.count, 2)
+        XCTAssertTrue(accounts.allSatisfy { $0.usage?.fetchedAt == 2_000 })
+    }
+
+    func testSelectingCodexProviderRefreshesWithoutManualAction() async throws {
+        let fixture = makeOpeningRefreshFixture()
+        await fixture.model.load()
+        fixture.model.selectedProvider = .codex
+        await fixture.model.refreshOnProviderSelection()
+        let queried = await fixture.usage.queriedAccounts
+        XCTAssertEqual(queried.sorted(), ["account-current", "account-next"])
+    }
+
+    private func makeOpeningRefreshFixture(delay: Duration = .zero) -> (
+        model: AccountsPageModel, store: SmokeAccountsStoreRepository, usage: SmokeOpeningUsageService
+    ) {
+        let store = SmokeAccountsStoreRepository(store: AccountsStore(version: 1, accounts: [
+            StoredAccount(id: "acct-current", label: "Current", email: "current@example.com",
+                accountID: "account-current", planType: "pro", teamName: nil, teamAlias: nil,
+                authJSON: .object(["id_token": .string("current-token")]), addedAt: 1, updatedAt: 1,
+                usage: makeSmokeUsageSnapshot(fetchedAt: 1_999), usageError: nil),
+            StoredAccount(id: "acct-next", label: "Next", email: "next@example.com",
+                accountID: "account-next", planType: "pro", teamName: nil, teamAlias: nil,
+                authJSON: .object(["id_token": .string("next-token")]), addedAt: 1, updatedAt: 1,
+                usage: makeSmokeUsageSnapshot(fetchedAt: 1_999), usageError: nil)
+        ], currentAccountID: "acct-current"))
+        let usage = SmokeOpeningUsageService(delay: delay)
+        let coordinator = AccountsCoordinator(storeRepository: store,
+            settingsRepository: TestSettingsRepository(), authRepository: SmokeAuthRepository(currentAccountKey: "account-current"),
+            usageService: usage, chatGPTOAuthLoginService: SmokeChatLoginService(),
+            codexCLIService: SmokeCodexCLIService(), editorAppService: SmokeEditorAppService(),
+            opencodeAuthSyncService: SmokeAILSA_SSAuthSyncService(), dateProvider: SmokeDateProvider(now: 2_000),
+            runtimePlatform: .macOS)
+        return (AccountsPageModel(coordinator: coordinator, runtimePlatform: .macOS), store, usage)
+    }
+
     func testAccountsPageLoadSwitchAndSettingsFlow() async throws {
         let now: Int64 = 1_763_216_000
         let storeRepository = SmokeAccountsStoreRepository(
@@ -420,6 +491,17 @@ private struct SmokeUsageService: UsageService {
         _ = accessToken
         _ = accountID
         return snapshot
+    }
+}
+
+private actor SmokeOpeningUsageService: UsageService {
+    let delay: Duration
+    private(set) var queriedAccounts: [String] = []
+    init(delay: Duration) { self.delay = delay }
+    func fetchUsage(accessToken: String, accountID: String) async throws -> UsageSnapshot {
+        queriedAccounts.append(accountID)
+        try await Task.sleep(for: delay)
+        return makeSmokeUsageSnapshot(fetchedAt: 2_000)
     }
 }
 

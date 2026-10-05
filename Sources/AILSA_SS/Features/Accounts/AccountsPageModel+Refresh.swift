@@ -7,7 +7,20 @@ extension AccountsPageModel {
     /// windows. The per-account set keeps the card state honest while partial
     /// results arrive and lets stale text return only after a failure.
     func refreshOnWindowOpen() async {
-        guard !isRefreshing else { return }
+        await refreshAutomatically(provider: nil)
+    }
+
+    func refreshOnProviderSelection() async {
+        await refreshAutomatically(provider: selectedProvider)
+    }
+
+    private func refreshAutomatically(provider: AccountProvider?) async {
+        // A background read of the active card must not suppress the other
+        // subscriptions. Claim this operation before loading the store so
+        // simultaneous presentation callbacks cannot launch duplicate reads.
+        guard !isManualRefreshing else { return }
+        isManualRefreshing = true
+        defer { isManualRefreshing = false }
 
         if !hasLoaded {
             await load()
@@ -17,14 +30,14 @@ extension AccountsPageModel {
         let targetIDs = accounts
             .filter(\.isVisibleInMainList)
             .filter { $0.provider == .codex || $0.provider == .antigravity }
+            .filter { provider == nil || $0.provider == provider }
+            .filter { !remoteUsageRefreshingAccountIDs.contains($0.id) && !refreshingAccountIDs.contains($0.id) }
             .map(\.id)
         guard !targetIDs.isEmpty else { return }
 
-        isManualRefreshing = true
         refreshingAccountIDs.formUnion(targetIDs)
         defer {
             refreshingAccountIDs.subtract(targetIDs)
-            isManualRefreshing = false
         }
 
         do {

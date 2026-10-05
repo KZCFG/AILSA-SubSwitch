@@ -165,6 +165,12 @@ final class QuotaManagementPageModel: ObservableObject {
         }
     }
 
+    func refreshOnRangeSelection(for provider: QuotaManagementProvider) async {
+        // Range changes are explicit freshness boundaries, even inside the
+        // dashboard TTL. Cursor only fetches its recent tail on this path.
+        await loadDashboard(for: provider, mode: .incremental)
+    }
+
     func loadIfNeeded() async {
         guard dashboards[selectedProvider] == nil else { return }
         await reloadCurrentProvider()

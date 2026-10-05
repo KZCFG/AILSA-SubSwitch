@@ -3,11 +3,12 @@ import SwiftUI
 struct CursorAccountsView: View {
     var progressMode: UsageProgressDisplayMode = .used
     var visibility: UsageQuotaVisibilityPreferences = .defaultValue
-    @State private var account: CursorAccountUsage?
-    @State private var profiles: [CursorSavedProfile] = []
-    @State private var error: String?
-    @State private var loading = false
-    @State private var recovery = false
+    @StateObject private var model = CursorAccountsModel()
+    private var account: CursorAccountUsage? { model.account }
+    private var profiles: [CursorSavedProfile] { model.profiles }
+    private var error: String? { model.error }
+    private var loading: Bool { model.loading }
+    private var recovery: Bool { model.recovery }
     @AppStorage("ass.cursorCardsCompact") private var compact = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("ass.launchCursorAfterSwitch") private var launchCursorAfterSwitch = true
@@ -53,7 +54,10 @@ struct CursorAccountsView: View {
             if let error { Text(error).font(.caption).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true) }
         }
         .padding(.horizontal, LayoutRules.pagePadding)
-        .task { if account == nil { await refresh() } }
+        .task { await refresh() }
+        .onReceive(NotificationCenter.default.publisher(for: .ailsaSSMainPanelDidOpen)) { _ in
+            Task { await refresh() }
+        }
     }
     private func savedCard(_ profile: CursorSavedProfile) -> some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -123,21 +127,54 @@ struct CursorAccountsView: View {
             Text("更新于 " + account.scannedAt.formatted(date: .omitted, time: .shortened)).font(.caption2).foregroundStyle(.secondary)
         }.padding(14).background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 8))
     }
-    @MainActor private func refresh() async { await perform {} }
+    @MainActor private func refresh() async { await model.refresh() }
     @MainActor private func perform(_ operation: () async throws -> Void) async {
+        await model.perform(operation)
+    }
+}
+
+@MainActor
+final class CursorAccountsModel: ObservableObject {
+    @Published private(set) var account: CursorAccountUsage?
+    @Published private(set) var profiles: [CursorSavedProfile] = []
+    @Published private(set) var error: String?
+    @Published private(set) var loading = false
+    @Published private(set) var recovery = false
+    private let loadProfiles: () async throws -> [CursorSavedProfile]
+    private let hasRecovery: () async throws -> Bool
+    private let loadAccount: () async throws -> CursorAccountUsage
+    private let onAccountChanged: (String) -> Void
+
+    init(
+        loadProfiles: @escaping () async throws -> [CursorSavedProfile] = { try await CursorProfileRepository.shared.profiles() },
+        hasRecovery: @escaping () async throws -> Bool = { try await CursorProfileRepository.shared.recoveryValues() != nil },
+        loadAccount: @escaping () async throws -> CursorAccountUsage = { try await CursorUsageService.shared.loadAccount() },
+        onAccountChanged: @escaping (String) -> Void = { id in
+            NotificationCenter.default.post(name: .assCursorAccountDidChange, object: nil, userInfo: ["accountID": id])
+        }
+    ) {
+        self.loadProfiles = loadProfiles
+        self.hasRecovery = hasRecovery
+        self.loadAccount = loadAccount
+        self.onAccountChanged = onAccountChanged
+    }
+
+    func refresh() async { await perform {} }
+
+    func perform(_ operation: () async throws -> Void) async {
         guard !loading else { return }; loading = true; error = nil
         defer { loading = false }
         do {
             try await operation()
-            profiles = try await CursorProfileRepository.shared.profiles()
-            recovery = try await CursorProfileRepository.shared.recoveryValues() != nil
-            let updated = try await CursorUsageService.shared.loadAccount()
+            profiles = try await loadProfiles()
+            recovery = try await hasRecovery()
+            let updated = try await loadAccount()
             let changed = account?.id != updated.id
             account = updated
-            if changed { NotificationCenter.default.post(name: .assCursorAccountDidChange, object: nil, userInfo: ["accountID": updated.id]) }
+            if changed { onAccountChanged(updated.id) }
         } catch {
             self.error = error.localizedDescription
-            recovery = (try? await CursorProfileRepository.shared.recoveryValues()) != nil
+            recovery = (try? await hasRecovery()) ?? false
         }
     }
 }

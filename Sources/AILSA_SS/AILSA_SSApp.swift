@@ -20,6 +20,10 @@ struct AILSA_SSApp {
             AnyView(QuotaManagementPageView(model: container.quotaManagementModel, isStandalone: true)
                 .modifier(ASModalSurface()).frame(minWidth: 544, minHeight: 650))
         }
+        SubSwitchApplicationDelegate.refreshMainContent = {
+            Task { await container.accountsModel.refreshOnWindowOpen() }
+            Task { await container.quotaManagementModel.refreshOnWindowOpen() }
+        }
         let owner = SubSwitchApplicationDelegate()
         delegate = owner
         app.delegate = owner
@@ -91,11 +95,16 @@ struct AILSA_SSApp {
     #endif
 }
 
+extension Notification.Name {
+    static let ailsaSSMainPanelDidOpen = Notification.Name("com.ailsa.subswitch.main-panel-did-open")
+}
+
 #if os(macOS)
 @MainActor
 final class SubSwitchApplicationDelegate: NSObject, NSApplicationDelegate {
     static var makeMainContent: (() -> AnyView)?
     static var makeQuotaContent: (() -> AnyView)?
+    static var refreshMainContent: (() -> Void)?
     static weak var current: SubSwitchApplicationDelegate?
     private var quotaWindow: NSWindow?
     func showQuotaWindow() {
@@ -192,6 +201,10 @@ final class SubSwitchApplicationDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         popover.contentViewController?.view.window?.makeKey()
+        // NSHostingController is retained between opens; SwiftUI onAppear
+        // alone does not reliably observe a second NSPopover presentation.
+        Self.refreshMainContent?()
+        NotificationCenter.default.post(name: .ailsaSSMainPanelDidOpen, object: nil)
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

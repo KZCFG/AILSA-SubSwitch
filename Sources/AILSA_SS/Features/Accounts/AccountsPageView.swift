@@ -56,6 +56,10 @@ struct AccountsPageView: View {
         .onAppear {
             triggerInitialCardEntranceIfNeeded(for: contentAccountCount)
         }
+        .task { await model.refreshOnWindowOpen() }
+        .onChange(of: model.selectedProvider) { _, _ in
+            Task { await model.refreshOnProviderSelection() }
+        }
         .onChange(of: contentAccountCount) { _, newValue in
             triggerInitialCardEntranceIfNeeded(for: newValue)
         }

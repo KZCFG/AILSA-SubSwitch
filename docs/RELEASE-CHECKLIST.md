@@ -14,7 +14,28 @@ separate steps.
 - [x] Publish a clean source snapshot to KZCFG/AILSA-SubSwitch; verify remote readback.
 - [x] Enable private vulnerability reporting.
 
-## Current release: 1.0.0(g) (2026100101)
+## Current release: 1.0.0(h) (2026100502)
+
+This revision fixes automatic account and usage refresh.
+
+- M1 CLT validation: **381 passed, 0 failed, across 50 classes**. The separate
+  local variant passed **421 tests across 56 classes**. The asserting compatibility
+  runner is not Apple's XCTest runtime.
+- The preceding implementation reproduced two account-refresh regressions:
+  a background read suppressed inactive subscriptions, and simultaneous initial
+  presentations duplicated requests. Both now pass, alongside Cursor reentry,
+  provider selection, range refresh, concurrency and failed-read timestamp tests.
+- Package checks cover source provenance, archive checksum, matching app/widget
+  versions, ad-hoc signatures and exclusion of private imports/configuration.
+- Existing charts, Token accounting, model pricing and public promotional assets
+  are unchanged. No live-provider environment or clean-machine UI acceptance is
+  inferred from injected service tests.
+- Distribution remains ad-hoc signed for Apple Silicon. Developer ID signing,
+  notarization and native XCTest remain unverified.
+
+See [1.0.0(h) release notes](RELEASE-1.0.0h.md).
+
+## Historical release: 1.0.0(g) (2026100101)
 
 This revision adds GPT-6.1 Sol usage reference pricing.
 
