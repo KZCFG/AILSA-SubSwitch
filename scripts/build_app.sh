@@ -89,8 +89,15 @@ while IFS= read -r source_file; do
   app_sources+=("$source_file")
 done < <(find "$repo_dir/Sources/AILSA_SS" -type f -name '*.swift' -print | sort)
 
+# Keep the selected SDK in LC_BUILD_VERSION while retaining the target's
+# minimum macOS version. Mirrors the packaging correction in CodexBar 0.74.1.
+sdk_path="$(xcrun --sdk macosx --show-sdk-path)"
+sdk_version="$(xcrun --sdk macosx --show-sdk-version)"
+minimum_macos="${target_triple##*macos}"
 common_swift_flags=(
+  -sdk "$sdk_path"
   -target "$target_triple"
+  -Xlinker -platform_version -Xlinker macos -Xlinker "$minimum_macos" -Xlinker "$sdk_version"
   -O
   -file-prefix-map "$repo_dir=/AILSA-SubSwitch"
   -framework SwiftUI
@@ -132,6 +139,16 @@ xcrun --sdk macosx swiftc \
   -module-name AILSA_SSWidgetsMac \
   -o "$widget_binary" \
   "${widget_sources[@]}"
+
+# Refuse a package whose app or widget advertises the deployment target as
+# its SDK; native UI behavior depends on the SDK selected at build time.
+for binary in "$app_binary" "$widget_binary"; do
+  otool -l "$binary" | awk -v sdk="$sdk_version" -v min="$minimum_macos" '
+    $1 == "cmd" { build = ($2 == "LC_BUILD_VERSION") }
+    build && $1 == "minos" { minimum = ($2 == min) }
+    build && $1 == "sdk" { valid = (minimum && $2 == sdk) }
+    END { exit !valid }' || { printf 'Unexpected SDK metadata: %s\n' "$binary" >&2; exit 1; }
+done
 
 # ---------------------------------------------------------------------------
 # Info.plist (resolve every $(...) placeholder from VERSION / constants)

@@ -473,3 +473,6 @@
 
 "settings.quota_chart_metric.title" = "額度管理圖表顯示";
 "settings.quota_chart_metric.detail" = "適用於今日、7 天和 30 天圖表。美元金額採用頁面中的等效 API 消費金額，並非訂閱帳單；Antigravity 仍顯示額度百分比。";
+
+"app.menu_bar_unavailable.title" = "The menu bar icon is unavailable";
+"app.menu_bar_unavailable.detail" = "AILSA SubSwitch is running, but macOS has not placed its menu bar icon. In System Settings > Menu Bar, enable AILSA SubSwitch under Allow in Menu Bar. If you use Bartender or another organizer, set the icon to Show, then open AILSA SubSwitch again.";

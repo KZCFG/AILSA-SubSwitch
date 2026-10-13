@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0(i) — 2026-10-13
+
+- Add cached-input reuse and reported cache-sample coverage to usage details. Missing cache metadata remains unknown instead of appearing as a measured zero; the statistics follow the selected day, week, month or hovered interval.
+- Stream native Codex usage metadata with a bounded buffer, preserving cumulative token deltas while avoiding file-sized conversation buffers. Recognize native session metadata IDs and fail closed on oversized context rows.
+- Keep popup presentation attached to a verified on-screen menu-bar button. Wait for macOS placement on reopening and report unavailable placement truthfully when a menu-bar organizer hides the item.
+- Preserve the selected macOS SDK in the app and widget, with a packaging check for both binaries and a minimum system version of macOS 14.
+- Adapt the relevant usage and packaging improvements from CodexBar 0.74.1 while preserving AILSA SubSwitch's existing account and dashboard layouts.
+
 ## 1.0.0 candidate 2026091905 — local configuration backup and factory reset
 
 - Replace the public tagline with “Weekly usage at a glance. Switch accounts in a

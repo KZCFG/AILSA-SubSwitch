@@ -473,3 +473,6 @@
 
 "settings.quota_chart_metric.title" = "Affichage du graphique";
 "settings.quota_chart_metric.detail" = "Pour Aujourd’hui, 7 jours et 30 jours. USD indique le montant API équivalent, pas une facture d’abonnement. Antigravity conserve les pourcentages de quota.";
+
+"app.menu_bar_unavailable.title" = "The menu bar icon is unavailable";
+"app.menu_bar_unavailable.detail" = "AILSA SubSwitch is running, but macOS has not placed its menu bar icon. In System Settings > Menu Bar, enable AILSA SubSwitch under Allow in Menu Bar. If you use Bartender or another organizer, set the icon to Show, then open AILSA SubSwitch again.";

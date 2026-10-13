@@ -73,6 +73,27 @@ final class LocalQuotaManagementUsageServiceTests: XCTestCase {
         XCTAssertFalse(analytics.totals(on: nil).estimate.hasKnownEstimate)
     }
 
+    func testNativeMetadataIdAndMissingCacheDoNotInventZeroReuse() async throws {
+        let fixture = try makeFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        try write("""
+        {"type":"session_meta","payload":{"id":"real-native-session-id"}}
+        {"type":"turn_context","payload":{"model":"gpt-6-sol"}}
+        {"type":"event_msg","timestamp":"2026-09-14T02:00:00Z","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":100,"output_tokens":10}}}}
+        {"type":"event_msg","timestamp":"2026-09-14T03:00:00Z","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":200,"cached_input_tokens":20,"output_tokens":20}}}}
+        {"type":"event_msg","timestamp":"2026-09-14T04:00:00Z","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":300,"cached_input_tokens":20,"output_tokens":30}}}}
+        """,to:fixture.sessions.appendingPathComponent("native-2026-09-14.jsonl"))
+        let data=try await LocalQuotaManagementUsageService(paths:fixture.paths).loadData(
+            for:.codex,historyDays:30,now:date("2026-09-14T12:00:00Z"))
+        guard case .codex(let analytics)=data else { return XCTFail("Expected native fallback") }
+        XCTAssertEqual(analytics.records.map(\.cacheBreakdownReported),[false,false,true])
+        XCTAssertTrue(analytics.records.allSatisfy { $0.id.hasPrefix("real-native-session-id-") })
+        let snapshot=QuotaDashboardSnapshot.build(data,now:date("2026-09-14T12:00:00Z"))
+        XCTAssertEqual(snapshot.all.cacheReuse.samples,1)
+        XCTAssertEqual(snapshot.all.cacheReuse.fraction,0)
+        XCTAssertEqual(snapshot.all.tokens.total,330)
+    }
+
     func testAntigravityHistoryRemainsQuotaOnly() async throws {
         let fixture = try makeFixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }

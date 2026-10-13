@@ -275,6 +275,8 @@ struct LocalUsageRecord: Equatable, Identifiable, Sendable {
     /// Nil means that the locally cached public rate catalog had no
     /// attributable price for this model/routing label.
     var apiEquivalentUSD: Double?
+    /// True only when this delta has a valid cache breakdown from the source.
+    var cacheBreakdownReported: Bool = false
 
     var displayModel: String {
         let trimmed = model?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -479,8 +481,32 @@ struct QuotaMoney: Equatable, Sendable {
     var usd: Double? { count > 0 && !overflow ? Double(pico) / 1e12 : nil }
 }
 
+/// Observation-only cache statistics. Missing cache metadata is not measured zero.
+/// Counts and token totals cover only samples with a valid reported breakdown.
+struct UsageCacheReuse: Equatable, Sendable {
+    var samples = 0
+    var input = 0
+    var cachedInput = 0
+
+    mutating func observe(input: Int, cachedInput: Int?) {
+        guard let cachedInput, input >= 0, cachedInput >= 0, cachedInput <= input else { return }
+        samples += 1
+        self.input += input
+        self.cachedInput += cachedInput
+    }
+    mutating func merge(_ other: Self) {
+        samples += other.samples
+        input += other.input
+        cachedInput += other.cachedInput
+    }
+    var fraction: Double? {
+        input > 0 ? Double(cachedInput) / Double(input) : nil
+    }
+}
+
 struct QuotaAggregate: Equatable, Sendable {
     var tokens = UsageTokenBreakdown.zero
+    var cacheReuse = UsageCacheReuse()
     var requests = 0
     var reported = 0
     var aborted = 0
@@ -491,6 +517,7 @@ struct QuotaAggregate: Equatable, Sendable {
     var states: [String: Int] = [:]
     mutating func merge(_ other: Self) {
         tokens = tokens + other.tokens
+        cacheReuse.merge(other.cacheReuse)
         requests += other.requests; reported += other.reported
         aborted += other.aborted; unknownRoute += other.unknownRoute
         reference.merge(other.reference); confirmed.merge(other.confirmed); metered.merge(other.metered)
@@ -620,6 +647,8 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
             for record in data.records {
                 var value = QuotaAggregate()
                 value.requests = 1; value.reported = 1; value.tokens = record.tokens
+                value.cacheReuse.observe(input: record.tokens.input,
+                    cachedInput: record.cacheBreakdownReported ? record.tokens.cachedInput : nil)
                 if let usd = record.apiEquivalentUSD, usd.isFinite, usd >= 0, usd * 1e12 < Double(Int64.max) { value.reference.add(Int64((usd * 1e12).rounded())) }
                 if calendar.isDate(record.occurredAt, inSameDayAs: today) {
                     let minute = Date(timeIntervalSince1970: floor(record.occurredAt.timeIntervalSince1970 / 60) * 60)
@@ -671,6 +700,8 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
             value.states[record.standardReferenceEstimate.status.rawValue] = 1
             if reported {
                 value.reported = 1
+                value.cacheReuse.observe(input: record.tokens.inputTokens ?? 0,
+                    cachedInput: record.tokens.cacheReadInputTokens ?? record.tokens.cachedInputTokens)
                 value.tokens = UsageTokenBreakdown(input: record.tokens.inputTokens ?? 0,
                     cachedInput: record.tokens.cacheReadInputTokens ?? record.tokens.cachedInputTokens ?? 0,
                     cacheWriteInput: record.tokens.cacheCreationInputTokens ?? 0,

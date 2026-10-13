@@ -98,15 +98,17 @@ extension SettingsPageModel {
 
     func repairStatusItemDisplay() {
         #if os(macOS)
-        let repaired = SubSwitchApplicationDelegate.current?.repairStatusItemDisplay() == true
-        notice = NoticeMessage(
-            style: repaired ? .success : .info,
-            text: L10n.tr(
-                repaired
-                    ? "settings.notice.status_item_repaired"
-                    : "settings.notice.status_item_repair_unavailable"
+        Task { @MainActor in
+            let repaired = await SubSwitchApplicationDelegate.current?.repairStatusItemDisplay() == true
+            notice = NoticeMessage(
+                style: repaired ? .success : .info,
+                text: L10n.tr(
+                    repaired
+                        ? "settings.notice.status_item_repaired"
+                        : "settings.notice.status_item_repair_unavailable"
+                )
             )
-        )
+        }
         #else
         notice = NoticeMessage(style: .info, text: L10n.tr("settings.notice.status_item_repair_unavailable"))
         #endif

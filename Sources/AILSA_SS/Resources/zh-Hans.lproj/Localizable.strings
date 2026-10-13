@@ -499,3 +499,6 @@
 
 "settings.quota_chart_metric.title" = "额度管理图表显示";
 "settings.quota_chart_metric.detail" = "适用于今日、7 天和 30 天图表。美元金额采用页面中的等效 API 消费金额，并非订阅账单；Antigravity 仍显示额度百分比。";
+
+"app.menu_bar_unavailable.title" = "菜单栏图标尚未显示";
+"app.menu_bar_unavailable.detail" = "AILSA SubSwitch 正在运行，但 macOS 尚未显示它的菜单栏图标。请在系统设置 → 菜单栏 → 允许在菜单栏显示中打开 AILSA SubSwitch。如果使用 Bartender 等整理工具，也请将图标设为显示，再重新打开 AILSA SubSwitch。";

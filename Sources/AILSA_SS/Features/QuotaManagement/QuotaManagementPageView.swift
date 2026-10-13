@@ -889,10 +889,12 @@ private struct QuotaDetails: View {
             } else if page == 1 {
                 row(qtext("当前范围请求", "Requests in range"), String(total.requests))
                 row(qtext("已报告用量", "Usage reported"), "\(total.reported) / \(total.requests - total.aborted)")
+                row(qtext("缓存复用率", "Cached-input reuse"), total.cacheReuse.fraction.map { String(format: "%.1f%%", $0 * 100) } ?? "—")
+                row(qtext("缓存样本覆盖", "Cache samples"), "\(total.cacheReuse.samples) / \(total.reported)")
                 row(qtext("有参考价", "Reference priced"), "\(total.reference.count) / \(total.reported)")
                 row(qtext("已中止", "Aborted"), String(total.aborted))
                 row(qtext("未解析路由", "Unresolved routes"), String(total.unknownRoute))
-                row(qtext("全量请求（非当前范围）", "All-time requests"), String(data.all.requests))
+                Text(qtext("复用率只计算明确报告缓存的输入。缺失数据不会当作 0%；缓存词元已包含在输入中。", "Reuse uses input from samples that report cache metadata. Missing data is not 0%; cached tokens are already included in input.")).font(.caption).foregroundStyle(.secondary)
                 row(qtext("丢弃重复／跳过", "Duplicates / skipped"), String(data.discardedRows))
             } else if page == 2 {
                 Text(qtext("数据来自本机记录或供应商用量接口。未知金额显示 —，不会按请求别名猜测实际模型；未解析请求合并展示，仍保留真实用量。", "Data comes from local records or provider usage APIs. Unknown amounts show —. Requested aliases are not assumed to be resolved models; unresolved requests are grouped without discarding reported usage.")).font(.callout)

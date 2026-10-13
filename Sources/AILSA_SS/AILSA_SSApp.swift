@@ -123,14 +123,16 @@ final class SubSwitchApplicationDelegate: NSObject, NSApplicationDelegate {
     }
     private var statusItem: NSStatusItem?
     private let popover = NSPopover()
+    private var pendingPanelPresentation: Task<Void, Never>?
+    private var panelRequestID = 0
+    private var recoveryAlertIsShown = false
 
-    /// Recreates the status item after a menu-bar organizer has retained a
-    /// stale host identity or moved the item to a hidden section. This is a
-    /// best-effort repair: the organizer still owns the final placement.
+    /// A single explicit repair, without repeatedly churning Control Center's
+    /// status-item identity. The OS and menu-bar organizer own final visibility.
     @discardableResult
-    func repairStatusItemDisplay() -> Bool {
-        popover.performClose(nil)
-        if let statusItem {
+    func repairStatusItemDisplay() async -> Bool {
+        if menuBarAnchor() == nil, let statusItem {
+            popover.performClose(nil)
             NSStatusBar.system.removeStatusItem(statusItem)
             self.statusItem = nil
         }
@@ -139,7 +141,7 @@ final class SubSwitchApplicationDelegate: NSObject, NSApplicationDelegate {
         statusItem?.isVisible = true
         statusItem?.button?.image = AILSA_SSApp.makeMenuBarSymbolImage()
         statusItem?.button?.setAccessibilityLabel(AILSA_SSApp.productName)
-        return statusItem?.isVisible == true && statusItem?.button?.image?.isValid == true
+        return await waitForMenuBarAnchor() != nil
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -149,17 +151,7 @@ final class SubSwitchApplicationDelegate: NSObject, NSApplicationDelegate {
         if ProcessInfo.processInfo.environment["ASS_STATUS_DIAGNOSTICS"] == "1" {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
                 guard let self, let item = self.statusItem else { return }
-                let info: [String: Any] = [
-                    "visible": item.isVisible,
-                    "length": item.length,
-                    "windowVisible": item.button?.window?.isVisible ?? false,
-                    "frame": NSStringFromRect(item.button?.window?.frame ?? .zero),
-                    "button": NSStringFromRect(item.button?.bounds ?? .zero),
-                    "imageValid": item.button?.image?.isValid ?? false,
-                    "screens": NSScreen.screens.map { NSStringFromRect($0.frame) }
-                ]
-                if let data = try? JSONSerialization.data(withJSONObject: info, options: [.sortedKeys]),
-                   let text = String(data: data, encoding: .utf8) { print("ASS_STATUS " + text); fflush(stdout) }
+                self.logStatusPlacement(event: "startup", item: item)
             }
         }
     }
@@ -183,28 +175,106 @@ final class SubSwitchApplicationDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func togglePanel() {
-        if popover.isShown { popover.performClose(nil) } else { showPanel() }
+        if popover.isShown || pendingPanelPresentation != nil {
+            panelRequestID += 1
+            pendingPanelPresentation?.cancel()
+            pendingPanelPresentation = nil
+            popover.performClose(nil)
+        } else {
+            showPanel()
+        }
     }
 
     private func showPanel() {
         installStatusItem()
-        guard let button = statusItem?.button else { return }
-        if popover.contentViewController == nil, let content = Self.makeMainContent?() {
-            let controller = NSHostingController(rootView: content)
-            popover.contentViewController = controller
-            let screen = button.window?.screen ?? NSScreen.main
-            let visible = screen?.visibleFrame.size ?? NSSize(width: 1440, height: 900)
-            popover.contentSize = NSSize(
-                width: min(LayoutRules.accountsPageTargetWidth, visible.width - 32),
-                height: min(LayoutRules.macOSMenuBarPanelHeight, visible.height - 32))
+        statusItem?.isVisible = true
+        panelRequestID += 1
+        let requestID = panelRequestID
+        pendingPanelPresentation?.cancel()
+        pendingPanelPresentation = Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer {
+                if self.panelRequestID == requestID { self.pendingPanelPresentation = nil }
+            }
+            guard await self.waitForMenuBarAnchor() != nil else {
+                if !Task.isCancelled { self.showMenuBarRecoveryGuidance() }
+                return
+            }
+            guard !Task.isCancelled, self.panelRequestID == requestID else { return }
+            self.presentAnchoredPanel()
         }
+    }
+
+    private func menuBarAnchor() -> (button: NSStatusBarButton, screen: NSScreen)? {
+        guard let item = statusItem, item.isVisible,
+              let button = item.button, button.image?.isValid == true,
+              let window = button.window else { return nil }
+        let frame = window.convertToScreen(button.convert(button.bounds, to: nil))
+        let screens = NSScreen.screens
+        guard let index = MenuBarAnchorPlacement.screenIndex(
+            for: frame, windowVisible: window.isVisible,
+            screens: screens.map { .init(frame: $0.frame, visibleFrame: $0.visibleFrame) }
+        ) else { return nil }
+        return (button, screens[index])
+    }
+
+    private func waitForMenuBarAnchor() async -> (button: NSStatusBarButton, screen: NSScreen)? {
+        // Launch Services can reopen us before Control Center has placed the
+        // button. Wait for that host; never use its off-screen placeholder.
+        for _ in 0..<12 {
+            guard !Task.isCancelled else { return nil }
+            if let anchor = menuBarAnchor() { return anchor }
+            do { try await Task.sleep(nanoseconds: 200_000_000) }
+            catch { return nil }
+        }
+        return menuBarAnchor()
+    }
+
+    private func presentAnchoredPanel() {
+        if popover.contentViewController == nil, let content = Self.makeMainContent?() {
+            popover.contentViewController = NSHostingController(rootView: content)
+        }
+        guard let anchor = menuBarAnchor() else { showMenuBarRecoveryGuidance(); return }
+        let visible = anchor.screen.visibleFrame.size
+        popover.contentSize = NSSize(
+            width: min(LayoutRules.accountsPageTargetWidth, visible.width - 32),
+            height: min(LayoutRules.macOSMenuBarPanelHeight, visible.height - 32))
         NSApp.activate(ignoringOtherApps: true)
-        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        popover.show(relativeTo: anchor.button.bounds, of: anchor.button, preferredEdge: .minY)
         popover.contentViewController?.view.window?.makeKey()
+        if let item = statusItem { logStatusPlacement(event: "panel-open", item: item) }
         // NSHostingController is retained between opens; SwiftUI onAppear
         // alone does not reliably observe a second NSPopover presentation.
         Self.refreshMainContent?()
         NotificationCenter.default.post(name: .ailsaSSMainPanelDidOpen, object: nil)
+    }
+
+    private func showMenuBarRecoveryGuidance() {
+        guard !recoveryAlertIsShown else { return }
+        recoveryAlertIsShown = true
+        defer { recoveryAlertIsShown = false }
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = L10n.tr("app.menu_bar_unavailable.title")
+        alert.informativeText = L10n.tr("app.menu_bar_unavailable.detail")
+        NSApp.activate(ignoringOtherApps: true)
+        alert.runModal()
+    }
+
+    private func logStatusPlacement(event: String, item: NSStatusItem) {
+        guard ProcessInfo.processInfo.environment["ASS_STATUS_DIAGNOSTICS"] == "1" else { return }
+        let info: [String: Any] = [
+            "event": event, "visible": item.isVisible, "length": item.length,
+            "windowVisible": item.button?.window?.isVisible ?? false,
+            "frame": NSStringFromRect(item.button?.window?.frame ?? .zero),
+            "button": NSStringFromRect(item.button?.bounds ?? .zero),
+            "imageValid": item.button?.image?.isValid ?? false,
+            "anchorReady": menuBarAnchor() != nil,
+            "panelFrame": NSStringFromRect(popover.contentViewController?.view.window?.frame ?? .zero),
+            "screens": NSScreen.screens.map { NSStringFromRect($0.frame) }
+        ]
+        if let data = try? JSONSerialization.data(withJSONObject: info, options: [.sortedKeys]),
+           let text = String(data: data, encoding: .utf8) { print("ASS_STATUS " + text); fflush(stdout) }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

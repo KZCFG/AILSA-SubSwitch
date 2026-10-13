@@ -491,3 +491,6 @@
 
 "settings.quota_chart_metric.title" = "使用量グラフの表示";
 "settings.quota_chart_metric.detail" = "今日・7 日・30 日のグラフに適用します。USD は画面の API 換算額で、サブスクリプションの請求額ではありません。Antigravity は引き続き利用枠の割合を表示します。";
+
+"app.menu_bar_unavailable.title" = "The menu bar icon is unavailable";
+"app.menu_bar_unavailable.detail" = "AILSA SubSwitch is running, but macOS has not placed its menu bar icon. In System Settings > Menu Bar, enable AILSA SubSwitch under Allow in Menu Bar. If you use Bartender or another organizer, set the icon to Show, then open AILSA SubSwitch again.";

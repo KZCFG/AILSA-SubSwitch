@@ -196,40 +196,44 @@ actor LocalQuotaManagementUsageService: QuotaManagementUsageServiceProtocol {
         since start: Date,
         pricingCatalog: [String: UsagePricingRates]
     ) throws -> [LocalUsageRecord] {
-        let data = try Data(contentsOf: url)
-        guard !data.isEmpty else { return [] }
-
         var sessionID = url.deletingPathExtension().lastPathComponent
         var projectName: String?
         var activeModel: String?
         var previousTotals: UsageTokenBreakdown?
+        var previousCacheReported = false
         var eventOrdinal = 0
         var records: [LocalUsageRecord] = []
 
-        for line in data.split(separator: 0x0A, omittingEmptySubsequences: true) {
+        try UsageJSONLStream.read(url) { line in
+            guard let line else {
+                // A huge context or malformed row must not inherit a stale model.
+                activeModel = nil
+                previousCacheReported = false
+                return
+            }
             guard let object = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
                   let type = object["type"] as? String
             else {
                 // Codex may be appending a final line while the dashboard is
                 // reading. Ignore that line rather than treating text content
                 // as a parsable source.
-                continue
+                return
             }
 
             let payload = object["payload"] as? [String: Any]
             if type == "session_meta" {
-                if let sourceID = nonemptyString(payload?["session_id"]) {
+                if let sourceID = nonemptyString(payload?["session_id"]) ?? nonemptyString(payload?["id"]) {
                     sessionID = sourceID
                 }
                 if let cwd = nonemptyString(payload?["cwd"]) {
                     projectName = URL(fileURLWithPath: cwd).lastPathComponent
                 }
-                continue
+                return
             }
 
             if type == "turn_context" {
                 activeModel = nonemptyString(payload?["model"]) ?? activeModel
-                continue
+                return
             }
 
             guard type == "event_msg",
@@ -238,10 +242,13 @@ actor LocalQuotaManagementUsageService: QuotaManagementUsageServiceProtocol {
                   let totalObject = (info["total_token_usage"] as? [String: Any])
                     ?? (info["last_token_usage"] as? [String: Any])
             else {
-                continue
+                return
             }
 
             let totals = tokenBreakdown(from: totalObject)
+            let rawCache = integer(from: totalObject["cached_input_tokens"])
+            let cacheReported = rawCache.map { $0 >= 0 && $0 <= totals.input } ?? false
+            let sameEpoch = previousTotals.map { totals.total >= $0.total } ?? false
             let delta: UsageTokenBreakdown
             if let previousTotals,
                totals.total >= previousTotals.total {
@@ -252,14 +259,17 @@ actor LocalQuotaManagementUsageService: QuotaManagementUsageServiceProtocol {
                 // total rather than a negative delta.
                 delta = totals
             }
+            let deltaCacheReported = cacheReported && (!sameEpoch || (previousCacheReported && totals.cachedInput >= (previousTotals?.cachedInput ?? 0)))
+                && delta.cachedInput >= 0 && delta.cachedInput <= delta.input
             previousTotals = totals
+            previousCacheReported = cacheReported
             eventOrdinal += 1
 
             guard delta.hasUsage,
                   let occurredAt = date(from: object["timestamp"]),
                   occurredAt >= start
             else {
-                continue
+                return
             }
 
             let model = activeModel
@@ -274,7 +284,8 @@ actor LocalQuotaManagementUsageService: QuotaManagementUsageServiceProtocol {
                     projectName: projectName,
                     sessionLabel: Self.sessionLabel(for: sessionID),
                     tokens: delta,
-                    apiEquivalentUSD: estimatedCost
+                    apiEquivalentUSD: estimatedCost,
+                    cacheBreakdownReported: deltaCacheReported
                 )
             )
         }
