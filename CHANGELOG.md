@@ -6,6 +6,7 @@
 - Stream native Codex usage metadata with a bounded buffer, preserving cumulative token deltas while avoiding file-sized conversation buffers. Recognize native session metadata IDs and fail closed on oversized context rows.
 - Keep popup presentation attached to a verified on-screen menu-bar button. Wait for macOS placement on reopening and report unavailable placement truthfully when a menu-bar organizer hides the item.
 - Preserve the selected macOS SDK in the app and widget, with a packaging check for both binaries and a minimum system version of macOS 14.
+- Remove a legacy machine-specific pricing mapping from the public edition. Official DeepSeek API pricing remains available; local deployment equivalences stay private.
 - Adapt the relevant usage and packaging improvements from CodexBar 0.74.1 while preserving AILSA SubSwitch's existing account and dashboard layouts.
 
 ## 1.0.0 candidate 2026091905 — local configuration backup and factory reset

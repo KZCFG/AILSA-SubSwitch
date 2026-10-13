@@ -262,8 +262,8 @@ final class GPT6SolLunaPricingTests: XCTestCase {
     }
 }
 
-final class DeepSeekV41LocalPricingTests: XCTestCase {
-    private func row(provider: String = "atc-deepseek", resolved: String? = "DeepSeek-v4.1-Flash-EXL3",
+final class DeepSeekFlashPricingTests: XCTestCase {
+    private func row(provider: String = "deepseek", resolved: String? = "deepseek-flash",
                      timestamp: String? = "2026-09-30T00:30:00Z", cached: Int? = 40_000,
                      reasoning: Int = 4_000, status: String = "reported", aborted: Bool = false,
                      estimated: Bool = false) throws -> String {
@@ -271,11 +271,11 @@ final class DeepSeekV41LocalPricingTests: XCTestCase {
                                    "reasoningOutputTokens": reasoning, "estimated": estimated]
         if let cached { usage["cachedInputTokens"] = cached }
         var value: [String: Any] = [
-            "requestId": "local-deepseek", "provider": provider,
-            "model": "DeepSeek-v4.1-Flash-EXL3",
-            "requestedModel": "atc-deepseek/DeepSeek-v4.1-Flash-EXL3",
+            "requestId": "official-deepseek", "provider": provider,
+            "model": "deepseek-flash",
+            "requestedModel": "deepseek/deepseek-flash",
             "usageStatus": status, "usage": usage, "streamAborted": aborted,
-            "apiEquivalentEligibility": "not_eligible_unknown_identity"
+            "apiEquivalentEligibility": "api_equivalent_eligible"
         ]
         if let resolved { value["resolvedModel"] = resolved }
         if let timestamp { value["timestamp"] = timestamp }
@@ -287,14 +287,14 @@ final class DeepSeekV41LocalPricingTests: XCTestCase {
             .read(data: Data(value.utf8)).records.first)
     }
 
-    func testLocalReferenceUsesOfficialFlashPriceWithoutClaimingVendorCharges() throws {
+    func testOfficialFlashReferenceWithoutClaimingVendorCharges() throws {
         let result = try record(row())
         // (60k * $0.15 + 40k * $0.003 + 20k * $0.60) / 1M.
         XCTAssertEqual(result.standardReferenceEstimate.apiEquivalentUSD, "0.021120000000")
         XCTAssertEqual(result.standardReferenceEstimate.leaf, "deepseek-flash")
-        XCTAssertEqual(result.standardReferenceEstimate.priceBasis, "user_mapped_official_standard_reference")
-        XCTAssertEqual(result.routeProvider, "atc-deepseek")
-        XCTAssertEqual(result.resolvedModel, "DeepSeek-v4.1-Flash-EXL3")
+        XCTAssertEqual(result.standardReferenceEstimate.priceBasis, "official_standard_reference_unconfirmed_tier")
+        XCTAssertEqual(result.routeProvider, "deepseek")
+        XCTAssertEqual(result.resolvedModel, "deepseek-flash")
         XCTAssertNil(result.pricing.picoUSD)
         XCTAssertEqual(result.tokens.totalTokens, 120_000, "Derive total from primary tokens when the server omits totalTokens")
         XCTAssertFalse(result.standardReferenceEstimate.estimatePartial)
@@ -353,15 +353,13 @@ final class DeepSeekV41LocalPricingTests: XCTestCase {
         XCTAssertEqual(result.standardReferenceEstimate.apiEquivalentUSD, "0.027000000000")
     }
 
-    func testLocalAliasRequiresExactProviderAndModelPair() throws {
-        for value in [try row(provider: "unverified-proxy"),
-                      try row(resolved: "DeepSeek-v4.1-Pro-EXL3"),
-                      try row(resolved: "DeepSeek-v4.1-Flash-EXL3-other"),
-                      try row(resolved: "DeepSeek-v4-Flash-EXL3")] {
-            XCTAssertNil(try record(value).standardReferenceEstimate.picoUSD)
+    func testUnknownLocalCheckpointsHaveNoPublicReferenceMapping() throws {
+        for name in ["DeepSeek-v4.1-Flash-LocalQuantized", "DeepSeek-v4.1-Pro-LocalQuantized",
+                     "DeepSeek-v4-Flash-LocalQuantized", "GLM-5.3-Flash-LocalQuantized"] {
+            let result = try record(row(provider: "local-provider", resolved: name))
+            XCTAssertNil(result.standardReferenceEstimate.picoUSD)
+            XCTAssertEqual(result.tokens.totalTokens, 120_000)
         }
-        XCTAssertEqual(try record(row(resolved: "deepseek-v4.1-flash-exl3")).standardReferenceEstimate.picoUSD,
-                       21_120_000_000)
     }
 
     func testRequestedModelCannotRepairMissingResolvedIdentity() throws {
@@ -396,8 +394,8 @@ final class DeepSeekV41LocalPricingTests: XCTestCase {
         XCTAssertEqual(snapshot.all.tokens.total, 120_000)
         XCTAssertEqual(snapshot.all.reference.pico, 21_120_000_000)
         XCTAssertEqual(snapshot.all.reference.count, 1)
-        XCTAssertEqual(QuotaModelKey(provider: "atc-deepseek", model: "DeepSeek-v4.1-Flash-EXL3").familyKey.model,
-                       "DeepSeek V4.1 Flash")
+        XCTAssertEqual(QuotaModelKey(provider: "deepseek", model: "deepseek-flash").familyKey.model,
+                       "DeepSeek Flash")
         XCTAssertEqual(QuotaModelKey(provider: "deepseek", model: "deepseek-v4-flash").familyKey.model, "DeepSeek Flash")
     }
 }

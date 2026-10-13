@@ -305,18 +305,8 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         "kimi-k3-max": "k3", "k3-max": "k3",
         "deepseek-v4-flash": "deepseek-flash"
     ]
-    /// Explicit local deployment -> official API reference equivalence. The
-    /// native route remains intact; this never establishes a vendor charge or
-    /// quality equivalence for the quantized model. Only this exact pair opts in.
-    private static let userReferencePairs: [String: String] = [
-        "atc-deepseek/deepseek-v4.1-flash-exl3": "deepseek-flash"
-    ]
-
     private static func userReferenceAlias(provider: String?, resolvedModel: String?) -> String? {
         guard let resolvedModel else { return nil }
-        if let provider, let alias = userReferencePairs["\(provider)/\(resolvedModel)".lowercased()] {
-            return alias
-        }
         return userReferenceAliases[resolvedModel]
     }
     private static let crossProviderReferences: Set<String> = [
