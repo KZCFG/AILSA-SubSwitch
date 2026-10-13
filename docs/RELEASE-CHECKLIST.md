@@ -14,7 +14,24 @@ separate steps.
 - [x] Publish a clean source snapshot to KZCFG/AILSA-SubSwitch; verify remote readback.
 - [x] Enable private vulnerability reporting.
 
-## Current release: 1.0.0(h) (2026100502)
+## Current release: 1.0.0(i) (2026101301)
+
+This revision adapts usage-detail and packaging improvements from CodexBar 0.74.1.
+
+- M1 Command Line Tools validation uses the full asserting XCTest-compatible
+  harness, including missing versus measured-zero cache metadata, weighted cache
+  reuse, native JSONL chunk/line/EOF boundaries and menu-bar placement guards.
+- The app and widget use the selected SDK in their link metadata while retaining
+  a minimum macOS version of 14. Package creation checks both binaries.
+- Public source and package scans exclude machine-local importers, services,
+  account files, personal paths and credentials.
+- Existing account and dashboard layouts and provider pricing are preserved.
+- Distribution remains ad-hoc signed for Apple Silicon. This is not native
+  XCTest, notarization or acceptance on a clean machine.
+
+See [integration notes](AILSA_SS-upstream-0.74.1.md).
+
+## Historical release: 1.0.0(h) (2026100502)
 
 This revision fixes automatic account and usage refresh.
 

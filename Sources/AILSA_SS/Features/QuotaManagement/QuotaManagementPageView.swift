@@ -880,7 +880,7 @@ private struct QuotaDetails: View {
             } else if page == 0 {
                 if data.source == "Cursor" { row("Cursor-metered", qmoney(total.metered)) }
                 row(qtext("输入 Token", "Input tokens"), QuotaTokenFormatter.format(total.tokens.input, unit: tokenUnit))
-                row(qtext("缓存读取（包含在输入）", "Cached read (included in input)"), QuotaTokenFormatter.format(total.tokens.cachedInput, unit: tokenUnit))
+                row(qtext("缓存读取（包含在输入）", "Cached read (included in input)"), total.cacheReuse.samples > 0 ? QuotaTokenFormatter.format(total.cacheReuse.cachedInput, unit: tokenUnit) : "—")
                 row(qtext("输出 Token", "Output tokens"), QuotaTokenFormatter.format(total.tokens.output, unit: tokenUnit))
                 row(qtext("推理（包含在输出）", "Reasoning (included in output)"), QuotaTokenFormatter.format(total.tokens.reasoningOutput, unit: tokenUnit))
                 row(qtext("API 参考价", "Standard API estimate"), qmoney(total.reference))

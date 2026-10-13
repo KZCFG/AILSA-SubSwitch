@@ -70,19 +70,18 @@ Antigravity usage percentages are not converted into invented token totals.
 We expect to add Grok and Kimi usage monitoring in **1.0.1**, followed by
 Alibaba and DeepSeek usage monitoring in **1.0.2**.
 
-**1.0.0(h)** refreshes account subscriptions when opening the menu, returning
-to Accounts or selecting a provider. Today, 7-day and 30-day selections also
-refresh usage automatically, with concurrent requests coalesced and the last
-successful update time retained on failure. Cursor refreshes only recent
-history during automatic updates. See the [update notes](docs/RELEASE-1.0.0h.md).
+**1.0.0(i)** adds cached-input reuse and sample coverage in usage details, reads
+native Codex history with bounded memory, and improves menu-bar anchoring and
+macOS SDK packaging. Account refresh and the existing dashboard layouts are
+preserved. See the [integration notes](docs/AILSA_SS-upstream-0.74.1.md).
 
 **1.0.0(g)** adds **GPT-6.1 Sol** Token and equivalent API usage accounting,
 including its 5% cache-hit price, the full-request long-context rule and
 vendor-confirmed Fast pricing. Existing records are recalculated when loaded.
 See the [update notes](docs/RELEASE-1.0.0g.md).
 
-**1.0.0(f)** recognizes ATC's local DeepSeek V4.1 Flash usage and calculates
-its equivalent API amount using official Flash rates, request timestamps and
+**1.0.0(f)** adds DeepSeek V4.1 Flash reference accounting using official
+Flash rates, request timestamps and
 reported cache hits. Peak/off-peak rules now account for Chinese public holidays.
 Token records stay unchanged. See the [update notes](docs/RELEASE-1.0.0f.md).
 
@@ -133,7 +132,7 @@ not load your live account library.
 for each provider you want to use. Provider subscriptions are separate from
 AILSA SubSwitch.
 
-1. Download the macOS ZIP from the [1.0.0(h) release](https://github.com/KZCFG/AILSA-SubSwitch/releases/tag/v1.0.0-h).
+1. Download the macOS ZIP from the [1.0.0(i) release](https://github.com/KZCFG/AILSA-SubSwitch/releases/tag/v1.0.0-i).
    You do not need Xcode to use a prebuilt package.
 2. Move **AILSA SubSwitch.app** to **Applications** and open it.
 3. Click its menu bar icon. In **Accounts**, select a provider and import the
@@ -182,7 +181,7 @@ cd AILSA-SubSwitch
 bash scripts/build_app.sh
 ```
 
-Output: `build/1.0.0(h)-2026100502/AILSA SubSwitch.app`, an arm64 ZIP, SHA-256 checksum,
+Output: `build/1.0.0(i)-2026101301/AILSA SubSwitch.app`, an arm64 ZIP, SHA-256 checksum,
 and source manifest. Check [build and release notes](docs/release-macos.md) for
 custom output locations and signing details.
 
@@ -201,7 +200,7 @@ the tests it actually executes. See [Contributing](CONTRIBUTING.md).
 
 ## Status and limitations
 
-- 1.0.0(h) is distributed through GitHub Releases; validation and coverage are tracked in
+- 1.0.0(i) is distributed through GitHub Releases; validation and coverage are tracked in
   [the release checklist](docs/RELEASE-CHECKLIST.md).
 - Small updates advance the suffix: `(a)`, `(b)`, `(c)`, ...; larger feature releases
   change the numeric version. Internal build numbers retain the date plus revision.
