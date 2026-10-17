@@ -195,6 +195,37 @@ final class AntigravityRemoteQuotaProtocolTests: XCTestCase {
         super.tearDown()
     }
 
+    func testRemotePlanCorrectionSurvivesCredentialResult() async throws {
+        for scenario in ["paid", "paid-id", "five-hour", "weekly", "disabled", "unknown"] {
+            RecordingAntigravityRemoteURLProtocol.install { request in
+                switch request.url?.path {
+                case "/v1internal:loadCodeAssist":
+                    var body: [String: Any] = ["cloudaicompanionProject": "consumer-project", "currentTier": ["id": "free-tier"]]
+                    if scenario == "paid" { body["paidTier"] = ["name": "Google AI Pro", "id": "g1-pro-tier"] }
+                    if scenario == "paid-id" { body["paidTier"] = ["id": "standard-tier"] }
+                    return (200, try! JSONSerialization.data(withJSONObject: body))
+                case "/v1internal:retrieveUserQuotaSummary":
+                    var buckets: [[String: Any]] = [["bucketId": "gemini-weekly", "window": "weekly", "remainingFraction": 0.75]]
+                    if scenario != "weekly" {
+                        var bucket: [String: Any] = ["bucketId": "gemini-5h", "window": "5h", "disabled": scenario == "disabled"]
+                        if scenario != "unknown" { bucket["remainingFraction"] = 0.5 }
+                        buckets.append(bucket)
+                    }
+                    return (200, try! JSONSerialization.data(withJSONObject: ["groups": [["displayName": "Gemini", "buckets": buckets]]]))
+                default: return (404, Data())
+                }
+            }
+            let result = try await makeRemoteService().fetchUsage(
+                authJSON: verifiedRemoteAuth(profile: .consumer, accessToken: "consumer-access"),
+                expectedEmail: "consumer@example.com")
+            let expected: String? = scenario == "paid" ? "pro" : scenario == "paid-id" ? "paid" : scenario == "five-hour" ? nil : "free"
+            XCTAssertEqual(result.planType, expected)
+            XCTAssertEqual(result.usage.planType, expected)
+            XCTAssertEqual(result.usage.oneWeek?.usedPercent, 25)
+            XCTAssertEqual(result.usage.sourceAccountMatched, true)
+        }
+    }
+
     func testConsumerUsesDailyQuotaSummaryWithItsOwnProjectAndBearer() async throws {
         let recorder = AntigravityRemoteRequestRecorder()
         RecordingAntigravityRemoteURLProtocol.install { request in

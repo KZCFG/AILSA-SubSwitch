@@ -70,6 +70,12 @@ Antigravity usage percentages are not converted into invented token totals.
 We expect to add Grok and Kimi usage monitoring in **1.0.1**, followed by
 Alibaba and DeepSeek usage monitoring in **1.0.2**.
 
+**1.0.0(j)** speeds up native Codex history scanning and corrects Antigravity
+paid-plan labels, adapting the relevant changes from CodexBar 0.77.0. Measured
+quotas keep their reset times without inventing a subscription tier. See the
+[release notes](docs/RELEASE-1.0.0j.md) and
+[upstream review](docs/AILSA_SS-upstream-0.77.0.md).
+
 **1.0.0(i)** adds cached-input reuse and sample coverage in usage details, reads
 native Codex history with bounded memory, and improves menu-bar anchoring and
 macOS SDK packaging. Account refresh and the existing dashboard layouts are

@@ -85,6 +85,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+The bounded byte-search implementation in `AILSA_SS-UsageJSONLStream.swift`
+is adapted from [CodexBar PR #4552](https://github.com/steipete/CodexBar/pull/4552)
+by Lucenx9. Antigravity paid-tier resolution follows
+[CodexBar PR #4571](https://github.com/steipete/CodexBar/pull/4571), with ASS-specific
+account identity and widget checks. Both are covered by the CodexBar MIT notice above.
+
 ## Data read from other tools (no code included)
 
 The app reads, but does not bundle code from, these local files written by

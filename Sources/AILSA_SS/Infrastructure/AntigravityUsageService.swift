@@ -404,7 +404,7 @@ final class AntigravityNativeUsageService: @unchecked Sendable {
         guard !known.isEmpty else {
             throw AppError.invalidData(L10n.tr("error.antigravity.native_quota_unavailable"))
         }
-        return UsageSnapshot(
+        var snapshot = UsageSnapshot(
             fetchedAt: fetchedAt,
             planType: planType,
             fiveHour: Self.legacyWindow(from: known, cadenceRank: 0),
@@ -414,6 +414,12 @@ final class AntigravityNativeUsageService: @unchecked Sendable {
             source: source,
             sourceAccountMatched: sourceAccountMatched
         )
+        // A measured five-hour quota contradicts generic Free metadata, but
+        // does not establish which paid subscription this account owns.
+        if planType == "free", snapshot.hasMeasuredAntigravityFiveHourQuota {
+            snapshot.planType = nil
+        }
+        return snapshot
     }
 
     static func email(fromUserStatus payload: JSONValue) -> String? {
@@ -423,7 +429,9 @@ final class AntigravityNativeUsageService: @unchecked Sendable {
 
     static func planType(fromUserStatus payload: JSONValue) -> String? {
         let status = payload["userStatus"] ?? payload["response"]?["userStatus"] ?? payload
+        if let paid = AntigravityUsageService.paidPlanType(from: status["paidTier"]) { return paid }
         let candidates = [
+            status["userTier"]?["id"]?.stringValue,
             status["userTier"]?["name"]?.stringValue,
             status["userTier"]?["preferredName"]?.stringValue,
             status["planStatus"]?["planInfo"]?["planName"]?.stringValue,
@@ -1309,6 +1317,17 @@ final class AntigravityUsageService: @unchecked Sendable {
         return nil
     }
 
+    static func paidPlanType(from tier: JSONValue?) -> String? {
+        let fields = [tier?["name"]?.stringValue, tier?["preferredName"]?.stringValue, tier?["id"]?.stringValue]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        guard !fields.isEmpty else { return nil }
+        if let known = normalizedPlanType(from: fields.joined(separator: " ")) {
+            return known == "free" ? nil : known
+        }
+        return "paid"
+    }
+
     private func fetchGoogleUserInfoEmail(accessToken: String) async throws -> String {
         guard let url = URL(string: "https://openidconnect.googleapis.com/v1/userinfo") else {
             throw AppError.network(L10n.tr("error.antigravity.native_identity_unavailable"))
@@ -1459,21 +1478,12 @@ final class AntigravityUsageService: @unchecked Sendable {
             source: .antigravityRemoteQuota,
             sourceAccountMatched: true
         )
-        return (usage, planType)
+        return (usage, usage.planType)
     }
 
-    private static func planType(fromCodeAssist payload: JSONValue) -> String? {
+    static func planType(fromCodeAssist payload: JSONValue) -> String? {
         let payload = payload["response"] ?? payload
-        let paidFields = [
-            payload["paidTier"]?["id"]?.stringValue,
-            payload["paidTier"]?["name"]?.stringValue,
-            payload["paidTier"]?["preferredName"]?.stringValue
-        ]
-        .compactMap { $0 }
-        .joined(separator: " ")
-        if let paid = normalizedPlanType(from: paidFields), paid != "free" {
-            return paid
-        }
+        if let paid = paidPlanType(from: payload["paidTier"]) { return paid }
         let currentFields = [
             payload["currentTier"]?["id"]?.stringValue,
             payload["currentTier"]?["name"]?.stringValue,

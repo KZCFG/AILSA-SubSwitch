@@ -54,6 +54,8 @@ enum AccountPlanLabel {
                 return "GEMINI PRO"
             case "ultra", "ai_ultra", "gemini-ultra":
                 return "ULTRA"
+            case "paid":
+                return "PAID"
             default:
                 return "GEMINI"
             }
@@ -408,11 +410,17 @@ struct AccountSummary: Equatable, Identifiable {
     }
 
     var normalizedPlanLabel: String {
-        AccountPlanLabel.normalized(
+        let label = AccountPlanLabel.normalized(
             usagePlanType: usage?.planType,
             storedPlanType: planType,
             provider: provider
         )
+        // Old stores may still carry Free after the live summary cleared it.
+        if provider == .antigravity, label == "FREE",
+           usage?.hasMeasuredAntigravityFiveHourQuota == true {
+            return "GEMINI"
+        }
+        return label
     }
 
     var displayTeamName: String? {
@@ -577,6 +585,14 @@ extension UsageSnapshot {
     var hasAuthoritativeQuota: Bool {
         guard let source, source.isAuthoritativeQuota else { return false }
         return !knownQuotaBuckets.isEmpty
+    }
+
+    var hasMeasuredAntigravityFiveHourQuota: Bool {
+        source?.isAuthoritativeQuota == true && sourceAccountMatched == true
+            && knownQuotaBuckets.contains { bucket in
+                bucket.windowSeconds == 5 * 60 * 60
+                    && bucket.usedPercent.map { $0.isFinite && (0...100).contains($0) } == true
+            }
     }
 
     var isVerifiedForSwitch: Bool {

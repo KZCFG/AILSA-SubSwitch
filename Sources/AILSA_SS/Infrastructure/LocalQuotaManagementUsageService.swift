@@ -211,7 +211,8 @@ actor LocalQuotaManagementUsageService: QuotaManagementUsageServiceProtocol {
                 previousCacheReported = false
                 return
             }
-            guard let object = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
+            guard UsageJSONLStream.mayContainCodexUsage(line),
+                  let object = try? JSONSerialization.jsonObject(with: line) as? [String: Any],
                   let type = object["type"] as? String
             else {
                 // Codex may be appending a final line while the dashboard is

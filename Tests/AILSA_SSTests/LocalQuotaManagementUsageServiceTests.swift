@@ -94,6 +94,27 @@ final class LocalQuotaManagementUsageServiceTests: XCTestCase {
         XCTAssertEqual(snapshot.all.tokens.total,330)
     }
 
+    func testMetadataFilterPreservesEscapedNamesUnicodeAndCumulativeUsage() async throws {
+        let fixture = try makeFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let body = #"{"type":"response_item","payload":{"text":""# + String(repeating: "普通聊天正文 ", count: 3000) + #""}}"#
+        try write([
+            #"{"type":"session_\u006deta","payload":{"id":"escaped-session","cwd":"/projects/音乐"}}"#,
+            #"{"type":"turn_\u0063ontext","payload":{"model":"gpt-6-sol"}}"#,
+            body,
+            #"{"type":"event_msg","timestamp":"2026-09-14T02:00:00Z","payload":{"type":"token_\u0063ount","info":{"total_token_usage":{"input_tokens":100,"cached_input_tokens":20,"output_tokens":10}}}}"#,
+            #"{"type":"event_msg","timestamp":"2026-09-14T03:00:00Z","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":150,"cached_input_tokens":30,"output_tokens":15}}}}"#
+        ].joined(separator: "\n"), to: fixture.sessions.appendingPathComponent("escaped-2026-09-14.jsonl"))
+        let data = try await LocalQuotaManagementUsageService(paths: fixture.paths).loadData(
+            for: .codex, historyDays: 30, now: date("2026-09-14T12:00:00Z"))
+        guard case .codex(let analytics) = data else { return XCTFail("Expected native usage") }
+        XCTAssertEqual(analytics.records.map(\.tokens.input), [100, 50])
+        XCTAssertEqual(analytics.records.map(\.tokens.cachedInput), [20, 10])
+        XCTAssertEqual(analytics.records.map(\.model), ["gpt-6-sol", "gpt-6-sol"])
+        XCTAssertEqual(analytics.records.map(\.projectName), ["音乐", "音乐"])
+        XCTAssertTrue(analytics.records.allSatisfy { $0.id.hasPrefix("escaped-session-") })
+    }
+
     func testAntigravityHistoryRemainsQuotaOnly() async throws {
         let fixture = try makeFixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
@@ -203,4 +224,39 @@ private struct Fixture {
     let opencodexLedger: URL
     let antigravityHistory: URL
     let paths: QuotaManagementDataPaths
+}
+
+final class UsageJSONLScanTests: XCTestCase {
+    func testByteSearchMatchesReferenceAcrossSlicesAndBinaryBoundaries() {
+        let samples: [[UInt8]] = [[], [0], [1, 2, 3], Array("aaaaab 世界 token_count".utf8), [255, 0, 255, 10]]
+        let needles: [[UInt8]] = [[], [0], [10], [255, 0], Array("aaaab".utf8), Array("世界".utf8), Array("token_count".utf8), Array("missing".utf8)]
+        for bytes in samples {
+            let padded = Data([17, 18] + bytes + [19])
+            let slice = padded[2..<(2 + bytes.count)]
+            for needle in needles {
+                let expected = needle.isEmpty || (needle.count <= bytes.count && (0...(bytes.count - needle.count)).contains { Array(bytes[$0..<($0 + needle.count)]) == needle })
+                XCTAssertEqual(UsageJSONLStream.containsBytes(slice, needle), expected)
+            }
+        }
+    }
+
+    func testStreamingBoundariesOversizeCRLFAndUnterminatedLastLine() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: url) }
+        try Data("abc\n\n123456\nx\r\nlast".utf8).write(to: url)
+        for chunk in [1, 2, 3, 8, 65_536] {
+            var rows: [String] = []
+            try UsageJSONLStream.read(url, chunkBytes: chunk, lineLimit: 4) { data in
+                rows.append(data.flatMap { String(data: $0, encoding: .utf8) } ?? "<oversize>")
+            }
+            XCTAssertEqual(rows, ["abc", "<oversize>", "x\r", "last"])
+        }
+    }
+
+    func testFilterOnlySkipsRowsWithoutUsageOrEncodingMarkers() {
+        XCTAssertFalse(UsageJSONLStream.mayContainCodexUsage(Data(#"{"type":"response_item","payload":{"text":"ordinary prose"}}"#.utf8)))
+        XCTAssertTrue(UsageJSONLStream.mayContainCodexUsage(Data(#"{"type":"turn_\u0063ontext"}"#.utf8)))
+        XCTAssertTrue(UsageJSONLStream.mayContainCodexUsage(Data(#"{"type":"event_msg","payload":{"type":"token_count"}}"#.utf8)))
+        XCTAssertTrue(UsageJSONLStream.mayContainCodexUsage(Data([0, 123, 0, 125])))
+    }
 }

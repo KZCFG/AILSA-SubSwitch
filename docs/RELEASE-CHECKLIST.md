@@ -14,7 +14,14 @@ separate steps.
 - [x] Publish a clean source snapshot to KZCFG/AILSA-SubSwitch; verify remote readback.
 - [x] Enable private vulnerability reporting.
 
-## Current release: 1.0.0(i) (2026101301)
+## Current release: 1.0.0(j) (2026101801)
+
+This revision adapts relevant CodexBar 0.77.0 history-reader and Antigravity fixes.
+Validation results are recorded in [the release notes](RELEASE-1.0.0j.md).
+The [integration review](AILSA_SS-upstream-0.77.0.md) records which upstream
+changes are already covered or outside the supported provider set.
+
+## Historical release: 1.0.0(i) (2026101301)
 
 This revision adapts usage-detail and packaging improvements from CodexBar 0.74.1.
 
