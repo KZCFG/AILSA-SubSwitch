@@ -43,6 +43,10 @@ struct UsageReportRequest: Equatable, Sendable {
     }
 }
 
+enum UsageReportPreferences {
+    static let hideUnpricedModelsKey = "ass.usageReport.hideUnpricedModels"
+}
+
 /// Only aggregates enter the renderer. No account labels, request IDs,
 /// conversation text, credentials, local paths or routing details are exported.
 struct UsageReport: Sendable {
@@ -65,6 +69,12 @@ struct UsageReport: Sendable {
     let points: [Point]
     let partialPeriod: Bool
     let missingPriceRecords: Int
+
+    /// Filters exported model details only. Totals and trends keep every record.
+    /// An explicit zero-dollar amount is priced and remains visible.
+    func visibleRows(hideUnpricedModels: Bool) -> [Row] {
+        hideUnpricedModels ? rows.filter { $0.value.reference.usd != nil } : rows
+    }
 
     static func build(snapshot: QuotaDashboardSnapshot, request: UsageReportRequest,
                       now: Date = Date(), calendar: Calendar = .current) -> Self {

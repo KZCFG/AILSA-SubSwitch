@@ -476,3 +476,8 @@
 
 "app.menu_bar_unavailable.title" = "The menu bar icon is unavailable";
 "app.menu_bar_unavailable.detail" = "AILSA SubSwitch is running, but macOS has not placed its menu bar icon. In System Settings > Menu Bar, enable AILSA SubSwitch under Allow in Menu Bar. If you use Bartender or another organizer, set the icon to Show, then open AILSA SubSwitch again.";
+
+// Usage image sharing preferences
+"settings.usage_report.title" = "Gebruiksafbeeldingen om te delen";
+"settings.usage_report.hide_unpriced" = "Modellen zonder USD-bedrag verbergen";
+"settings.usage_report.hide_unpriced.detail" = "Verberg modeldetails zonder prijs in geëxporteerde dag-, week- en maandafbeeldingen. Tokentotalen en trends bevatten al het gebruik. Modellen met $0.00 blijven zichtbaar.";

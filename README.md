@@ -91,6 +91,11 @@ Flash rates, request timestamps and
 reported cache hits. Peak/off-peak rules now account for Chinese public holidays.
 Token records stay unchanged. See the [update notes](docs/RELEASE-1.0.0f.md).
 
+**1.0.0(k)** adds **Settings → Quota display → Usage sharing images → Hide
+models without a USD amount**. Exported images can omit unpriced model rows
+while keeping complete Token totals and trends. Explicit $0.00 amounts remain
+visible.
+
 **1.0.0(e)** adds shareable Daily, Weekly and Monthly usage PNGs with a native
 save dialog, and official GPT-6 Sol / Luna reference pricing. Open Codex or
 Cursor usage and choose **Export usage image** in the toolbar. See the

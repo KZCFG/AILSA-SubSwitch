@@ -6,6 +6,9 @@ struct UsageReportPoster: View {
     let report: UsageReport
     var metric: QuotaChartMetric = .tokens
     var tokenUnit = "M"
+    var hideUnpricedModels = false
+    private var visibleRows: [UsageReport.Row] { report.visibleRows(hideUnpricedModels: hideUnpricedModels) }
+    private var hiddenModelCount: Int { report.rows.count - visibleRows.count }
     private let ink = Color(white: 0.07)
     private let muted = Color(white: 0.44)
     private let surface = Color(white: 0.965)
@@ -76,7 +79,11 @@ struct UsageReportPoster: View {
                     Text("Token").frame(width: 126, alignment: .trailing)
                     Text("USD").frame(width: 100, alignment: .trailing)
                 }.font(.system(size: 12)).foregroundStyle(muted).padding(.bottom, 12)
-                ForEach(report.rows) { row in
+                if visibleRows.isEmpty && hiddenModelCount > 0 {
+                    Text(text("当前时段没有可显示的已定价模型。", "No priced models to display for this period."))
+                        .font(.system(size: 13)).foregroundStyle(muted).padding(.vertical, 12)
+                }
+                ForEach(visibleRows) { row in
                     HStack(spacing: 10) {
                         RoundedRectangle(cornerRadius: 2).fill(row.name == "Grok 4.7" ? Color.indigo : ink.opacity(0.22)).frame(width: 4, height: 22)
                         Text(modelName(row.name)).font(.system(size: 16, weight: row.name == "Grok 4.7" ? .semibold : .medium))
@@ -89,8 +96,14 @@ struct UsageReportPoster: View {
                         Text(row.value.reported > 0 ? tokens(row.value.tokens.total) : "—").frame(width: 126, alignment: .trailing)
                         Text(money(row.value.reference)).frame(width: 100, alignment: .trailing)
                     }.font(.system(size: 16, weight: .medium)).monospacedDigit().frame(height: 45)
-                    if row.id != report.rows.last?.id { Rectangle().fill(ink.opacity(0.055)).frame(height: 1) }
+                    if row.id != visibleRows.last?.id { Rectangle().fill(ink.opacity(0.055)).frame(height: 1) }
                 }
+            }
+            if hiddenModelCount > 0 {
+                Text(text("已隐藏 \(hiddenModelCount) 个无 USD 金额的模型明细；总量与走势包含全部用量。",
+                          "\(hiddenModelCount) unpriced model details hidden. Totals and trends include all usage."))
+                    .font(.system(size: 11)).foregroundStyle(muted)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             VStack(alignment: .leading, spacing: 18) {
                 HStack {
@@ -165,8 +178,8 @@ struct UsageReportPoster: View {
 }
 
 enum UsageReportRenderer {
-    @MainActor static func png(_ report: UsageReport, metric: QuotaChartMetric = .tokens, tokenUnit: String = "M") throws -> Data {
-        let host = NSHostingView(rootView: UsageReportPoster(report: report, metric: metric, tokenUnit: tokenUnit))
+    @MainActor static func png(_ report: UsageReport, metric: QuotaChartMetric = .tokens, tokenUnit: String = "M", hideUnpricedModels: Bool = false) throws -> Data {
+        let host = NSHostingView(rootView: UsageReportPoster(report: report, metric: metric, tokenUnit: tokenUnit, hideUnpricedModels: hideUnpricedModels))
         let size = host.fittingSize
         guard size.height > 0, size.height <= 16_000 else {
             throw NSError(domain: "AILSA.SubSwitch.UsageReport", code: 1,

@@ -69,6 +69,38 @@ final class UsageReportTests: XCTestCase {
         XCTAssertTrue(report.rows.isEmpty)
     }
 
+    func testShareFilterKeepsZeroUSDAndPreservesTotalsAndTrends() {
+        let day = date("2026-09-27T00:00:00Z")
+        var bucket = QuotaBucket()
+        bucket.add(value(10), key: .init(provider: "fixture", model: "unpriced"))
+        bucket.add(value(20, price: 0), key: .init(provider: "fixture", model: "zero-usd"))
+        bucket.add(value(30, price: 1_000), key: .init(provider: "fixture", model: "paid"))
+        let report = UsageReport.build(snapshot: snapshot(days: [day:bucket]),
+            request: .init(provider: .codex, period: .weekly, endingOn: day),
+            now: day.addingTimeInterval(86400), calendar: calendar)
+        XCTAssertEqual(report.visibleRows(hideUnpricedModels: false).map(\.name), report.rows.map(\.name))
+        XCTAssertEqual(report.visibleRows(hideUnpricedModels: true).map(\.name), ["paid", "zero-usd"])
+        XCTAssertEqual(report.total.tokens.total, 60)
+        XCTAssertEqual(report.points.reduce(0) { $0 + $1.value.tokens.total }, 60)
+        XCTAssertEqual(report.total.reference.pico, 1_000)
+    }
+
+    func testShareFilterHandlesAllUnpricedAndOverflowAmounts() {
+        let day = date("2026-09-27T00:00:00Z")
+        var overflow = value(20, price: Int64.max)
+        overflow.reference.add(1)
+        var bucket = QuotaBucket()
+        bucket.add(value(10), key: .init(provider: "fixture", model: "unpriced"))
+        bucket.add(overflow, key: .init(provider: "fixture", model: "overflow"))
+        let report = UsageReport.build(snapshot: snapshot(days: [day:bucket]),
+            request: .init(provider: .codex, period: .weekly, endingOn: day),
+            now: day.addingTimeInterval(86400), calendar: calendar)
+        XCTAssertTrue(report.visibleRows(hideUnpricedModels: true).isEmpty)
+        XCTAssertEqual(report.visibleRows(hideUnpricedModels: false).count, 2)
+        XCTAssertEqual(report.total.tokens.total, 30)
+        XCTAssertNil(report.total.reference.usd)
+    }
+
     @MainActor func testPageModelLoadsHistoricalMinutesWithoutReplacingDashboard() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

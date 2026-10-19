@@ -476,3 +476,8 @@
 
 "app.menu_bar_unavailable.title" = "The menu bar icon is unavailable";
 "app.menu_bar_unavailable.detail" = "AILSA SubSwitch is running, but macOS has not placed its menu bar icon. In System Settings > Menu Bar, enable AILSA SubSwitch under Allow in Menu Bar. If you use Bartender or another organizer, set the icon to Show, then open AILSA SubSwitch again.";
+
+// Usage image sharing preferences
+"settings.usage_report.title" = "用量分享圖";
+"settings.usage_report.hide_unpriced" = "隱藏無 USD 金額的模型";
+"settings.usage_report.hide_unpriced.detail" = "僅在匯出的日報、週報和月報圖片中隱藏無 USD 金額的模型明細。總 Token 與走勢保留全部用量；$0.00 金額的模型仍會顯示。";

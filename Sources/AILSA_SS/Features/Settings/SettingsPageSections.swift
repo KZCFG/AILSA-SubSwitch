@@ -263,6 +263,7 @@ private struct SettingsSwitchBehaviorSection: View {
 
 private struct SettingsQuotaDisplaySection: View {
     @AppStorage(QuotaChartMetric.defaultsKey) private var quotaChartMetric: QuotaChartMetric = .tokens
+    @AppStorage(UsageReportPreferences.hideUnpricedModelsKey) private var hideUnpricedModels = false
     @ObservedObject var model: SettingsPageModel
     @State private var selectedProvider: AccountProvider = .codex
     @State private var pageIndex = 0
@@ -326,6 +327,19 @@ private struct SettingsQuotaDisplaySection: View {
                 Text(L10n.tr("settings.quota_chart_metric.detail"))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(16).frame(maxWidth: .infinity, alignment: .leading)
+            .cardSurface(cornerRadius: LayoutRules.cardRadius)
+            VStack(alignment: .leading, spacing: 8) {
+                Text(L10n.tr("settings.usage_report.title"))
+                    .font(.system(size: 13, weight: .semibold))
+                Toggle(L10n.tr("settings.usage_report.hide_unpriced"), isOn: $hideUnpricedModels)
+                    .toggleStyle(SettingsNeutralSwitchStyle())
+                    .font(.system(size: 13, weight: .medium))
+                    .accessibilityIdentifier("settings.usageReport.hideUnpricedModels")
+                Text(L10n.tr("settings.usage_report.hide_unpriced.detail"))
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(16).frame(maxWidth: .infinity, alignment: .leading)

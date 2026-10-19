@@ -502,3 +502,8 @@
 
 "app.menu_bar_unavailable.title" = "菜单栏图标尚未显示";
 "app.menu_bar_unavailable.detail" = "AILSA SubSwitch 正在运行，但 macOS 尚未显示它的菜单栏图标。请在系统设置 → 菜单栏 → 允许在菜单栏显示中打开 AILSA SubSwitch。如果使用 Bartender 等整理工具，也请将图标设为显示，再重新打开 AILSA SubSwitch。";
+
+// Usage image sharing preferences
+"settings.usage_report.title" = "用量分享图";
+"settings.usage_report.hide_unpriced" = "隐藏无 USD 金额的模型";
+"settings.usage_report.hide_unpriced.detail" = "仅在导出的日报、周报和月报图片中隐藏无 USD 金额的模型明细。总 Token 与走势保留全部用量；$0.00 金额的模型仍会显示。";

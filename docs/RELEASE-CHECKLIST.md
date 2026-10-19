@@ -14,7 +14,14 @@ separate steps.
 - [x] Publish a clean source snapshot to KZCFG/AILSA-SubSwitch; verify remote readback.
 - [x] Enable private vulnerability reporting.
 
-## Current release: 1.0.0(j) (2026101801)
+## Current release: 1.0.0(k) (2026102001)
+
+This revision adds the optional export-only unpriced-model filter. See the
+[release notes](RELEASE-1.0.0k.md) for behavior and distribution details.
+Validation covers missing versus zero USD, overflow, all-unpriced periods,
+unchanged totals and trends, localized settings and native PNG rendering.
+
+## Historical release: 1.0.0(j) (2026101801)
 
 This revision adapts relevant CodexBar 0.77.0 history-reader and Antigravity fixes.
 Validation results are recorded in [the release notes](RELEASE-1.0.0j.md).

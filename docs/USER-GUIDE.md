@@ -215,3 +215,12 @@ The image contains aggregates and model names, with no accounts, credentials,
 request IDs, conversation contents or local paths. API amounts are reference
 estimates, never an actual bill; unpriced or inconsistent records are excluded
 from the monetary sum. Antigravity remains a separate quota-snapshot interface.
+
+### Hide unpriced models in sharing images
+
+In **Settings → Quota display → Usage sharing images**, enable **Hide models
+without a USD amount** to omit those model rows from Daily, Weekly and Monthly
+PNGs. This preference is off by default and is saved across launches. A model
+with an explicit $0.00 amount stays visible. Token totals and charts still
+include all usage, and the image notes when model details have been hidden.
+This does not change the usage dashboard, stored records or pricing.

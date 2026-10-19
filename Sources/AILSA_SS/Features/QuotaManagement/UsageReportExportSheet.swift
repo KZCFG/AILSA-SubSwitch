@@ -20,6 +20,7 @@ struct UsageReportExportSheet: View {
     @State var endingOn: Date
     @AppStorage(QuotaChartMetric.defaultsKey) private var chartMetric: QuotaChartMetric = .tokens
     @AppStorage("ass.tokenUnit") private var tokenUnit = "M"
+    @AppStorage(UsageReportPreferences.hideUnpricedModelsKey) private var hideUnpricedModels = false
     @State private var generating = false
     @State private var saving = false
     @State private var document: UsageReportPNG?
@@ -67,7 +68,7 @@ struct UsageReportExportSheet: View {
                 errorMessage = UsageReportText.text("所选时段暂无可导出的用量记录。", "No usage records are available for this period.")
                 return
             }
-            document = UsageReportPNG(data: try UsageReportRenderer.png(report, metric: chartMetric, tokenUnit: tokenUnit))
+            document = UsageReportPNG(data: try UsageReportRenderer.png(report, metric: chartMetric, tokenUnit: tokenUnit, hideUnpricedModels: hideUnpricedModels))
             filename = request.filename()
             saving = true
         } catch { errorMessage = error.localizedDescription }

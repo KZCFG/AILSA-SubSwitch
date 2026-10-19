@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0(k) — 2026-10-20
+
+- Add a saved Settings → Quota display option to hide models without a USD
+  amount from exported Daily, Weekly and Monthly usage images.
+- Keep explicit $0.00 model amounts visible and preserve complete Token totals
+  and trends. Images disclose when unpriced model details are hidden.
+
+
 ## 1.0.0(i) — 2026-10-13
 
 - Add cached-input reuse and reported cache-sample coverage to usage details. Missing cache metadata remains unknown instead of appearing as a measured zero; the statistics follow the selected day, week, month or hovered interval.
