@@ -14,7 +14,14 @@ separate steps.
 - [x] Publish a clean source snapshot to KZCFG/AILSA-SubSwitch; verify remote readback.
 - [x] Enable private vulnerability reporting.
 
-## Current release: 1.0.0(k) (2026102001)
+## Current release: 1.0.0(l) (2026102003)
+
+This revision adds official USD reference prices and WorkBuddy model-ID mapping.
+See [the release notes](RELEASE-1.0.0l.md) for the verified rates and sources.
+Validation covers cache misses/hits, reasoning subsets, original request-time
+DeepSeek rates, missing/invalid usage and historical export repricing.
+
+## Historical release: 1.0.0(k) (2026102001)
 
 This revision adds the optional export-only unpriced-model filter. See the
 [release notes](RELEASE-1.0.0k.md) for behavior and distribution details.

@@ -303,7 +303,9 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         "claude-fable-5.1-thinking": "claude-fable-5-1",
         "claude-fable-5.1": "claude-fable-5-1",
         "kimi-k3-max": "k3", "k3-max": "k3",
-        "deepseek-v4-flash": "deepseek-flash"
+        "deepseek-v4-flash": "deepseek-flash",
+        // WorkBuddy exposes the provider model version rather than the API alias.
+        "deepseek-v4.1-flash": "deepseek-flash"
     ]
     private static func userReferenceAlias(provider: String?, resolvedModel: String?) -> String? {
         guard let resolvedModel else { return nil }
@@ -323,7 +325,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         }
         if id == "deepseek-flash" {
             // DeepSeek-V4.1-Flash is served as deepseek-flash. USD per 1M,
-            // verified 2026-09-30: peak 0.30 / 0.006 / 1.20; off-peak is half.
+            // rechecked 2026-10-20: peak 0.30 / 0.006 / 1.20; off-peak is half.
             // https://api-docs.deepseek.com/quick_start/pricing
             guard let occurredAt, let peak = deepSeekPeakHours(at: occurredAt) else { return nil }
             return Leaf(short: Rate(inputPicoUSDPerToken: peak ? 300_000 : 150_000,
@@ -395,11 +397,25 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         "kimi-k3": ["kimi-code"],
         "kimi-k2.7-code": ["kimi-code", "kimi", "moonshot"],
         "kimi-k2.7-code-highspeed": ["kimi-code", "kimi", "moonshot"],
+        "hy3": ["tencent", "tencentcloud", "hunyuan", "workbuddy", "workbuddy-ai"],
+        "step-5-preview": ["stepfun", "stepfun-ai", "workbuddy", "workbuddy-ai"],
     ]
 
     // Amounts are USD per 1M converted to pico-USD per token. For example,
     // $2 / 1M becomes 2_000_000 pico-USD per token.
     private static let leaves: [String: Leaf] = [
+        // USD per 1M, checked 2026-10-20 against Tencent's official USD table.
+        // https://www.tencentcloud.com/document/product/1300/78937
+        "hy3": Leaf(
+            short: Rate(inputPicoUSDPerToken: 132_000, cacheReadPicoUSDPerToken: 33_000, outputPicoUSDPerToken: 528_000),
+            long: nil, threshold: .allContexts),
+        // StepFun's own USD price is used, including $0.10/M cached input.
+        // https://platform.stepfun.ai/docs/en/guides/pricing/details
+        // Checked 2026-10-20. Cache writes are included in uncached input;
+        // reasoning tokens are already a subset of total output tokens.
+        "step-5-preview": Leaf(
+            short: Rate(inputPicoUSDPerToken: 1_000_000, cacheReadPicoUSDPerToken: 100_000, outputPicoUSDPerToken: 2_700_000),
+            long: nil, threshold: .allContexts),
         // Official K2.7 USD reference checked 2026-09-17; Preview maps here only by user instruction.
         "kimi-k2.7-code": Leaf(
             short: Rate(inputPicoUSDPerToken: 950_000, cacheReadPicoUSDPerToken: 190_000, outputPicoUSDPerToken: 4_000_000),

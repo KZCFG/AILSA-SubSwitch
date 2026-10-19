@@ -530,3 +530,81 @@ final class GPT61SolPricingTests: XCTestCase {
         XCTAssertNotEqual(newKey, oldKey)
     }
 }
+
+final class WorkBuddyReferencePricingTests: XCTestCase {
+    private func row(_ model: String, provider: String = "workbuddy-ai", cache: Int? = 250_000,
+                     reasoning: Int = 10_000, timestamp: String = "2026-10-20T00:30:00Z",
+                     status: String = "reported", resolved: Bool = true) throws -> String {
+        var usage: [String: Any] = ["inputTokens": 1_000_000, "outputTokens": 100_000,
+                                   "reasoningOutputTokens": reasoning]
+        if let cache { usage["cachedInputTokens"] = cache }
+        var record: [String: Any] = ["requestId": "fixture-" + model, "provider": provider,
+            "model": model, "requestedModel": provider + "/" + model,
+            "timestamp": timestamp, "usageStatus": status, "usage": usage]
+        if resolved { record["resolvedModel"] = model }
+        return String(decoding: try JSONSerialization.data(withJSONObject: record), as: UTF8.self)
+    }
+    private func read(_ line: String) throws -> OpenCodexLedgerMeteringRecord {
+        try XCTUnwrap(AILSA_SSLedgerMeteringReader(pricingCatalog: .empty).read(data: Data(line.utf8)).records.first)
+    }
+    func testHy3OfficialUSDIncludesDiscountedCacheOnlyOnce() throws {
+        let record = try read(row("hy3"))
+        XCTAssertEqual(record.standardReferenceEstimate.apiEquivalentUSD, "0.160050000000")
+        XCTAssertEqual(record.standardReferenceEstimate.leaf, "hy3")
+        XCTAssertEqual(record.tokens.totalTokens, 1_100_000)
+        XCTAssertNil(record.pricing.picoUSD, "Reference cost does not claim a WorkBuddy charge")
+        XCTAssertEqual(try read(row("hy3", cache: 0)).standardReferenceEstimate.apiEquivalentUSD, "0.184800000000")
+        XCTAssertEqual(try read(row("hy3", cache: 1_000_000)).standardReferenceEstimate.apiEquivalentUSD, "0.085800000000")
+    }
+    func testStepFiveUsesVendorCachePriceRatherThanResellerPrice() throws {
+        // $0.75 uncached + $0.025 cached + $0.27 output.
+        for reasoning in [0, 10_000, 100_000] {
+            let record = try read(row("step-5-preview", reasoning: reasoning))
+            XCTAssertEqual(record.standardReferenceEstimate.apiEquivalentUSD, "1.045000000000")
+            XCTAssertEqual(record.tokens.totalTokens, 1_100_000)
+            XCTAssertNil(record.pricing.picoUSD)
+        }
+        XCTAssertEqual(try read(row("step-5-preview", cache: 1_000_000)).standardReferenceEstimate.apiEquivalentUSD,
+                       "0.370000000000")
+    }
+    func testVersionedDeepSeekWorkBuddyRouteUsesOriginalRequestTime() throws {
+        let offPeak = try read(row("deepseek-v4.1-flash"))
+        XCTAssertEqual(offPeak.standardReferenceEstimate.apiEquivalentUSD, "0.173250000000")
+        XCTAssertEqual(offPeak.standardReferenceEstimate.leaf, "deepseek-flash")
+        XCTAssertEqual(offPeak.resolvedModel, "deepseek-v4.1-flash")
+        XCTAssertEqual(try read(row("deepseek-v4.1-flash", timestamp: "2026-10-20T01:00:00Z")).standardReferenceEstimate.apiEquivalentUSD,
+                       "0.346500000000")
+        XCTAssertEqual(try read(row("deepseek-v4.1-flash", timestamp: "2026-10-18T01:00:00Z")).standardReferenceEstimate.apiEquivalentUSD,
+                       "0.173250000000")
+    }
+    func testMissingCacheRetainsPartialReferenceAndUnknownUsageStaysUnknown() throws {
+        for model in ["hy3", "step-5-preview", "deepseek-v4.1-flash"] {
+            XCTAssertTrue(try read(row(model, cache: nil)).standardReferenceEstimate.estimatePartial)
+            for line in [try row(model, status: "unreported"), try row(model, resolved: false),
+                         try row(model, cache: 1_000_001), try row(model, reasoning: 100_001)] {
+                XCTAssertNil(try read(line).standardReferenceEstimate.picoUSD)
+            }
+        }
+        for model in ["hy3-preview", "step-5", "step-5-preview-unverified"] {
+            XCTAssertNil(try read(row(model)).standardReferenceEstimate.picoUSD)
+        }
+        XCTAssertNil(try read(row("hy3", provider: "unverified-provider")).standardReferenceEstimate.picoUSD)
+    }
+    func testHistoryExportsRepriceRecordsWithoutChangingTokensOrRoutes() throws {
+        let lines = try ["hy3", "step-5-preview", "deepseek-v4.1-flash"].map { try row($0) }
+        let analytics = AILSA_SSLedgerMeteringReader(pricingCatalog: .empty)
+            .read(data: Data((lines + [lines[0]]).joined(separator: "\n").utf8))
+        XCTAssertEqual(analytics.records.count, 3)
+        XCTAssertEqual(analytics.coverage.ledgerDuplicateRowsDiscarded, 1)
+        let now = ISO8601DateFormatter().date(from: "2026-10-20T12:00:00Z")!
+        var calendar = Calendar(identifier: .gregorian); calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let snapshot = QuotaDashboardSnapshot.build(.openCodex(analytics), now: now, calendar: calendar)
+        XCTAssertEqual(snapshot.all.tokens.total, 3_300_000)
+        XCTAssertEqual(snapshot.all.reference.pico, 1_378_300_000_000)
+        XCTAssertEqual(snapshot.all.reference.count, 3)
+        let report = UsageReport.build(snapshot: snapshot, request: .init(provider: .codex, period: .daily, endingOn: now), now: now, calendar: calendar)
+        XCTAssertEqual(report.visibleRows(hideUnpricedModels: true).count, 3)
+        XCTAssertEqual(Set(report.rows.map(\.name)), Set(["Hy3", "Step 5 Preview", "DeepSeek V4.1 Flash"]))
+        XCTAssertTrue(analytics.records.allSatisfy { $0.routeProvider == "workbuddy-ai" })
+    }
+}

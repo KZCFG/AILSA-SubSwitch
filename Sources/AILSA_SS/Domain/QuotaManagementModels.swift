@@ -541,6 +541,7 @@ struct QuotaModelKey: Hashable, Sendable {
             ("grok-4.7", "Grok 4.7"),
             ("grok-4.6", "Grok 4.6"), ("grok-4.5", "Grok 4.5"),
             ("gemini-3.8-flash", "Gemini 3.8 Flash"),
+            ("hy3", "Hy3"), ("step-5-preview", "Step 5 Preview"),
             ("deepseek-v4.1-flash", "DeepSeek V4.1 Flash"),
             ("deepseek-v4-flash", "DeepSeek Flash"), ("deepseek-flash", "DeepSeek Flash"),
             ("fable-5.1", "Fable 5.1"), ("fable-5-1", "Fable 5.1"),

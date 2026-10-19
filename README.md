@@ -91,6 +91,11 @@ Flash rates, request timestamps and
 reported cache hits. Peak/off-peak rules now account for Chinese public holidays.
 Token records stay unchanged. See the [update notes](docs/RELEASE-1.0.0f.md).
 
+**1.0.0(l)** adds official USD reference rates for **DeepSeek V4.1 Flash,
+Hy3 and Step 5 Preview**, including WorkBuddy model IDs, cache discounts and
+DeepSeek request-time peak/off-peak pricing. Historical views and usage images
+are recalculated without changing Token counts. See the [pricing details](docs/RELEASE-1.0.0l.md).
+
 **1.0.0(k)** adds **Settings → Quota display → Usage sharing images → Hide
 models without a USD amount**. Exported images can omit unpriced model rows
 while keeping complete Token totals and trends. Explicit $0.00 amounts remain

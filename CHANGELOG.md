@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.0(l) — 2026-10-20
+
+- Add official USD reference rates for Hy3 and Step 5 Preview, including cached
+  input; use StepFun’s vendor cache rate rather than a reseller rate.
+- Recognize WorkBuddy’s DeepSeek V4.1 Flash ID and retain request-time peak and
+  off-peak pricing, cache subset accounting and original Token totals.
+- Recalculate historical usage and exported images with the new references.
+
+
 ## 1.0.0(k) — 2026-10-20
 
 - Add a saved Settings → Quota display option to hide models without a USD

@@ -14,14 +14,21 @@ approving. If macOS reports a damaged archive, redownload and verify it first.
 Each package has a SHA-256 file. In the download directory:
 
 ```bash
-shasum -a 256 -c AILSA-SubSwitch-1.0.0g-2026100101-arm64.zip.sha256
+shasum -a 256 -c AILSA-SubSwitch-1.0.0l-2026102003-arm64.zip.sha256
 ```
 
 There is no OTA updater in 1.0.0. Quit ASS from Settings before replacing the
 application with a newer download. Replacing the app does not erase its separate
 account store. Keep only one installed copy to avoid launching an older build.
 
-This update is **1.0.0(g)**. **GPT-6.1 Sol** now contributes reported Token
+This update is **1.0.0(l)**. DeepSeek V4.1 Flash, Hy3 and Step 5 Preview
+now have official USD reference amounts, including WorkBuddy usage. Existing
+history is recalculated when read, and the same amounts reach exported images.
+DeepSeek retains request-time peak/off-peak pricing; Step 5 Preview uses the
+vendor's $0.10 per million cached-input tokens. A free WorkBuddy route still has
+an equivalent API reference value. See [the pricing table](RELEASE-1.0.0l.md).
+
+Revision **1.0.0(g)**: **GPT-6.1 Sol** now contributes reported Token
 usage and equivalent API amounts to model breakdowns, Today/7-day/30-day charts
 and image exports. Historical records are recalculated when read, with no need
 to sign in again. Standard pricing is $2.00 input, $0.10 cached input and $10.00
