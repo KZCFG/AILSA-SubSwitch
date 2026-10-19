@@ -597,7 +597,7 @@ final class WorkBuddyReferencePricingTests: XCTestCase {
         XCTAssertEqual(analytics.records.count, 3)
         XCTAssertEqual(analytics.coverage.ledgerDuplicateRowsDiscarded, 1)
         let now = ISO8601DateFormatter().date(from: "2026-10-20T12:00:00Z")!
-        var calendar = Calendar(identifier: .gregorian); calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let calendar = Calendar.current
         let snapshot = QuotaDashboardSnapshot.build(.openCodex(analytics), now: now, calendar: calendar)
         XCTAssertEqual(snapshot.all.tokens.total, 3_300_000)
         XCTAssertEqual(snapshot.all.reference.pico, 1_378_300_000_000)
