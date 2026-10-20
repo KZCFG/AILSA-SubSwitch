@@ -183,6 +183,11 @@
 		EF078D3327429DACA99A440B /* UsageCacheReuseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6DA552B19DF02165C2D6C7B /* UsageCacheReuseTests.swift */; };
 		176FD03E8CE4183C53256164 /* MenuBarAnchorPlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F16E077F242F15371287839 /* MenuBarAnchorPlacement.swift */; };
 		C06B27227EAEB4268E670C47 /* MenuBarAnchorPlacementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EADA5374162866BE85555A27 /* MenuBarAnchorPlacementTests.swift */; };
+		F4414EAEFC299EF71D738088 /* AccountsCoordinator+QuotaActivation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E3F0E3C353A0DE6D01FABF8 /* AccountsCoordinator+QuotaActivation.swift */; };
+		AD7D336C8434E09278164EE6 /* QuotaActivationPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5969000C5A40F7A616450652 /* QuotaActivationPlanner.swift */; };
+		2F10D46087D8A2BC87DB96CF /* SettingsQuotaPoolSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 824B0D692F38594399EDDD83 /* SettingsQuotaPoolSection.swift */; };
+		35D4ACAA905A267DE0CB5995 /* OpenCodexPoolService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1833B33290F3BCD2F42FC6A9 /* OpenCodexPoolService.swift */; };
+		38B04FC9BE5C0A7BF19C256F /* QuotaActivationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DDB5E9D0BBF0B5F26389597 /* QuotaActivationTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -398,6 +403,11 @@
 		C6DA552B19DF02165C2D6C7B /* UsageCacheReuseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageCacheReuseTests.swift; sourceTree = "<group>"; };
 		1F16E077F242F15371287839 /* MenuBarAnchorPlacement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarAnchorPlacement.swift; sourceTree = "<group>"; };
 		EADA5374162866BE85555A27 /* MenuBarAnchorPlacementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarAnchorPlacementTests.swift; sourceTree = "<group>"; };
+		2E3F0E3C353A0DE6D01FABF8 /* AccountsCoordinator+QuotaActivation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/AILSA_SS/Behavior/AccountsCoordinator+QuotaActivation.swift"; sourceTree = SOURCE_ROOT; };
+		5969000C5A40F7A616450652 /* QuotaActivationPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/AILSA_SS/Behavior/QuotaActivationPlanner.swift"; sourceTree = SOURCE_ROOT; };
+		824B0D692F38594399EDDD83 /* SettingsQuotaPoolSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/AILSA_SS/Features/Settings/SettingsQuotaPoolSection.swift"; sourceTree = SOURCE_ROOT; };
+		1833B33290F3BCD2F42FC6A9 /* OpenCodexPoolService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/AILSA_SS/Infrastructure/OpenCodexPoolService.swift"; sourceTree = SOURCE_ROOT; };
+		5DDB5E9D0BBF0B5F26389597 /* QuotaActivationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tests/AILSA_SSTests/QuotaActivationTests.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -436,6 +446,7 @@
 				E655B6B7D30ED7AD4AC38A3D /* CursorProfileRepository.swift */,
 				5EA76A8A659C4C78A46945EF /* AntiGravityAuthRepository.swift */,
 				C8A3C8A3C8A3C8A3C8A3C8A3 /* AntigravityAccountService.swift */,
+				1833B33290F3BCD2F42FC6A9 /* OpenCodexPoolService.swift */,
 				F8A1F8A1F8A1F8A1F8A1F8A1 /* AntigravityUsageService.swift */,
 				7296C82EB9955D9DB121C940 /* AuthFileRepository.swift */,
 				7296C82EB9955D9DB121C941 /* AuthFlowDebugLog.swift */,
@@ -473,6 +484,8 @@
 				D1A2D1A2D1A2D1A2D1A2D1A2 /* AntigravityAccountsCoordinator.swift */,
 				17F4E9A12A114B1AA9D0E111 /* AccountsSnapshotFreshnessPolicy.swift */,
 				D025232E17FEBC918542E358 /* AntigravityObservedSelection.swift */,
+				2E3F0E3C353A0DE6D01FABF8 /* AccountsCoordinator+QuotaActivation.swift */,
+				5969000C5A40F7A616450652 /* QuotaActivationPlanner.swift */,
 				2357B18057314DF498B2DA93F /* QuotaCountdownState.swift */,
 				16C9AA1111C9AA1111C9AA13 /* CurrentAccountProjectionWriter.swift */,
 				EBC562226CDA114F63F5E91A /* SettingsCoordinator.swift */,
@@ -540,6 +553,7 @@
 		596621B3395F4D9CF54DC584 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				824B0D692F38594399EDDD83 /* SettingsQuotaPoolSection.swift */,
 				021AE790CD09A0C7B88ACB32 /* AboutView.swift */,
 				B201B201B201B201B201B201 /* SettingsControlPresentation.swift */,
 				B202B202B202B202B202B202 /* SettingsControlPrimitives.swift */,
@@ -685,6 +699,7 @@
 				85BEA62E5EB96361AD117627 /* AccountsCoordinatorTests.swift */,
 				50A1E15C1EDB4A5C9E8D1121 /* AccountsSnapshotFreshnessPolicyTests.swift */,
 				E143A7B4FF17ACBBD054C812 /* AntigravityObservedSelectionTests.swift */,
+				5DDB5E9D0BBF0B5F26389597 /* QuotaActivationTests.swift */,
 				C776802C474B4B14BF3E6D47 /* QuotaCountdownStateTests.swift */,
 				C5F07730BDBA47A297C79B70 /* AILSA_SS-AuthSyncServiceTests.swift */,
 				A146C7576AB39EFCD658BFED /* AppLocaleTests.swift */,
@@ -901,6 +916,7 @@
 				A841A841A841A841A841A841 /* AccountsActionPresentationTests.swift in Sources */,
 				50A1E15C1EDB4A5C9E8D1120 /* AccountsSnapshotFreshnessPolicyTests.swift in Sources */,
 				5D98DA622BB3C117F56591F9 /* AntigravityObservedSelectionTests.swift in Sources */,
+				38B04FC9BE5C0A7BF19C256F /* QuotaActivationTests.swift in Sources */,
 				623DD5E1C9334D38846FCF68 /* QuotaCountdownStateTests.swift in Sources */,
 				67E8085567484C0D879933E8 /* AILSA_SS-AuthSyncServiceTests.swift in Sources */,
 				C1689CF8BC0D6EBC84B515ED /* AccountsCoordinatorTests.swift in Sources */,
@@ -973,6 +989,10 @@
 				E8A1E8A1E8A1E8A1E8A1E8A1 /* AntigravityUsageService.swift in Sources */,
 				17F4E9A12A114B1AA9D0E110 /* AccountsSnapshotFreshnessPolicy.swift in Sources */,
 				8B951462BA95C4ED1B5CD3FA /* AntigravityObservedSelection.swift in Sources */,
+				F4414EAEFC299EF71D738088 /* AccountsCoordinator+QuotaActivation.swift in Sources */,
+				AD7D336C8434E09278164EE6 /* QuotaActivationPlanner.swift in Sources */,
+				2F10D46087D8A2BC87DB96CF /* SettingsQuotaPoolSection.swift in Sources */,
+				35D4ACAA905A267DE0CB5995 /* OpenCodexPoolService.swift in Sources */,
 				5DAC97464AD04B3480333ACB /* QuotaCountdownState.swift in Sources */,
 				16C9AA1111C9AA1111C9AA11 /* CurrentAccountProjectionWriter.swift in Sources */,
 				137936A0518C78C5549E919F /* AccountCardPresentation.swift in Sources */,
