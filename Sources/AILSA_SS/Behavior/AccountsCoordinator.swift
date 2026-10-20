@@ -294,7 +294,7 @@ actor AccountsCoordinator {
                     settings: settings,
                     credentialAccess: credentialAccess
                 )
-                return try applyAntigravitySwitchSideEffects(for: latestAccount, settings: settings)
+                return try await applyAntigravitySwitchSideEffects(for: latestAccount, settings: settings)
             }
         }
         try updateCurrentAccountProjection(account: account)
@@ -583,7 +583,7 @@ actor AccountsCoordinator {
     private func applyAntigravitySwitchSideEffects(
         for account: StoredAccount,
         settings: AppSettings
-    ) throws -> SwitchAccountExecutionResult {
+    ) async throws -> SwitchAccountExecutionResult {
         // The native transaction has already restored the prior running state
         // or launched the app solely when the dedicated setting allowed it.
         // Never send AntiGravity through the generic force-restart service.
@@ -610,7 +610,8 @@ actor AccountsCoordinator {
         }
 
         do {
-            try opencodeAuthSyncService.syncFromAntigravityAuth(storedAccount.authJSON)
+            guard let email = storedAccount.email else { result.opencodeSyncSkipped = true; return result }
+            try await OpenCodexPoolService().followDesktopAccount(email: email)
             result.opencodeSynced = true
         } catch {
             result.opencodeSyncError = error.localizedDescription

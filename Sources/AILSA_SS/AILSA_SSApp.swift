@@ -1,4 +1,5 @@
 import SwiftUI
+import Dispatch
 #if canImport(AppKit)
 import AppKit
 #endif
@@ -9,6 +10,11 @@ struct AILSA_SSApp {
     private static var delegate: SubSwitchApplicationDelegate?
 
     static func main() {
+        if CommandLine.arguments.dropFirst().first == "--pool-control" {
+            let command = CommandLine.arguments.dropFirst(2).first ?? "status"
+            Task { exit(await OpenCodexPoolCLI.run(command)) }
+            dispatchMain()
+        }
         AntigravityQuietKeychainBridge.runChildIfRequested()
         migrateLegacyPreferences()
         let app = NSApplication.shared

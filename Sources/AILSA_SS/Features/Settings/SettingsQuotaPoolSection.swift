@@ -12,12 +12,40 @@ struct SettingsQuotaPoolSection: View {
                     .disabled(model.poolBusy)
             }
             if let pool = model.openCodexPool {
+                HStack {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(L10n.tr(pool.legacyConflict ? "settings.pool.control_external" : (pool.managementEnabled ? "settings.pool.control_owned" : "settings.pool.control_idle")))
+                            .font(.system(size: 13, weight: .medium))
+                        if let stamp = pool.lastSyncAt {
+                            Text(L10n.tr("settings.pool.last_sync") + " " + Date(timeIntervalSince1970: stamp).formatted(date: .omitted, time: .shortened))
+                                .font(.system(size: 11)).foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+                    Button(L10n.tr(pool.managementEnabled && !pool.legacyConflict ? "settings.pool.control_stop" : "settings.pool.control_takeover")) {
+                        model.mutateOpenCodexPool { try await $0.setManagementEnabled(!pool.managementEnabled || pool.legacyConflict) }
+                    }
+                }
+                Text(L10n.tr("settings.pool.control_detail")).font(.system(size: 11)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Toggle(L10n.tr("settings.pool.follow_desktop"), isOn: Binding(
+                    get: { model.settings.syncOpencodeAntigravityAuth },
+                    set: { model.setSyncOpencodeAntigravityAuth($0) }))
+                    .toggleStyle(SettingsNeutralSwitchStyle()).disabled(!pool.managementEnabled || pool.legacyConflict)
+
                 Toggle(L10n.tr("settings.pool.enabled"), isOn: Binding(get: { pool.enabled }, set: { enabled in
                     model.mutateOpenCodexPool { try await $0.setEnabled(enabled) }
                 }))
-                .toggleStyle(SettingsNeutralSwitchStyle())
+                .toggleStyle(SettingsNeutralSwitchStyle()).disabled(!pool.managementEnabled || pool.legacyConflict)
                 ForEach(pool.accounts) { account in
-                    SettingsQuotaPoolAccountRow(account: account, active: pool.activeAccountId == account.id, enabled: pool.enabled, model: model)
+                    SettingsQuotaPoolAccountRow(account: account, active: pool.activeAccountId == account.id, enabled: pool.enabled, managed: pool.managementEnabled && !pool.legacyConflict, model: model)
+                }
+                ForEach(pool.candidates) { candidate in
+                    HStack {
+                        Text(candidate.label).font(.system(size: 13))
+                        Spacer()
+                        Button(L10n.tr("settings.pool.import_saved")) { model.mutateOpenCodexPool { try await $0.importSavedAccount(id: candidate.id) } }
+                    }.disabled(!pool.managementEnabled || pool.legacyConflict)
                 }
                 Text(L10n.tr("settings.pool.detail"))
                     .font(.system(size: 11)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -28,6 +56,12 @@ struct SettingsQuotaPoolSection: View {
             if let message = model.poolMessage, model.openCodexPool != nil { Text(message).font(.system(size: 11)).foregroundStyle(.secondary) }
         }
         .disabled(model.poolBusy)
+        .task {
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(10)) } catch { return }
+                await model.refreshOpenCodexPool(forceRefresh: false)
+            }
+        }
     }
 }
 
@@ -35,6 +69,7 @@ private struct SettingsQuotaPoolAccountRow: View {
     let account: OpenCodexPoolAccount
     let active: Bool
     let enabled: Bool
+    let managed: Bool
     @ObservedObject var model: SettingsPageModel
     @State private var minimum = 10
     @State private var maximum = 10
@@ -45,7 +80,11 @@ private struct SettingsQuotaPoolAccountRow: View {
             })) {
                 Text(account.label + (active ? " · " + L10n.tr("settings.pool.current") : ""))
                     .font(.system(size: 13, weight: .medium)).lineLimit(1)
-            }.toggleStyle(.checkbox)
+            }.toggleStyle(.checkbox).disabled(!managed)
+            if !active {
+                Button(L10n.tr("settings.pool.use_account")) { model.mutateOpenCodexPool { try await $0.selectAccount(id: account.id) } }
+                    .font(.system(size: 11)).disabled(!managed || !account.selected || !account.isAvailable || account.needsReauth)
+            }
             HStack(spacing: 6) {
                 Text(L10n.tr("settings.pool.remaining"))
                 TextField("5", value: $minimum, formatter: NumberFormatter()).frame(width: 38)

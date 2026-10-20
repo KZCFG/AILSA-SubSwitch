@@ -476,7 +476,7 @@
 "settings.notice.status_item_repaired" = "Tried to display the menu bar icon again. If it is still hidden, set AILSA SubSwitch to Show in your menu bar organizer.";
 "settings.notice.status_item_repair_unavailable" = "The menu bar icon could not be recreated. Restart AILSA SubSwitch and try again.";
 "settings.sync_opencode_antigravity_auth" = "Sync OpenCodex AntiGravity account";
-"settings.sync_opencode_antigravity_auth.detail" = "After AILSA SubSwitch switches AntiGravity, select the same account in OpenCodex google-antigravity; keep the current account when quota or reset data is unknown, stale, or exhausted.";
+"settings.sync_opencode_antigravity_auth.detail" = "After a verified native switch, select the matching account in the managed OpenCodex pool. Take over management and admit the account first; no direct auth-file rewrite is used.";
 "accounts.notice.sync_skipped_quota" = "OpenCodex was not synced: the target account quota or reset data is unavailable.";
 
 "settings.quota_activation.active_account.detail" = "Check the selected Codex / AntiGravity account after switching. The 5 h / 1 week countdown waits for provider-reported usage; no model request is sent.";
@@ -511,7 +511,7 @@
 "settings.pool.title" = "OpenCodex · Antigravity pool accounts";
 "settings.pool.refresh" = "Refresh pool";
 "settings.pool.enabled" = "Switch within a remaining-quota range";
-"settings.pool.detail" = "Selected accounts participate in OpenCodex; unchecking pauses the account in that pool. The default is 10% remaining; each account can use a range such as 5–10%. One threshold is drawn per observed quota cycle and retained across refreshes and restarts. SubSwitch must remain running: it checks about every 30 seconds using the most recently used model family and fresh, identity-matched quota. Only later requests are affected. Unknown, stale, exhausted or unavailable accounts are skipped. No proxy modification or official Antigravity sign-in change is required.";
+"settings.pool.detail" = "Checked accounts participate in this OpenCodex pool; unchecking pauses them. Newly admitted accounts start paused. The default is 10% remaining, or save a per-account range such as 5–10%. A threshold is fixed per real quota cycle. While running, SubSwitch checks about every 30 seconds using the most recent model family and fresh quota. Only later requests are switched; unknown, stale, exhausted and unavailable accounts are skipped. The official Antigravity sign-in is not changed.";
 "settings.pool.unavailable" = "Run the original local OpenCodex with Antigravity accounts imported. Quota-based switching also requires fresh, identity-verified quota in SubSwitch.";
 "settings.pool.update_failed" = "Pool update failed. Refresh to check its state; credentials are not replaced.";
 "settings.pool.current" = "Current";
@@ -525,3 +525,21 @@
 "settings.pool.disabled" = "Automatic switching is off";
 "settings.pool.unavailable_account" = "Temporarily unavailable; skipped by automatic selection.";
 "settings.group.account_pool" = "Account pool";
+"settings.pool.control_busy" = "Another pool operation is in progress. Try again shortly.";
+"settings.pool.control_conflict" = "An external sync or rotation controller was detected. Managed operations are paused until ownership is reclaimed.";
+"settings.pool.control_takeover_failed" = "The legacy writer could not be fully stopped. Unified management was not enabled.";
+"settings.pool.control_required" = "Enable unified management in Account pool first.";
+"settings.pool.control_external" = "A legacy sync service is still active";
+"settings.pool.control_owned" = "Managed by SubSwitch";
+"settings.pool.control_idle" = "Unified management is off";
+"settings.pool.control_takeover" = "Take over management";
+"settings.pool.control_stop" = "Stop management";
+"settings.pool.control_detail" = "Takeover backs up and disables the legacy sync daemon. SubSwitch coordinates account sync, verified desktop selection and quota rotation using the original OpenCodex APIs and locked store transactions. It never rewrites IDE login markers. New accounts require explicit admission and start paused. Automatic operations stop when management or the app stops; legacy scripts are not silently restored.";
+"settings.pool.follow_desktop" = "Follow verified SubSwitch account selection";
+"settings.pool.last_sync" = "Last sync check";
+"settings.pool.import_saved" = "Add to pool";
+"settings.pool.import_required" = "Add this account in Account pool first.";
+"settings.pool.use_account" = "Use for next requests";
+"settings.pool.sync_unsupported" = "The original OpenCodex locked sync capability is unavailable. Update or restore its original runtime first.";
+"settings.pool.sync_failed" = "Account sync was not completed. Existing credentials and selection are retained; refresh to verify.";
+"settings.pool.sync_refresh_required" = "Refresh this account in SubSwitch first. Only verified, OpenCodex-compatible grants can be synchronized.";

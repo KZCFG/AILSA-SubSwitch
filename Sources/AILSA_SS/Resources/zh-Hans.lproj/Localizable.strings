@@ -484,7 +484,7 @@
 "settings.notice.status_item_repaired" = "已尝试重新显示菜单栏图标。若仍不可见，请在菜单栏整理工具中将 AILSA SubSwitch 设为显示。";
 "settings.notice.status_item_repair_unavailable" = "当前无法重新创建菜单栏图标，请重启 AILSA SubSwitch 后再试。";
 "settings.sync_opencode_antigravity_auth" = "同步 OpenCodex AntiGravity 账号";
-"settings.sync_opencode_antigravity_auth.detail" = "AILSA SubSwitch 切换 AntiGravity 账号后，将同一账号写入 OpenCodex 的 google-antigravity；额度未知、过期或耗尽时保留当前账号。";
+"settings.sync_opencode_antigravity_auth.detail" = "在原生切换验证成功后，让统一管理的 OpenCodex 账号池跟随选择。需先接管账号池并加入相应账号；不会直接改写账号文件。";
 "accounts.notice.sync_skipped_quota" = "未同步 OpenCodex：目标账号的 5 h / 1 周额度或重置时间不可用。";
 
 "settings.quota_activation.active_account.detail" = "切换 Codex / AntiGravity 账号后检查其额度；不会代发模型请求，5 h / 1 周倒计时需等待服务商报告首次用量。";
@@ -519,7 +519,7 @@
 "settings.pool.title" = "OpenCodex · Antigravity 额度池账号";
 "settings.pool.refresh" = "刷新账号池";
 "settings.pool.enabled" = "按剩余额度区间自动切换";
-"settings.pool.detail" = "勾选账号参与 OpenCodex 账号池；取消勾选会暂停池中账号。默认剩余 10%，也可逐账号设置区间（如 5%～10%）。每个真实额度周期抽取一次，刷新和重启不会重抽。SubSwitch 须保持运行，约每 30 秒根据最近使用的模型池和已核验的新鲜额度检查，仅影响后续请求。未知、过期、耗尽或暂不可用的账号不作为切换目标。无需魔改代理，也不会更改官方 Antigravity 登录账号。";
+"settings.pool.detail" = "勾选的账号参与当前 OpenCodex 额度池；取消勾选会暂停该账号，新加入账号默认暂停。默认剩余 10%，可逐账号设置区间（如 5%～10%），每个真实周期固定一次。应用运行时约每 30 秒，根据最近使用的模型池和新鲜额度检查，仅切换后续请求。未知、过期、耗尽和不可用账号不作为切换目标。不会切换官方 Antigravity 的登录账号。";
 "settings.pool.unavailable" = "请运行本机原版 OpenCodex 并导入 Antigravity 账号。按额度切换还需要 SubSwitch 中有身份已核验的新鲜额度。";
 "settings.pool.update_failed" = "账号池更新失败，请刷新核对；登录凭据不会因此被替换。";
 "settings.pool.current" = "当前账号";
@@ -533,3 +533,21 @@
 "settings.pool.disabled" = "自动切换已关闭";
 "settings.pool.unavailable_account" = "账号暂不可用，不参与自动选择。";
 "settings.group.account_pool" = "账号池";
+"settings.pool.control_busy" = "账号池正在执行另一项操作，请稍后重试。";
+"settings.pool.control_conflict" = "检测到外部同步或轮换控制，统一管理已暂停。请重新接管后继续。";
+"settings.pool.control_takeover_failed" = "旧同步服务尚未完全停用，未启用统一管理。";
+"settings.pool.control_required" = "请先在账号池页面启用统一管理。";
+"settings.pool.control_external" = "旧同步服务仍在运行，尚未统一接管";
+"settings.pool.control_owned" = "由 SubSwitch 统一管理";
+"settings.pool.control_idle" = "统一管理未启用";
+"settings.pool.control_takeover" = "接管并统一管理";
+"settings.pool.control_stop" = "停止统一管理";
+"settings.pool.control_detail" = "接管会备份并停用旧同步守护程序，统一管理账号同步、手动跟随和额度切换。保留原版 OpenCodex，通过其原有接口及带锁事务更新；不会直接改写 IDE 登录标记。新账号须手动加入，再勾选参与。应用退出或停止管理后，相关自动操作暂停，旧脚本不会自动恢复。";
+"settings.pool.follow_desktop" = "跟随 SubSwitch 已验证的账号选择";
+"settings.pool.last_sync" = "上次同步检查";
+"settings.pool.import_saved" = "加入账号池";
+"settings.pool.import_required" = "请先在账号池页面加入该账号。";
+"settings.pool.use_account" = "用于后续请求";
+"settings.pool.sync_unsupported" = "原版 OpenCodex 的带锁同步能力不可用，请先更新或恢复原版运行环境。";
+"settings.pool.sync_failed" = "账号同步未完成，保留现有凭据和选择，请刷新后核对。";
+"settings.pool.sync_refresh_required" = "请先在 SubSwitch 刷新该账号；仅同步身份已验证且与 OpenCodex 兼容的授权。";

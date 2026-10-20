@@ -30,11 +30,11 @@ final class SettingsPageModel: ObservableObject {
     @Published private(set) var poolMessage: String?
     let openCodexPoolService: OpenCodexPoolService
 
-    func refreshOpenCodexPool() async {
+    func refreshOpenCodexPool(forceRefresh: Bool = true) async {
         guard !poolBusy else { return }
         poolBusy = true
         defer { poolBusy = false }
-        do { openCodexPool = try await openCodexPoolService.snapshot(refresh: true); poolMessage = nil }
+        do { openCodexPool = try await openCodexPoolService.snapshot(refresh: forceRefresh); poolMessage = nil }
         catch { poolMessage = L10n.tr("settings.pool.unavailable") }
     }
 
@@ -47,7 +47,10 @@ final class SettingsPageModel: ObservableObject {
                 try await action(openCodexPoolService)
                 openCodexPool = try await openCodexPoolService.snapshot()
                 poolMessage = nil
-            } catch { poolMessage = L10n.tr("settings.pool.update_failed") }
+            } catch {
+                openCodexPool = (try? await openCodexPoolService.snapshot()) ?? openCodexPool
+                poolMessage = error.localizedDescription
+            }
         }
     }
 

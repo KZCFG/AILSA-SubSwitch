@@ -188,6 +188,11 @@
 		2F10D46087D8A2BC87DB96CF /* SettingsQuotaPoolSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 824B0D692F38594399EDDD83 /* SettingsQuotaPoolSection.swift */; };
 		35D4ACAA905A267DE0CB5995 /* OpenCodexPoolService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1833B33290F3BCD2F42FC6A9 /* OpenCodexPoolService.swift */; };
 		38B04FC9BE5C0A7BF19C256F /* QuotaActivationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DDB5E9D0BBF0B5F26389597 /* QuotaActivationTests.swift */; };
+		CE9CF1380D4B65548A283FA4 /* OpenCodexControlOwnership.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03D27D006F31B39A6B406A3 /* OpenCodexControlOwnership.swift */; };
+		6F00D18CE270BB1AD0B165BF /* OpenCodexManagedSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A42921A289059C6CE8E293C /* OpenCodexManagedSync.swift */; };
+		2ABDFF48F53A8A33C0569477 /* OpenCodexPoolCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A51AC0FCEA8D1C45BC99410 /* OpenCodexPoolCLI.swift */; };
+		7182802FEEFC53505E263ACE /* OpenCodexUnifiedSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118A1B4FEE756C14455B3267 /* OpenCodexUnifiedSyncTests.swift */; };
+		3772C6B236EF430FD79308FF /* OpenCodexManagedSync.ts in Resources */ = {isa = PBXBuildFile; fileRef = 2F8949D90159307550BB02D5 /* OpenCodexManagedSync.ts */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -408,6 +413,11 @@
 		824B0D692F38594399EDDD83 /* SettingsQuotaPoolSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/AILSA_SS/Features/Settings/SettingsQuotaPoolSection.swift"; sourceTree = SOURCE_ROOT; };
 		1833B33290F3BCD2F42FC6A9 /* OpenCodexPoolService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/AILSA_SS/Infrastructure/OpenCodexPoolService.swift"; sourceTree = SOURCE_ROOT; };
 		5DDB5E9D0BBF0B5F26389597 /* QuotaActivationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tests/AILSA_SSTests/QuotaActivationTests.swift"; sourceTree = SOURCE_ROOT; };
+		C03D27D006F31B39A6B406A3 /* OpenCodexControlOwnership.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/AILSA_SS/Infrastructure/OpenCodexControlOwnership.swift"; sourceTree = SOURCE_ROOT; };
+		3A42921A289059C6CE8E293C /* OpenCodexManagedSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/AILSA_SS/Infrastructure/OpenCodexManagedSync.swift"; sourceTree = SOURCE_ROOT; };
+		8A51AC0FCEA8D1C45BC99410 /* OpenCodexPoolCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/AILSA_SS/Infrastructure/OpenCodexPoolCLI.swift"; sourceTree = SOURCE_ROOT; };
+		118A1B4FEE756C14455B3267 /* OpenCodexUnifiedSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tests/AILSA_SSTests/OpenCodexUnifiedSyncTests.swift"; sourceTree = SOURCE_ROOT; };
+		2F8949D90159307550BB02D5 /* OpenCodexManagedSync.ts */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Sources/AILSA_SS/Resources/OpenCodexManagedSync.ts"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -446,6 +456,9 @@
 				E655B6B7D30ED7AD4AC38A3D /* CursorProfileRepository.swift */,
 				5EA76A8A659C4C78A46945EF /* AntiGravityAuthRepository.swift */,
 				C8A3C8A3C8A3C8A3C8A3C8A3 /* AntigravityAccountService.swift */,
+				C03D27D006F31B39A6B406A3 /* OpenCodexControlOwnership.swift */,
+				3A42921A289059C6CE8E293C /* OpenCodexManagedSync.swift */,
+				8A51AC0FCEA8D1C45BC99410 /* OpenCodexPoolCLI.swift */,
 				1833B33290F3BCD2F42FC6A9 /* OpenCodexPoolService.swift */,
 				F8A1F8A1F8A1F8A1F8A1F8A1 /* AntigravityUsageService.swift */,
 				7296C82EB9955D9DB121C940 /* AuthFileRepository.swift */,
@@ -545,6 +558,7 @@
 				97D79696C6A34BCD8B3C05C1 /* AILSASubSwitch.icns */,
 				D103F001D103F001D103F001 /* THIRD_PARTY_NOTICES.md */,
 				C0DF0004C0DF0004C0DF0004 /* AILSA_SS-runtime-pricing-bindings-v1.json */,
+				2F8949D90159307550BB02D5 /* OpenCodexManagedSync.ts */,
 				B200F10CE9F433B769723734 /* Localizable.strings */,
 			);
 			path = Resources;
@@ -699,6 +713,7 @@
 				85BEA62E5EB96361AD117627 /* AccountsCoordinatorTests.swift */,
 				50A1E15C1EDB4A5C9E8D1121 /* AccountsSnapshotFreshnessPolicyTests.swift */,
 				E143A7B4FF17ACBBD054C812 /* AntigravityObservedSelectionTests.swift */,
+				118A1B4FEE756C14455B3267 /* OpenCodexUnifiedSyncTests.swift */,
 				5DDB5E9D0BBF0B5F26389597 /* QuotaActivationTests.swift */,
 				C776802C474B4B14BF3E6D47 /* QuotaCountdownStateTests.swift */,
 				C5F07730BDBA47A297C79B70 /* AILSA_SS-AuthSyncServiceTests.swift */,
@@ -890,6 +905,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3772C6B236EF430FD79308FF /* OpenCodexManagedSync.ts in Resources */,
 				D103F002D103F002D103F002 /* THIRD_PARTY_NOTICES.md in Resources */,
 				C0DE0004C0DE0004C0DE0004 /* AILSA_SS-runtime-pricing-bindings-v1.json in Resources */,
 				77F129ACAC53652FC1D928BB /* AILSASubSwitch.icns in Resources */,
@@ -916,6 +932,7 @@
 				A841A841A841A841A841A841 /* AccountsActionPresentationTests.swift in Sources */,
 				50A1E15C1EDB4A5C9E8D1120 /* AccountsSnapshotFreshnessPolicyTests.swift in Sources */,
 				5D98DA622BB3C117F56591F9 /* AntigravityObservedSelectionTests.swift in Sources */,
+				7182802FEEFC53505E263ACE /* OpenCodexUnifiedSyncTests.swift in Sources */,
 				38B04FC9BE5C0A7BF19C256F /* QuotaActivationTests.swift in Sources */,
 				623DD5E1C9334D38846FCF68 /* QuotaCountdownStateTests.swift in Sources */,
 				67E8085567484C0D879933E8 /* AILSA_SS-AuthSyncServiceTests.swift in Sources */,
@@ -993,6 +1010,9 @@
 				AD7D336C8434E09278164EE6 /* QuotaActivationPlanner.swift in Sources */,
 				2F10D46087D8A2BC87DB96CF /* SettingsQuotaPoolSection.swift in Sources */,
 				35D4ACAA905A267DE0CB5995 /* OpenCodexPoolService.swift in Sources */,
+				CE9CF1380D4B65548A283FA4 /* OpenCodexControlOwnership.swift in Sources */,
+				6F00D18CE270BB1AD0B165BF /* OpenCodexManagedSync.swift in Sources */,
+				2ABDFF48F53A8A33C0569477 /* OpenCodexPoolCLI.swift in Sources */,
 				5DAC97464AD04B3480333ACB /* QuotaCountdownState.swift in Sources */,
 				16C9AA1111C9AA1111C9AA11 /* CurrentAccountProjectionWriter.swift in Sources */,
 				137936A0518C78C5549E919F /* AccountCardPresentation.swift in Sources */,
@@ -1139,7 +1159,7 @@
 				CODE_SIGN_ENTITLEMENTS = AILSA_SS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2026102005;
+				CURRENT_PROJECT_VERSION = 2026102007;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
@@ -1181,7 +1201,7 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = AILSA_SSWidgetsMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026102005;
+				CURRENT_PROJECT_VERSION = 2026102007;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
@@ -1222,7 +1242,7 @@
 				CODE_SIGN_ENTITLEMENTS = AILSA_SS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2026102005;
+				CURRENT_PROJECT_VERSION = 2026102007;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
@@ -1283,7 +1303,7 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = AILSA_SSWidgetsMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026102005;
+				CURRENT_PROJECT_VERSION = 2026102007;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;

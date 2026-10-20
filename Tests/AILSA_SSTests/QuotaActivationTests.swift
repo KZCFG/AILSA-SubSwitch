@@ -139,6 +139,8 @@ final class QuotaActivationTests: XCTestCase {
         })
         let snapshot = try await service.snapshot()
         XCTAssertFalse(snapshot.enabled)
+        var managed = OpenCodexLocalPoolPolicy(); managed.managementEnabled = true
+        try JSONEncoder().encode(managed).write(to: path.appendingPathComponent("policy.json"))
         try await service.setRange(id: "fixture", range: OpenCodexPoolRange(minimum: 4, maximum: 8))
         do {
             try await service.setRange(id: "fixture", range: OpenCodexPoolRange(minimum: 12, maximum: 5))
@@ -198,6 +200,8 @@ final class QuotaActivationTests: XCTestCase {
         XCTAssertEqual(server.activeWrites, 1)
         XCTAssertFalse(server.nativeEnabled)
         try await service.setEnabled(false)
+        XCTAssertFalse(server.nativeEnabled)
+        try await service.setManagementEnabled(false)
         XCTAssertTrue(server.nativeEnabled)
         XCTAssertFalse(try service.policy().enabled)
         XCTAssertEqual((try FileManager.default.attributesOfItem(atPath: service.policyURL.path)[.posixPermissions] as? NSNumber)?.intValue, 0o600)
@@ -232,7 +236,7 @@ final class QuotaActivationTests: XCTestCase {
         XCTAssertEqual(try service.policy().ranges["ready"], OpenCodexPoolRange(minimum: 9, maximum: 13))
         do { try await service.setRange(id: "ready", range: OpenCodexPoolRange(minimum: 8, maximum: 4)); XCTFail("invalid") } catch {}
         XCTAssertEqual(server.activeWrites, 0)
-        XCTAssertTrue(server.nativeEnabled)
+        XCTAssertFalse(server.nativeEnabled)
     }
 
     func testLocalQuotaBridgeRequiresIdentityEvidenceAndDoesNotRedrawIdleWindows() throws {
@@ -312,13 +316,15 @@ private final class ActivationURLProtocol: URLProtocol, @unchecked Sendable {
 
 private final class PoolFixture: @unchecked Sendable {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-    var active = "low", nativeEnabled = true, activeWrites = 0, pausedReady = false
+    var active = "low", nativeEnabled = false, activeWrites = 0, pausedReady = false
     var mode = "normal", changeActiveOnRecheck = false
     private let lock = NSLock()
     func clean() { try? FileManager.default.removeItem(at: directory) }
     func service() throws -> OpenCodexPoolService {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try Data("fixture-admin".utf8).write(to: directory.appendingPathComponent("admin-api-token"))
+        var policy = OpenCodexLocalPoolPolicy(); policy.managementEnabled = true; policy.previousNativePreference = true
+        try JSONEncoder().encode(policy).write(to: directory.appendingPathComponent("policy.json"))
         return OpenCodexPoolService(home: directory, policyURL: directory.appendingPathComponent("policy.json"), localQuotaURL: directory.appendingPathComponent("local.json"), loader: { self.respond($0) })
     }
     private func respond(_ request: URLRequest) -> (Data, URLResponse) {

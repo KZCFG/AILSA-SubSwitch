@@ -42,7 +42,13 @@ struct OpenCodexPoolSnapshot: Codable, Equatable, Sendable {
     var accounts: [OpenCodexPoolAccount]
     var monitoredFamily: String = "gemini"
     var policyRevision: String = ""
+    var managementEnabled: Bool = false
+    var legacyConflict: Bool = false
+    var lastSyncAt: Double? = nil
+    var candidates: [OpenCodexPoolCandidate] = []
 }
+
+struct OpenCodexPoolCandidate: Identifiable, Equatable, Sendable, Codable { var id: String; var label: String }
 
 struct OpenCodexLocalPoolPolicy: Codable, Equatable, Sendable {
     var enabled = false
@@ -51,6 +57,32 @@ struct OpenCodexLocalPoolPolicy: Codable, Equatable, Sendable {
     var seed = UUID().uuidString
     var revision = UUID().uuidString
     var previousNativePreference: Bool? = nil
+    var managementEnabled = false
+    var managedSince: Double? = nil
+    var desktopSelection: String? = nil
+    var nativeSelectionFingerprint: String? = nil
+    var lastSyncAt: Double? = nil
+    var disabledLegacyLabels: [String] = []
+    init() {}
+    enum CodingKeys: String, CodingKey {
+        case enabled, provider, ranges, seed, revision, previousNativePreference
+        case managementEnabled, managedSince, desktopSelection, nativeSelectionFingerprint, lastSyncAt, disabledLegacyLabels
+    }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        enabled = try c.decodeIfPresent(Bool.self, forKey: .enabled) ?? false
+        provider = try c.decodeIfPresent(String.self, forKey: .provider) ?? "antigravity-pool"
+        ranges = try c.decodeIfPresent([String: OpenCodexPoolRange].self, forKey: .ranges) ?? [:]
+        seed = try c.decodeIfPresent(String.self, forKey: .seed) ?? UUID().uuidString
+        revision = try c.decodeIfPresent(String.self, forKey: .revision) ?? UUID().uuidString
+        previousNativePreference = try c.decodeIfPresent(Bool.self, forKey: .previousNativePreference)
+        managementEnabled = try c.decodeIfPresent(Bool.self, forKey: .managementEnabled) ?? false
+        managedSince = try c.decodeIfPresent(Double.self, forKey: .managedSince)
+        desktopSelection = try c.decodeIfPresent(String.self, forKey: .desktopSelection)
+        nativeSelectionFingerprint = try c.decodeIfPresent(String.self, forKey: .nativeSelectionFingerprint)
+        lastSyncAt = try c.decodeIfPresent(Double.self, forKey: .lastSyncAt)
+        disabledLegacyLabels = try c.decodeIfPresent([String].self, forKey: .disabledLegacyLabels) ?? []
+    }
 
     func threshold(id: String, quota: OpenCodexPoolQuota?, family: String, now: Date = Date()) -> Int? {
         let millis = now.timeIntervalSince1970 * 1000
@@ -71,7 +103,7 @@ struct OpenCodexLocalPoolPolicy: Codable, Equatable, Sendable {
     }
 }
 
-/// Local rules are application-owned. The original proxy is accessed only through its APIs.
+/// Local rules are application-owned. Routing uses original APIs; credential sync uses its locked transaction.
 struct OpenCodexPoolService: Sendable {
     var home = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".opencodex")
     var policyURL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/CodexToolsSwift/opencodex-pool.json")
@@ -79,6 +111,13 @@ struct OpenCodexPoolService: Sendable {
     var loader: @Sendable (URLRequest) async throws -> (Data, URLResponse) = { request in
         try await OpenCodexPoolNetworkSession.shared.data(for: request)
     }
+    var ownershipOverride: OpenCodexControlOwnership? = nil
+    var nativeSelection: @Sendable () async throws -> String? = { try await AntigravityNativeUsageService().fetchCurrentUsage().email }
+    var syncWorker: @Sendable (Data) async throws -> Data = { try await OpenCodexManagedSyncWorker.run($0) }
+    var credentialValidator: @Sendable (JSONValue, String) async throws -> (JSONValue, JSONValue) = { auth, email in
+        try await AntigravityUsageService().validatedOpenCodexCredential(authJSON: auth, expectedEmail: email)
+    }
+    var ownership: OpenCodexControlOwnership { ownershipOverride ?? OpenCodexControlOwnership(home: home.deletingLastPathComponent()) }
     private static let policyLock = NSLock()
     private enum Failure: Error { case http(Int) }
 
@@ -96,14 +135,14 @@ struct OpenCodexPoolService: Sendable {
         }
         return value
     }
-    private func updatePolicy(_ update: (inout OpenCodexLocalPoolPolicy) -> Void) throws {
+    func updatePolicy(_ update: (inout OpenCodexLocalPoolPolicy) -> Void) throws {
         Self.policyLock.lock(); defer { Self.policyLock.unlock() }
         var value = try readPolicy(); update(&value); value.revision = UUID().uuidString
         try FileManager.default.createDirectory(at: policyURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         try JSONEncoder().encode(value).write(to: policyURL, options: .atomic)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: policyURL.path)
     }
-    private func request(_ path: String, method: String = "GET", body: [String: JSONValue]? = nil) async throws -> Data {
+    func request(_ path: String, method: String = "GET", body: [String: JSONValue]? = nil) async throws -> Data {
         let token = try String(contentsOf: home.appendingPathComponent("admin-api-token"), encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !token.isEmpty, !token.contains("\n"), !token.contains("\r") else { throw AppError.invalidData(L10n.tr("settings.pool.unavailable")) }
         var request = URLRequest(url: URL(string: "http://127.0.0.1:10100" + path)!)
@@ -127,7 +166,7 @@ struct OpenCodexPoolService: Sendable {
     }
     private struct StockHealth: Decodable { var status: String }
     private struct StockAccounts: Decodable { var activeAccountId: String?; var accounts: [StockAccount] }
-    private struct StockPreference: Decodable { var enabled: Bool }
+    struct StockPreference: Decodable { var enabled: Bool }
 
     /// Read identity metadata only; never copy or return the credential objects themselves.
     private func identityEmails(provider: String) -> [String: String] {
@@ -213,44 +252,30 @@ struct OpenCodexPoolService: Sendable {
                     effectiveThreshold: local.enabled ? local.threshold(id: account.id, quota: quota, family: "gemini", now: now) : nil,
                     effectiveClaudeThreshold: local.enabled ? local.threshold(id: account.id, quota: quota, family: "claude", now: now) : nil,
                     remainingPercent: used.map { 100 - $0 }, isAvailable: account.health == nil || account.health?.status == "healthy")
-            }, monitoredFamily: family, policyRevision: local.revision)
+            }, monitoredFamily: family, policyRevision: local.revision,
+            managementEnabled: local.managementEnabled, legacyConflict: ownership.hasConflictingWriter(),
+            lastSyncAt: local.lastSyncAt, candidates: savedCandidates(excluding: Set(identities.values.compactMap { AccountIdentity.normalizedEmail($0) })))
     }
     func setEnabled(_ enabled: Bool) async throws {
-        if enabled {
-            let pool = try await snapshot()
-            let before = try JSONDecoder().decode(StockPreference.self, from: await request("/api/oauth/accounts/pool?provider=" + pool.provider))
-            // Original proxy retains reactive 429 rotation; SubSwitch owns only proactive thresholds.
-            _ = try await request("/api/oauth/accounts/pool", method: "PUT", body: ["provider": .string(pool.provider), "enabled": .bool(false)])
-            do {
-                try updatePolicy { value in
-                    if !value.enabled { value.previousNativePreference = before.enabled }
-                    value.enabled = true; value.provider = pool.provider
-                }
-            } catch {
-                _ = try? await request("/api/oauth/accounts/pool", method: "PUT", body: ["provider": .string(pool.provider), "enabled": .bool(before.enabled)])
-                throw error
-            }
-        } else {
-            let old = try policy()
-            try updatePolicy { $0.enabled = false }
-            if let previous = old.previousNativePreference {
-                let current = try JSONDecoder().decode(StockPreference.self, from: await request("/api/oauth/accounts/pool?provider=" + old.provider))
-                if !current.enabled { _ = try await request("/api/oauth/accounts/pool", method: "PUT", body: ["provider": .string(old.provider), "enabled": .bool(previous)]) }
-            }
-        }
+        let lease = try controlLease(); defer { withExtendedLifetime(lease) {} }
+        try updatePolicy { $0.enabled = enabled }
     }
     func setRange(id: String, range: OpenCodexPoolRange) async throws {
+        let lease = try controlLease(); defer { withExtendedLifetime(lease) {} }
         guard range.isValid else { throw AppError.invalidData(L10n.tr("settings.pool.range_invalid")) }
         let pool = try await snapshot()
         guard pool.accounts.contains(where: { $0.id == id }) else { throw AppError.invalidData(L10n.tr("settings.pool.update_failed")) }
         try updatePolicy { $0.provider = pool.provider; $0.ranges[id] = range }
     }
     func setSelected(id: String, selected: Bool) async throws {
+        let lease = try controlLease(); defer { withExtendedLifetime(lease) {} }
         let pool = try await snapshot()
         guard pool.accounts.contains(where: { $0.id == id }) else { throw AppError.invalidData(L10n.tr("settings.pool.update_failed")) }
         _ = try await request("/api/oauth/accounts/pause", method: "PUT", body: ["provider": .string(pool.provider), "accountId": .string(id), "paused": .bool(!selected)])
     }
-    func selectNextIfNeeded() async throws -> Bool {
+    func selectNextIfNeeded(holding existingLease: OpenCodexControlLease? = nil) async throws -> Bool {
+        guard try policy().managementEnabled else { return false }
+        let lease = try existingLease ?? controlLease(); defer { withExtendedLifetime(lease) {} }
         guard try policy().enabled else { return false }
         let pool = try await snapshot()
         guard pool.enabled else { return false }
@@ -271,7 +296,8 @@ struct OpenCodexPoolService: Sendable {
               let candidate = rechecked.accounts.first(where: { $0.id == next.id }), candidate.paused != true,
               candidate.needsReauth != true, candidate.health == nil || candidate.health?.status == "healthy" else { return false }
         let latest = try policy()
-        guard latest.enabled, latest.revision == pool.policyRevision else { return false }
+        guard latest.enabled, latest.revision == pool.policyRevision,
+              (try? savedSyncStore().currentAntigravityAccountId) == latest.desktopSelection else { return false }
         try Task.checkCancellation()
         _ = try await request("/api/oauth/accounts/active", method: "PUT", body: ["provider": .string(pool.provider), "accountId": .string(next.id)])
         return true
@@ -283,10 +309,10 @@ actor OpenCodexPoolRuntime {
     private var lastCheck = Date.distantPast
     private var checking = false
     func check(service: OpenCodexPoolService = OpenCodexPoolService(), now: Date = Date()) async throws {
-        guard !checking, now.timeIntervalSince(lastCheck) >= 30, try service.policy().enabled else { return }
+        guard !checking, now.timeIntervalSince(lastCheck) >= 30, try service.policy().managementEnabled else { return }
         checking = true; lastCheck = now
         defer { checking = false }
-        _ = try await service.selectNextIfNeeded()
+        try await service.runManagedCycle()
     }
 }
 

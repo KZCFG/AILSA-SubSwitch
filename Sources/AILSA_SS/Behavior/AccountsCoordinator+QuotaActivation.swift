@@ -10,6 +10,11 @@ extension AccountsCoordinator {
             guard settings.antigravityQuotaActivationMode != .off,
                   QuotaActivationPlanner.withinHours(settings, now: Date(timeIntervalSince1970: Double(now))),
                   let service = antigravityUsageService else { return false }
+            // A reappearing external writer pauses activation as well as pool mutations.
+            let poolControl = OpenCodexPoolService()
+            let control = try poolControl.policy()
+            if control.managedSince != nil && !control.managementEnabled { return false }
+            if control.managementEnabled { try poolControl.ownership.requireNoLegacyWriter() }
             let store = try storeRepository.loadStore()
             let poolEmails: Set<String>?
             if settings.antigravityQuotaActivationMode == .poolAccounts {
@@ -46,6 +51,9 @@ extension AccountsCoordinator {
                             }
                         }, admit: {
                             let latest = try self.settingsRepository.loadSettings()
+                            let controlService = OpenCodexPoolService(), control = try controlService.policy()
+                            guard control.managedSince == nil || control.managementEnabled else { throw CancellationError() }
+                            if control.managementEnabled { try controlService.ownership.requireNoLegacyWriter() }
                             guard latest.antigravityQuotaActivationMode == settings.antigravityQuotaActivationMode,
                                   QuotaActivationPlanner.withinHours(latest, now: Date(timeIntervalSince1970: Double(self.dateProvider.unixSecondsNow()))),
                                   try self.storeRepository.loadStore().accounts.contains(where: { $0.id == live.id }) else {

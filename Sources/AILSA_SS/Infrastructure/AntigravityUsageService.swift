@@ -1070,6 +1070,27 @@ final class AntigravityUsageService: @unchecked Sendable {
 
     /// Explicit opt-in only. One small request on the target credential; no account switch,
     /// fallback, tool execution, native launch or retry after an ambiguous response.
+    /// Verify an existing portable grant without rotating it in a second writer.
+    func validatedOpenCodexCredential(authJSON: JSONValue, expectedEmail: String) async throws -> (JSONValue, JSONValue) {
+        guard AntigravityOAuthProfile.resolve(from: authJSON) == .consumer,
+              !Self.accessTokenNeedsRefresh(in: authJSON),
+              let expiry = Self.accessTokenExpirySeconds(in: authJSON), expiry < Date().timeIntervalSince1970 + 366 * 86_400 else {
+            throw AppError.invalidData(L10n.tr("settings.pool.sync_refresh_required"))
+        }
+        let auth = try await bindStoredCredentialIdentity(authJSON, profile: .consumer)
+        guard AccountIdentity.normalizedEmail(auth["email"]?.stringValue) == AccountIdentity.normalizedEmail(expectedEmail),
+              let token = auth["access_token"]?.stringValue, let refresh = auth["refresh_token"]?.stringValue else {
+            throw AppError.unauthorized(L10n.tr("settings.pool.sync_failed"))
+        }
+        let context = remoteQuotaContext(authJSON: auth, profile: .consumer)
+        let assist = try await loadCodeAssist(accessToken: token, context: context, projectID: context.explicitProjectID)
+        guard let project = Self.cloudCodeProjectID(from: assist) ?? context.explicitProjectID else {
+            throw AppError.invalidData(L10n.tr("settings.pool.sync_failed"))
+        }
+        return (auth, .object(["email": .string(expectedEmail.lowercased()), "access": .string(token), "refresh": .string(refresh),
+                              "expires": .number(Double(Int64(expiry * 1000))), "projectId": .string(project), "source": .string("oauth")]))
+    }
+
     func activateQuota(authJSON: JSONValue, expectedEmail: String, family: QuotaActivationFamily,
                        credentialPrepared: (JSONValue) throws -> Void,
                        generationConfirmed: (String, Int64, Int64?) throws -> Void,

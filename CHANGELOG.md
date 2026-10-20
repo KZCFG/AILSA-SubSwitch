@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0(n) — 2026-10-20
+
+- Coordinate Antigravity credential sync, verified desktop selection and quota rotation under explicit SubSwitch ownership.
+- Back up and disable recognized legacy sync writers; use original OpenCodex locked transactions and existing management APIs without a proxy patch.
+- Preserve pool boundaries and account metadata; newly admitted accounts start paused, and quota refreshes never reset manual selection.
+
+
 ## 1.0.0(m) — 2026-10-20
 
 - Opt-in, work-hour Antigravity quota activation with fresh quota checks and staggered short requests.
