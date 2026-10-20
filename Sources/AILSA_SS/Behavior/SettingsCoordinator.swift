@@ -37,6 +37,7 @@ actor SettingsCoordinator {
         if let value = patch.usageProgressDisplayMode { settings.usageProgressDisplayMode = value }
         if let value = patch.quotaVisibility { settings.quotaVisibility = value }
         if let value = patch.quotaWindowActivationMode { settings.quotaWindowActivationMode = value }
+        if let value = patch.antigravityQuotaActivationMode { settings.antigravityQuotaActivationMode = value }
         if let value = patch.quotaWindowActivationStartHour {
             settings.quotaWindowActivationStartHour = min(max(value, 0), 23)
         }

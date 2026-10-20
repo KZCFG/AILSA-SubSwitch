@@ -41,6 +41,10 @@ extension SettingsPageModel {
         Task { await update(AppSettingsPatch(quotaWindowActivationMode: value)) }
     }
 
+    func updateAntigravityQuotaActivationMode(_ value: QuotaRequestActivationMode) {
+        Task { await update(AppSettingsPatch(antigravityQuotaActivationMode: value)) }
+    }
+
     func updateQuotaWindowActivationStartHour(_ value: Int) {
         Task { await update(AppSettingsPatch(quotaWindowActivationStartHour: value)) }
     }

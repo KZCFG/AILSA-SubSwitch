@@ -507,3 +507,29 @@
 "settings.usage_report.title" = "Usage sharing images";
 "settings.usage_report.hide_unpriced" = "Hide models without a USD amount";
 "settings.usage_report.hide_unpriced.detail" = "Hide unpriced model details in exported daily, weekly and monthly images. Token totals and trends include all usage. Models with a $0.00 amount remain visible.";
+
+// Quota activation and optional OpenCodex pool settings
+"settings.quota_probe.title" = "Activate 5-hour quota windows";
+"settings.quota_probe.pool_accounts" = "Selected pool accounts during work hours";
+"settings.quota_probe.detail" = "Off by default. During work hours, once an Antigravity 5-hour pool is confirmed fully reset with no request evidence, send one short model request after a staggered 1–5 minute delay. This consumes real quota and does not guarantee avoidance of provider risk controls. At most one attempt per account and pool every 5 hours; failures are not retried. Weekly reset times remain provider-owned. Pool mode only includes selected accounts also saved locally. Keep the app running.";
+"settings.quota_probe.unavailable" = "This account is not ready for safe background activation. Sign in normally and refresh quota first.";
+"settings.quota_probe.not_idle" = "Quota is not confirmed reset or is already in use. No activation request was sent.";
+"settings.quota_probe.unconfirmed" = "The provider did not confirm a successful model request. This attempt will not be retried.";
+"settings.quota_probe.failed" = "Quota activation did not complete. To avoid duplicate usage, it will not retry this cycle. Check the account manually.";
+"settings.pool.title" = "OpenCodex · Antigravity pool accounts";
+"settings.pool.refresh" = "Refresh pool";
+"settings.pool.enabled" = "Switch within a remaining-quota range";
+"settings.pool.detail" = "Selected accounts participate in OpenCodex; unchecking pauses the account in that pool. The default is 10% remaining; each account can use a range such as 5–10%. One threshold is drawn per observed quota cycle and retained across refreshes and restarts. SubSwitch must remain running: it checks about every 30 seconds using the most recently used model family and fresh, identity-matched quota. Only later requests are affected. Unknown, stale, exhausted or unavailable accounts are skipped. No proxy modification or official Antigravity sign-in change is required.";
+"settings.pool.unavailable" = "Run the original local OpenCodex with Antigravity accounts imported. Quota-based switching also requires fresh, identity-verified quota in SubSwitch.";
+"settings.pool.update_failed" = "Pool update failed. Refresh to check its state; credentials are not replaced.";
+"settings.pool.current" = "Current";
+"settings.pool.remaining" = "Remaining";
+"settings.pool.save" = "Save";
+"settings.pool.current_threshold" = "Gemini threshold %d%%";
+"settings.pool.claude_threshold" = "Claude threshold %d%%";
+"settings.pool.threshold_pending" = "Waiting for fresh cycle data";
+"settings.pool.range_invalid" = "Range must satisfy 0 ≤ minimum ≤ maximum ≤ 99.";
+"settings.pool.sign_in_required" = "Sign in again; this account is excluded from automatic selection.";
+"settings.pool.disabled" = "Automatic switching is off";
+"settings.pool.unavailable_account" = "Temporarily unavailable; skipped by automatic selection.";
+"settings.group.account_pool" = "Account pool";

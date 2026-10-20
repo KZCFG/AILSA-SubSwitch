@@ -15,6 +15,7 @@ extension SettingsPageModel {
             refreshAntigravityAutomaticSwitchCapability()
             onSettingsUpdated(settings)
             hasLoaded = true
+            await refreshOpenCodexPool()
         } catch {
             notice = NoticeMessage(style: .error, text: error.localizedDescription)
         }

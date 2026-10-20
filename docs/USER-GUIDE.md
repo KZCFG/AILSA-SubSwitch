@@ -231,3 +231,16 @@ PNGs. This preference is off by default and is saved across launches. A model
 with an explicit $0.00 amount stays visible. Token totals and charts still
 include all usage, and the image notes when model details have been hidden.
 This does not change the usage dashboard, stored records or pricing.
+
+
+### Optional five-hour quota activation
+
+Read-only quota checks do not send model requests. Settings → Account pool has a separate setting that can activate unused Antigravity five-hour pools during local work hours. It is disabled by default, including for existing users. After fresh quota confirms a fully reset pool with no request evidence, the application schedules one very short request with a 1–5 minute delay. Requests consume real quota; random timing or prompt variants do not guarantee avoidance of provider risk controls. No model fallback is used. Weekly resets stay provider-reported.
+
+The application must remain running. Claims are saved before dispatch, so failed or ambiguous requests are not automatically retried, including after restart. Each account and model-family pool is attempted at most once every five hours. Unknown/stale quota, an unverified portable credential, or a native-session-only account is skipped. Requests never switch the official app sign-in or execute tools. Work hours support crossing midnight; equal start and end times mean all day.
+
+### Local OpenCodex account pool
+
+SubSwitch uses the original local OpenCodex management APIs; no proxy patch or companion plugin is required. Account checkboxes use OpenCodex's existing pause/resume API. Optional threshold switching is disabled by default. Keep 10% remaining or save a per-account range such as 5–10%; a persisted seed and actual provider cycles establish one threshold that survives refreshes and restarts. Unused five-hour reset estimates do not establish a new cycle. SubSwitch checks about every 30 seconds while running, using the most recently used model family (Gemini by default). It uses fresh provider quota or identity-matched SubSwitch snapshots and keeps the healthy active account until its threshold is reached. Only selected, available accounts with known headroom above their own threshold can be chosen. Manual changes observed during a check take precedence.
+
+Enabling these rules pauses OpenCodex's native proactive pool preference to avoid competing schedulers; explicitly disabling them restores its previous preference if it has not otherwise changed. Reactive rate-limit handling remains owned by OpenCodex. Switching affects subsequent requests and does not restart clients or change the official Antigravity session. If SubSwitch is closed, its threshold checks stop. The optional activation mode matches checked pool members to already-saved, identity-verified local accounts without enrolling or copying credentials.

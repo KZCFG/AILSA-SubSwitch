@@ -36,6 +36,7 @@ final class TrayMenuModel: ObservableObject, AccountsManualRefreshServiceProtoco
     let usageRefreshPlanningPolicy: AccountsUsageRefreshPlanningPolicy
     var usageRefreshTask: Task<Void, Never>?
     var workspaceMetadataRefreshTask: Task<Void, Never>?
+    var openCodexPoolTask: Task<Void, Never>?
     /// Backward-compatible aggregate used by the refresh loop. The two source
     /// settings remain separate so enabling Codex automation never implicitly
     /// enables AntiGravity native switching.
@@ -73,6 +74,7 @@ final class TrayMenuModel: ObservableObject, AccountsManualRefreshServiceProtoco
     deinit {
         usageRefreshTask?.cancel()
         workspaceMetadataRefreshTask?.cancel()
+        openCodexPoolTask?.cancel()
     }
 
     func acceptLocalAccountsSnapshot(_ accounts: [AccountSummary]) {
@@ -81,6 +83,15 @@ final class TrayMenuModel: ObservableObject, AccountsManualRefreshServiceProtoco
             "incoming=\(AccountSwitchDebugLog.describe(accounts: accounts))"
         )
         self.accounts = accounts
+    }
+
+    func scheduleOpenCodexPoolCheck() {
+        guard openCodexPoolTask == nil else { return }
+        openCodexPoolTask = Task { [weak self] in
+            defer { self?.openCodexPoolTask = nil }
+            do { try await OpenCodexPoolRuntime.shared.check() }
+            catch { self?.notice = L10n.tr("settings.pool.update_failed") }
+        }
     }
 
     func applySettings(_ settings: AppSettings) {

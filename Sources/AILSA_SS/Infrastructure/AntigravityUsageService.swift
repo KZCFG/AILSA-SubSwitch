@@ -1068,6 +1068,66 @@ final class AntigravityUsageService: @unchecked Sendable {
         try await loadNativeUsage(expectedEmail: nil)
     }
 
+    /// Explicit opt-in only. One small request on the target credential; no account switch,
+    /// fallback, tool execution, native launch or retry after an ambiguous response.
+    func activateQuota(authJSON: JSONValue, expectedEmail: String, family: QuotaActivationFamily,
+                       credentialPrepared: (JSONValue) throws -> Void,
+                       generationConfirmed: (String, Int64, Int64?) throws -> Void,
+                       admit: () async throws -> Void) async throws -> UsageSnapshot {
+        let auth = try await prepareStoredCredentialForUse(authJSON)
+        guard AccountIdentity.normalizedEmail(auth["email"]?.stringValue) == AccountIdentity.normalizedEmail(expectedEmail),
+              let profile = AntigravityOAuthProfile.resolve(from: auth),
+              let token = auth["access_token"]?.stringValue else {
+            throw AppError.unauthorized(L10n.tr("settings.quota_probe.unavailable"))
+        }
+        // Commit a rotated, identity-verified credential before a quota/generation failure.
+        try credentialPrepared(auth)
+        let context = remoteQuotaContext(authJSON: auth, profile: profile)
+        let assist = try await loadCodeAssist(accessToken: token, context: context, projectID: context.explicitProjectID)
+        guard let project = Self.cloudCodeProjectID(from: assist) ?? context.explicitProjectID else {
+            throw AppError.invalidData(L10n.tr("settings.quota_probe.unavailable"))
+        }
+        let before = try await loadRemoteUsage(accessToken: token, authJSON: auth, profile: profile).usage
+        guard QuotaActivationPlanner.readyFamilies(before, now: dateProvider.unixSecondsNow()).contains(family) else {
+            throw AppError.invalidData(L10n.tr("settings.quota_probe.not_idle"))
+        }
+        let models = try await requestCloudCode(path: "fetchAvailableModels", accessToken: token, context: context,
+                                               body: .object(["project": .string(project)]))
+        let roster = models["models"]?.objectValue ?? models["response"]?["models"]?.objectValue ?? [:]
+        let eligible = roster.keys.filter { id in
+            let lower = id.lowercased()
+            guard family == .gemini ? lower.hasPrefix("gemini-") : lower.hasPrefix("claude-") else { return false }
+            let remaining = roster[id]?["quotaInfo"]?["remainingFraction"]?.doubleValue
+            return remaining == 1
+        }.sorted { lhs, rhs in
+            // A short, non-thinking Flash / Haiku route is preferred when the live roster has it.
+            let score: (String) -> Int = { ($0.contains("flash") || $0.contains("haiku") ? 0 : 2) + ($0.contains("thinking") ? 1 : 0) }
+            return score(lhs) == score(rhs) ? lhs < rhs : score(lhs) < score(rhs)
+        }
+        guard let model = eligible.first else { throw AppError.invalidData(L10n.tr("settings.quota_probe.not_idle")) }
+        try Task.checkCancellation()
+        try await admit()
+        let result = try await requestCloudCode(path: "generateContent", accessToken: token, context: context, body: .object([
+            "model": .string(model), "project": .string(project), "userAgent": .string("antigravity"),
+            "requestType": .string("agent"), "requestId": .string("agent-" + UUID().uuidString),
+            "request": .object([
+                "sessionId": .string(UUID().uuidString),
+                "contents": .array([.object(["role": .string("user"), "parts": .array([.object(["text": .string(["Reply with OK.", "Return only the word ready.", "What is 1 + 1? Reply with the number only."].randomElement()!)])])])]),
+                "generationConfig": .object(["maxOutputTokens": .number(8), "temperature": .number(0)])
+            ])
+        ]))
+        let response = result["response"] ?? result
+        guard response["candidates"]?.arrayValue?.isEmpty == false,
+              (response["usageMetadata"]?["promptTokenCount"]?.int64Value ?? 0) > 0 else {
+            throw AppError.network(L10n.tr("settings.quota_probe.unconfirmed"))
+        }
+        try generationConfirmed(model, response["usageMetadata"]?["promptTokenCount"]?.int64Value ?? 0,
+                                response["usageMetadata"]?["candidatesTokenCount"]?.int64Value)
+        // The reset timestamp remains provider-owned. Success never invents a five-hour end time.
+        let fresh = try await loadRemoteUsage(accessToken: token, authJSON: auth, profile: profile).usage
+        return fresh
+    }
+
     func fetchNativeUsage(expectedEmail: String) async throws -> AntigravityNativeUsageResult {
         try await loadNativeUsage(expectedEmail: expectedEmail)
     }

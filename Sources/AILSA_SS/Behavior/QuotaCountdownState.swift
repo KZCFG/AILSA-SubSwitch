@@ -38,6 +38,24 @@ enum QuotaCountdownState {
         if let families = refreshed.codexQuotaFamilies {
             result.codexQuotaFamilies = reconcile(previous: previous?.codexQuotaFamilies, refreshed: families, observedAt: observedAt)
         }
+        let receipts = (previous?.quotaActivationRequests ?? [:]).filter {
+            $0.value <= observedAt && observedAt - $0.value < fiveHourWindowSeconds
+        }
+        result.quotaActivationRequests = receipts.isEmpty ? nil : receipts
+        if refreshed.sourceAccountMatched == true {
+            result.quotaFamilies = result.quotaFamilies?.map { family in
+                guard let kind = QuotaActivationFamily.identify(family.id + " " + family.displayName),
+                      let receipt = receipts[kind.rawValue], refreshed.fetchedAt >= receipt else { return family }
+                var family = family
+                family.buckets = family.buckets.map { bucket in
+                    guard bucket.isUsageKnown, bucket.windowSeconds == fiveHourWindowSeconds,
+                          let reset = bucket.resetAt, reset > observedAt, reset > receipt,
+                          reset <= receipt + fiveHourWindowSeconds + 120 else { return bucket }
+                    return markRequestObserved(bucket, observedAt: receipt)
+                }
+                return family
+            }
+        }
         return result
     }
 

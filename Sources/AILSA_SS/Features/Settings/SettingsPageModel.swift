@@ -25,11 +25,38 @@ final class SettingsPageModel: ObservableObject {
         }
     }
 
+    @Published private(set) var openCodexPool: OpenCodexPoolSnapshot?
+    @Published private(set) var poolBusy = false
+    @Published private(set) var poolMessage: String?
+    let openCodexPoolService: OpenCodexPoolService
+
+    func refreshOpenCodexPool() async {
+        guard !poolBusy else { return }
+        poolBusy = true
+        defer { poolBusy = false }
+        do { openCodexPool = try await openCodexPoolService.snapshot(refresh: true); poolMessage = nil }
+        catch { poolMessage = L10n.tr("settings.pool.unavailable") }
+    }
+
+    func mutateOpenCodexPool(_ action: @escaping @Sendable (OpenCodexPoolService) async throws -> Void) {
+        guard !poolBusy else { return }
+        poolBusy = true
+        Task {
+            defer { poolBusy = false }
+            do {
+                try await action(openCodexPoolService)
+                openCodexPool = try await openCodexPoolService.snapshot()
+                poolMessage = nil
+            } catch { poolMessage = L10n.tr("settings.pool.update_failed") }
+        }
+    }
+
     var hasLoaded = false
 
     init(
         settingsCoordinator: SettingsCoordinator,
         editorAppService: EditorAppServiceProtocol,
+        openCodexPoolService: OpenCodexPoolService = OpenCodexPoolService(),
         antigravityAutomaticSwitchCapabilityProvider: @escaping @MainActor () -> AntigravityAutomaticSwitchCapability = {
             .requiresManualSmartSwitch
         },
@@ -38,6 +65,7 @@ final class SettingsPageModel: ObservableObject {
     ) {
         self.settingsCoordinator = settingsCoordinator
         self.editorAppService = editorAppService
+        self.openCodexPoolService = openCodexPoolService
         self.antigravityAutomaticSwitchCapabilityProvider = antigravityAutomaticSwitchCapabilityProvider
         self.onSettingsUpdated = onSettingsUpdated
         self.onQuitRequested = onQuitRequested

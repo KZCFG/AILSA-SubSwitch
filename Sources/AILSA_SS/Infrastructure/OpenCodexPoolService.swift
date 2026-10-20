@@ -1,0 +1,297 @@
+import Foundation
+import CryptoKit
+
+struct OpenCodexPoolRange: Codable, Equatable, Sendable {
+    var minimum: Int = 10
+    var maximum: Int = 10
+    var isValid: Bool { (0...99).contains(minimum) && (minimum...99).contains(maximum) }
+}
+struct OpenCodexPoolWindow: Codable, Equatable, Sendable {
+    var label: String
+    var percent: Double
+    var resetAt: Double?
+    var modelId: String?
+}
+struct OpenCodexPoolQuota: Codable, Equatable, Sendable {
+    var customWindows: [OpenCodexPoolWindow]?
+    var updatedAt: Double
+    func windows(for family: String) -> [OpenCodexPoolWindow] {
+        (customWindows ?? []).filter {
+            guard $0.modelId == nil, $0.percent.isFinite, (0...100).contains($0.percent) else { return false }
+            let label = $0.label.lowercased()
+            return family == "gemini" ? label.hasPrefix("gem") : label.hasPrefix("cla")
+        }
+    }
+}
+struct OpenCodexPoolAccount: Codable, Identifiable, Equatable, Sendable {
+    var id: String
+    var label: String
+    var email: String?
+    var selected: Bool
+    var needsReauth: Bool
+    var range: OpenCodexPoolRange
+    var effectiveThreshold: Int?
+    var effectiveClaudeThreshold: Int?
+    var remainingPercent: Double? = nil
+    var isAvailable: Bool = true
+}
+struct OpenCodexPoolSnapshot: Codable, Equatable, Sendable {
+    var provider: String
+    var enabled: Bool
+    var activeAccountId: String?
+    var accounts: [OpenCodexPoolAccount]
+    var monitoredFamily: String = "gemini"
+    var policyRevision: String = ""
+}
+
+struct OpenCodexLocalPoolPolicy: Codable, Equatable, Sendable {
+    var enabled = false
+    var provider = "antigravity-pool"
+    var ranges: [String: OpenCodexPoolRange] = [:]
+    var seed = UUID().uuidString
+    var revision = UUID().uuidString
+    var previousNativePreference: Bool? = nil
+
+    func threshold(id: String, quota: OpenCodexPoolQuota?, family: String, now: Date = Date()) -> Int? {
+        let millis = now.timeIntervalSince1970 * 1000
+        guard let quota, quota.updatedAt <= millis, millis - quota.updatedAt <= 2 * 60_000 else { return nil }
+        // Idle short-window end estimates may slide on every provider poll.
+        let cycleWindows = quota.windows(for: family).filter {
+            let label = $0.label.lowercased()
+            return $0.percent > 0 || label.contains("week") || label.contains("7d") || label.contains("1w")
+        }
+        let cycle = cycleWindows.compactMap(\.resetAt).map { $0 < 1e11 ? $0 * 1000 : $0 }.filter { $0.isFinite && $0 > millis }.sorted()
+        guard !cycle.isEmpty else { return nil }
+        let range = ranges[id] ?? OpenCodexPoolRange()
+        guard range.isValid else { return nil }
+        let key = [seed, id, family, cycle.map { String(Int64($0)) }.joined(separator: ","), "\(range.minimum):\(range.maximum)"].joined(separator: "|")
+        let bytes = Array(SHA256.hash(data: Data(key.utf8)))
+        let draw = bytes.prefix(4).reduce(UInt64(0)) { $0 * 256 + UInt64($1) }
+        return range.minimum + Int(draw % UInt64(range.maximum - range.minimum + 1))
+    }
+}
+
+/// Local rules are application-owned. The original proxy is accessed only through its APIs.
+struct OpenCodexPoolService: Sendable {
+    var home = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".opencodex")
+    var policyURL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/CodexToolsSwift/opencodex-pool.json")
+    var localQuotaURL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/CodexToolsSwift/accounts.json")
+    var loader: @Sendable (URLRequest) async throws -> (Data, URLResponse) = { request in
+        try await OpenCodexPoolNetworkSession.shared.data(for: request)
+    }
+    private static let policyLock = NSLock()
+    private enum Failure: Error { case http(Int) }
+
+    func policy() throws -> OpenCodexLocalPoolPolicy {
+        Self.policyLock.lock(); defer { Self.policyLock.unlock() }
+        return try readPolicy()
+    }
+    private func readPolicy() throws -> OpenCodexLocalPoolPolicy {
+        guard FileManager.default.fileExists(atPath: policyURL.path) else { return OpenCodexLocalPoolPolicy() }
+        let data = try Data(contentsOf: policyURL)
+        guard data.count < 256_000 else { throw AppError.invalidData(L10n.tr("settings.pool.update_failed")) }
+        let value = try JSONDecoder().decode(OpenCodexLocalPoolPolicy.self, from: data)
+        guard ["antigravity-pool", "google-antigravity"].contains(value.provider), value.ranges.values.allSatisfy(\.isValid) else {
+            throw AppError.invalidData(L10n.tr("settings.pool.update_failed"))
+        }
+        return value
+    }
+    private func updatePolicy(_ update: (inout OpenCodexLocalPoolPolicy) -> Void) throws {
+        Self.policyLock.lock(); defer { Self.policyLock.unlock() }
+        var value = try readPolicy(); update(&value); value.revision = UUID().uuidString
+        try FileManager.default.createDirectory(at: policyURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try JSONEncoder().encode(value).write(to: policyURL, options: .atomic)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: policyURL.path)
+    }
+    private func request(_ path: String, method: String = "GET", body: [String: JSONValue]? = nil) async throws -> Data {
+        let token = try String(contentsOf: home.appendingPathComponent("admin-api-token"), encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !token.isEmpty, !token.contains("\n"), !token.contains("\r") else { throw AppError.invalidData(L10n.tr("settings.pool.unavailable")) }
+        var request = URLRequest(url: URL(string: "http://127.0.0.1:10100" + path)!)
+        request.httpMethod = method; request.timeoutInterval = 30
+        request.setValue(token, forHTTPHeaderField: "X-OpenCodex-API-Key")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let body { request.httpBody = try JSONEncoder().encode(body) }
+        let (data, response) = try await loader(request)
+        guard let http = response as? HTTPURLResponse else { throw Failure.http(0) }
+        guard (200..<300).contains(http.statusCode), data.count < 256_000 else { throw Failure.http(http.statusCode) }
+        return data
+    }
+    private struct StockAccount: Decodable {
+        var id: String
+        var alias: String?
+        var email: String?
+        var paused: Bool?
+        var needsReauth: Bool?
+        var health: StockHealth?
+        var quota: OpenCodexPoolQuota?
+    }
+    private struct StockHealth: Decodable { var status: String }
+    private struct StockAccounts: Decodable { var activeAccountId: String?; var accounts: [StockAccount] }
+    private struct StockPreference: Decodable { var enabled: Bool }
+
+    /// Read identity metadata only; never copy or return the credential objects themselves.
+    private func identityEmails(provider: String) -> [String: String] {
+        guard let data = try? Data(contentsOf: home.appendingPathComponent("auth.json")), data.count < 8 * 1024 * 1024,
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let set = root[provider] as? [String: Any], let accounts = set["accounts"] as? [[String: Any]] else { return [:] }
+        return accounts.reduce(into: [:]) { result, row in
+            if let id = row["id"] as? String, let credential = row["credential"] as? [String: Any], let email = credential["email"] as? String {
+                result[id] = email
+            }
+        }
+    }
+    private func recentModelFamily(provider: String, now: Date) -> String {
+        guard let handle = try? FileHandle(forReadingFrom: home.appendingPathComponent("usage.jsonl")) else { return "gemini" }
+        defer { try? handle.close() }
+        guard let size = try? handle.seekToEnd() else { return "gemini" }
+        let offset = size > 262_144 ? size - 262_144 : 0
+        try? handle.seek(toOffset: offset)
+        guard let data = try? handle.readToEnd(), let text = String(data: data, encoding: .utf8) else { return "gemini" }
+        for line in text.split(separator: "\n").reversed() {
+            guard let row = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any], row["provider"] as? String == provider,
+                  let status = row["status"] as? Int, (200..<300).contains(status),
+                  let timestamp = row["timestamp"] as? Double, timestamp <= now.timeIntervalSince1970 * 1000, now.timeIntervalSince1970 * 1000 - timestamp < 3_600_000 else { continue }
+            let model = ((row["servedModel"] ?? row["model"]) as? String ?? "").lowercased()
+            if model.contains("claude") || model.contains("gpt-oss") { return "claude" }
+            if model.contains("gemini") { return "gemini" }
+        }
+        return "gemini"
+    }
+    private struct LocalAccounts: Decodable { var accounts: [LocalAccount] }
+    private struct LocalAccount: Decodable { var provider: String; var email: String?; var usage: UsageSnapshot?; var usageError: String? }
+
+    /// Only identity-matched, provider-confirmed usage is consumed; authJSON is not decoded.
+    func localQuotas(now: Date = Date()) -> [String: OpenCodexPoolQuota] {
+        guard let data = try? Data(contentsOf: localQuotaURL), data.count < 8 * 1024 * 1024,
+              let store = try? JSONDecoder().decode(LocalAccounts.self, from: data) else { return [:] }
+        var result: [String: OpenCodexPoolQuota] = [:]
+        for account in store.accounts where account.provider == "antigravity" && account.usageError == nil {
+            guard let email = AccountIdentity.normalizedEmail(account.email), let usage = account.usage,
+                  usage.sourceAccountMatched == true, Double(usage.fetchedAt) <= now.timeIntervalSince1970,
+                  now.timeIntervalSince1970 - Double(usage.fetchedAt) <= 120 else { continue }
+            var windows: [OpenCodexPoolWindow] = []
+            for family in usage.quotaFamilies ?? [] {
+                guard let key = QuotaActivationFamily.identify(family.id + " " + family.displayName) else { continue }
+                for bucket in family.buckets {
+                    guard bucket.isUsageKnown, let used = bucket.usedPercent, used.isFinite, (0...100).contains(used), let reset = bucket.resetAt, Double(reset) > now.timeIntervalSince1970 else { continue }
+                    // Idle 5h reset estimates can move with every poll. They are not a cycle identity.
+                    let idle = QuotaCountdownState.requiresRequestEvidence(windowSeconds: bucket.windowSeconds, identifier: bucket.id)
+                        && bucket.usedPercent == 0 && bucket.countdownStartedAt == nil
+                    windows.append(OpenCodexPoolWindow(label: key.rawValue + " " + bucket.id, percent: used,
+                        resetAt: idle ? nil : Double(reset) * 1000, modelId: nil))
+                }
+            }
+            let quota = OpenCodexPoolQuota(customWindows: windows, updatedAt: Double(usage.fetchedAt) * 1000)
+            if (result[email]?.updatedAt ?? 0) < quota.updatedAt { result[email] = quota }
+        }
+        return result
+    }
+
+    func snapshot(refresh: Bool = false) async throws -> OpenCodexPoolSnapshot {
+        let local = try policy()
+        var provider = local.provider
+        let suffix = "&quota=1" + (refresh ? "&refresh=1" : "")
+        let data: Data
+        do { data = try await request("/api/oauth/accounts?provider=" + provider + suffix) }
+        catch Failure.http(let status) where provider == "antigravity-pool" && [400, 404, 409].contains(status) {
+            provider = "google-antigravity"
+            data = try await request("/api/oauth/accounts?provider=" + provider + suffix)
+        }
+        let stock = try JSONDecoder().decode(StockAccounts.self, from: data)
+        let identities = identityEmails(provider: provider)
+        let now = Date(), family = recentModelFamily(provider: provider, now: Date())
+        let savedQuotas = localQuotas(now: now)
+        return OpenCodexPoolSnapshot(provider: provider, enabled: local.enabled, activeAccountId: stock.activeAccountId,
+            accounts: stock.accounts.map { account in
+                let email = identities[account.id] ?? account.email
+                let quota = AccountIdentity.normalizedEmail(email).flatMap { savedQuotas[$0] } ?? account.quota
+                let fresh = quota.map { $0.updatedAt <= now.timeIntervalSince1970 * 1000 && now.timeIntervalSince1970 * 1000 - $0.updatedAt <= 2 * 60_000 } ?? false
+                let used = fresh ? quota?.windows(for: family).map(\.percent).max() : nil
+                return OpenCodexPoolAccount(id: account.id, label: account.alias ?? account.email ?? account.id,
+                    email: email, selected: account.paused != true, needsReauth: account.needsReauth == true || account.health?.status == "reauth_required",
+                    range: local.ranges[account.id] ?? OpenCodexPoolRange(),
+                    effectiveThreshold: local.enabled ? local.threshold(id: account.id, quota: quota, family: "gemini", now: now) : nil,
+                    effectiveClaudeThreshold: local.enabled ? local.threshold(id: account.id, quota: quota, family: "claude", now: now) : nil,
+                    remainingPercent: used.map { 100 - $0 }, isAvailable: account.health == nil || account.health?.status == "healthy")
+            }, monitoredFamily: family, policyRevision: local.revision)
+    }
+    func setEnabled(_ enabled: Bool) async throws {
+        if enabled {
+            let pool = try await snapshot()
+            let before = try JSONDecoder().decode(StockPreference.self, from: await request("/api/oauth/accounts/pool?provider=" + pool.provider))
+            // Original proxy retains reactive 429 rotation; SubSwitch owns only proactive thresholds.
+            _ = try await request("/api/oauth/accounts/pool", method: "PUT", body: ["provider": .string(pool.provider), "enabled": .bool(false)])
+            do {
+                try updatePolicy { value in
+                    if !value.enabled { value.previousNativePreference = before.enabled }
+                    value.enabled = true; value.provider = pool.provider
+                }
+            } catch {
+                _ = try? await request("/api/oauth/accounts/pool", method: "PUT", body: ["provider": .string(pool.provider), "enabled": .bool(before.enabled)])
+                throw error
+            }
+        } else {
+            let old = try policy()
+            try updatePolicy { $0.enabled = false }
+            if let previous = old.previousNativePreference {
+                let current = try JSONDecoder().decode(StockPreference.self, from: await request("/api/oauth/accounts/pool?provider=" + old.provider))
+                if !current.enabled { _ = try await request("/api/oauth/accounts/pool", method: "PUT", body: ["provider": .string(old.provider), "enabled": .bool(previous)]) }
+            }
+        }
+    }
+    func setRange(id: String, range: OpenCodexPoolRange) async throws {
+        guard range.isValid else { throw AppError.invalidData(L10n.tr("settings.pool.range_invalid")) }
+        let pool = try await snapshot()
+        guard pool.accounts.contains(where: { $0.id == id }) else { throw AppError.invalidData(L10n.tr("settings.pool.update_failed")) }
+        try updatePolicy { $0.provider = pool.provider; $0.ranges[id] = range }
+    }
+    func setSelected(id: String, selected: Bool) async throws {
+        let pool = try await snapshot()
+        guard pool.accounts.contains(where: { $0.id == id }) else { throw AppError.invalidData(L10n.tr("settings.pool.update_failed")) }
+        _ = try await request("/api/oauth/accounts/pause", method: "PUT", body: ["provider": .string(pool.provider), "accountId": .string(id), "paused": .bool(!selected)])
+    }
+    func selectNextIfNeeded() async throws -> Bool {
+        guard try policy().enabled else { return false }
+        let pool = try await snapshot()
+        guard pool.enabled else { return false }
+        let active = pool.accounts.first { $0.id == pool.activeAccountId }
+        let at: (OpenCodexPoolAccount) -> Int? = { pool.monitoredFamily == "claude" ? $0.effectiveClaudeThreshold : $0.effectiveThreshold }
+        if let active, active.selected && !active.needsReauth && active.isAvailable {
+            guard let remaining = active.remainingPercent, let threshold = at(active), remaining <= Double(threshold) else { return false }
+        }
+        let start = pool.accounts.firstIndex { $0.id == pool.activeAccountId } ?? -1
+        let ring = start < 0 ? pool.accounts : Array(pool.accounts.dropFirst(start + 1)) + Array(pool.accounts.prefix(start + 1))
+        guard let next = ring.first(where: { account in
+            guard account.id != pool.activeAccountId, account.selected, !account.needsReauth, account.isAvailable, let remaining = account.remainingPercent, let threshold = at(account) else { return false }
+            return remaining > Double(threshold)
+        }) else { return false }
+        // A manual account change or pause during quota IO wins over this scheduled decision.
+        let rechecked = try JSONDecoder().decode(StockAccounts.self, from: await request("/api/oauth/accounts?provider=" + pool.provider))
+        guard rechecked.activeAccountId == pool.activeAccountId,
+              let candidate = rechecked.accounts.first(where: { $0.id == next.id }), candidate.paused != true,
+              candidate.needsReauth != true, candidate.health == nil || candidate.health?.status == "healthy" else { return false }
+        let latest = try policy()
+        guard latest.enabled, latest.revision == pool.policyRevision else { return false }
+        try Task.checkCancellation()
+        _ = try await request("/api/oauth/accounts/active", method: "PUT", body: ["provider": .string(pool.provider), "accountId": .string(next.id)])
+        return true
+    }
+}
+
+actor OpenCodexPoolRuntime {
+    static let shared = OpenCodexPoolRuntime()
+    private var lastCheck = Date.distantPast
+    private var checking = false
+    func check(service: OpenCodexPoolService = OpenCodexPoolService(), now: Date = Date()) async throws {
+        guard !checking, now.timeIntervalSince(lastCheck) >= 30, try service.policy().enabled else { return }
+        checking = true; lastCheck = now
+        defer { checking = false }
+        _ = try await service.selectNextIfNeeded()
+    }
+}
+
+private final class OpenCodexPoolNetworkSession: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+    static let shared = URLSession(configuration: .ephemeral, delegate: OpenCodexPoolNetworkSession(), delegateQueue: nil)
+    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
+                    newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) { completionHandler(nil) }
+}

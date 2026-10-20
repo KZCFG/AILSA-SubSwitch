@@ -44,6 +44,8 @@ struct LocalConfigurationManager {
         [
             "accounts.json",
             "settings.json",
+            "quota-activation.json",
+            "opencodex-pool.json",
             "antigravity-accounts.json",
             "cursor-profiles.json",
             "cursor-switch-recovery.json",

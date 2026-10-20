@@ -175,6 +175,7 @@ extension TrayMenuModel {
     }
 
     func refreshRecurringUsage(tick: Int) async {
+        scheduleOpenCodexPoolCheck()
         guard !isRefreshingAccounts else { return }
         do {
             beginAccountsRefreshActivity()
@@ -184,8 +185,9 @@ extension TrayMenuModel {
 
             let latestAccounts = try await accountsCoordinator.listAccounts(refreshWorkspaceMetadata: false)
             let targetAccountIDs: [String]
-            if settings.quotaWindowActivationMode == .workHours,
-               isWithinQuotaActivationHours(settings, now: Date(timeIntervalSince1970: TimeInterval(dateProvider.unixSecondsNow()))) {
+            if (try? OpenCodexPoolService().policy().enabled) == true ||
+               ((settings.quotaWindowActivationMode == .workHours || settings.antigravityQuotaActivationMode == .workHours || settings.antigravityQuotaActivationMode == .poolAccounts) &&
+                isWithinQuotaActivationHours(settings, now: Date(timeIntervalSince1970: TimeInterval(dateProvider.unixSecondsNow())))) {
                 targetAccountIDs = latestAccounts
                     .filter { $0.provider == .codex || $0.provider == .antigravity }
                     .map(\.id)
@@ -204,6 +206,11 @@ extension TrayMenuModel {
             )
             accounts = localRefreshResult.accounts
             notice = localRefreshResult.nonModalNotice
+            if settings.antigravityQuotaActivationMode != .off {
+                if try await accountsCoordinator.activateReadyQuotaWindows() {
+                    accounts = try await accountsCoordinator.listAccounts(refreshWorkspaceMetadata: false)
+                }
+            }
         } catch {
             notice = error.localizedDescription
         }

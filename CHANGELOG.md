@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0(m) — 2026-10-20
+
+- Opt-in, work-hour Antigravity quota activation with fresh quota checks and staggered short requests.
+- Persisted per-account/family claims prevent repeated activation after failures, restart or sleep.
+- Provider-owned weekly resets and existing read-only checks remain separate from inference.
+- Optional local OpenCodex pool membership and per-account threshold ranges use original APIs without a proxy patch; stale or unavailable quota never triggers a blind switch.
+
 ## 1.0.0(l) — 2026-10-20
 
 - Add official USD reference rates for Hy3 and Step 5 Preview, including cached

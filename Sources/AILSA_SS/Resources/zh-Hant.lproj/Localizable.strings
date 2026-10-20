@@ -481,3 +481,29 @@
 "settings.usage_report.title" = "用量分享圖";
 "settings.usage_report.hide_unpriced" = "隱藏無 USD 金額的模型";
 "settings.usage_report.hide_unpriced.detail" = "僅在匯出的日報、週報和月報圖片中隱藏無 USD 金額的模型明細。總 Token 與走勢保留全部用量；$0.00 金額的模型仍會顯示。";
+
+// Quota activation and optional OpenCodex pool settings
+"settings.quota_probe.title" = "自动激活 5 小时额度窗口";
+"settings.quota_probe.pool_accounts" = "工作时间内已勾选的账号池成员";
+"settings.quota_probe.detail" = "默认关闭。启用后，仅在工作时间内，确认 Antigravity 的 5 小时额度已恢复且尚无请求证据时，错开 1～5 分钟发送一次极短模型请求；会消耗真实额度，不保证规避平台风控。每个账号、每个额度池每 5 小时最多尝试一次，失败不自动重试。每周重置时间仍以服务方为准。账号池模式只激活同时保存在本机且已勾选的账号。应用须保持运行。";
+"settings.quota_probe.unavailable" = "该账号尚不支持安全的后台激活，请先正常登录并刷新额度。";
+"settings.quota_probe.not_idle" = "额度尚未确认恢复或已开始使用，本轮不发送激活请求。";
+"settings.quota_probe.unconfirmed" = "服务方未确认模型请求成功，本轮不重试。";
+"settings.quota_probe.failed" = "额度激活未完成。为避免重复消耗，本轮不会自动重试；请手动检查账号状态。";
+"settings.pool.title" = "OpenCodex · Antigravity 额度池账号";
+"settings.pool.refresh" = "刷新账号池";
+"settings.pool.enabled" = "按剩余额度区间自动切换";
+"settings.pool.detail" = "勾选账号参与 OpenCodex 账号池；取消勾选会暂停池中账号。默认剩余 10%，也可逐账号设置区间（如 5%～10%）。每个真实额度周期抽取一次，刷新和重启不会重抽。SubSwitch 须保持运行，约每 30 秒根据最近使用的模型池和已核验的新鲜额度检查，仅影响后续请求。未知、过期、耗尽或暂不可用的账号不作为切换目标。无需魔改代理，也不会更改官方 Antigravity 登录账号。";
+"settings.pool.unavailable" = "请运行本机原版 OpenCodex 并导入 Antigravity 账号。按额度切换还需要 SubSwitch 中有身份已核验的新鲜额度。";
+"settings.pool.update_failed" = "账号池更新失败，请刷新核对；登录凭据不会因此被替换。";
+"settings.pool.current" = "当前账号";
+"settings.pool.remaining" = "剩余额度";
+"settings.pool.save" = "保存";
+"settings.pool.current_threshold" = "Gemini 本轮 %d%%";
+"settings.pool.claude_threshold" = "Claude 本轮 %d%%";
+"settings.pool.threshold_pending" = "等待新鲜的周期数据";
+"settings.pool.range_invalid" = "区间需满足 0 ≤ 下限 ≤ 上限 ≤ 99。";
+"settings.pool.sign_in_required" = "需要重新登录，不参与自动选择。";
+"settings.pool.disabled" = "自动切换已关闭";
+"settings.pool.unavailable_account" = "账号暂不可用，不参与自动选择。";
+"settings.group.account_pool" = "账号池";

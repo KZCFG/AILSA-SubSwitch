@@ -647,6 +647,9 @@ struct UsageSnapshot: Codable, Equatable {
     var source: UsageSnapshotSource? = nil
     var sourceAccountMatched: Bool? = nil
     var resetCredits: ResetCreditInventory? = nil
+    /// Only actual, provider-confirmed activation requests write these family-scoped receipts.
+    /// They survive a failed follow-up quota read without inventing reset timestamps.
+    var quotaActivationRequests: [String: Int64]? = nil
 }
 
 struct ResetCreditInventory: Codable, Equatable {

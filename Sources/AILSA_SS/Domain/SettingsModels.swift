@@ -38,6 +38,19 @@ enum QuotaWindowActivationMode: String, Codable, Equatable, CaseIterable, Sendab
     }
 }
 
+/// Separate from the legacy read-only checks; old preferences never authorize inference.
+enum QuotaRequestActivationMode: String, Codable, Equatable, CaseIterable, Sendable {
+    case off, activeAccount, workHours, poolAccounts
+    var titleKey: String {
+        switch self {
+        case .off: return "settings.quota_activation.off"
+        case .activeAccount: return "settings.quota_activation.active_account"
+        case .workHours: return "settings.quota_activation.work_hours"
+        case .poolAccounts: return "settings.quota_probe.pool_accounts"
+        }
+    }
+}
+
 /// Per-window presentation choices only.  The underlying `UsageSnapshot`
 /// remains untouched so changing this preference can never influence refresh,
 /// ranking, or automatic switching.
@@ -121,6 +134,7 @@ struct AppSettings: Codable, Equatable {
     var usageProgressDisplayMode: UsageProgressDisplayMode
     var quotaVisibility: UsageQuotaVisibilityPreferences
     var quotaWindowActivationMode: QuotaWindowActivationMode
+    var antigravityQuotaActivationMode: QuotaRequestActivationMode
     var quotaWindowActivationStartHour: Int
     var quotaWindowActivationEndHour: Int
     var locale: String
@@ -157,6 +171,7 @@ struct AppSettings: Codable, Equatable {
         case usageProgressDisplayMode
         case quotaVisibility
         case quotaWindowActivationMode
+        case antigravityQuotaActivationMode
         case quotaWindowActivationStartHour
         case quotaWindowActivationEndHour
         case locale
@@ -175,6 +190,7 @@ struct AppSettings: Codable, Equatable {
         usageProgressDisplayMode: UsageProgressDisplayMode = .used,
         quotaVisibility: UsageQuotaVisibilityPreferences = .defaultValue,
         quotaWindowActivationMode: QuotaWindowActivationMode = .off,
+        antigravityQuotaActivationMode: QuotaRequestActivationMode = .off,
         quotaWindowActivationStartHour: Int = 9,
         quotaWindowActivationEndHour: Int = 18,
         locale: String,
@@ -192,6 +208,7 @@ struct AppSettings: Codable, Equatable {
         self.usageProgressDisplayMode = usageProgressDisplayMode
         self.quotaVisibility = quotaVisibility
         self.quotaWindowActivationMode = quotaWindowActivationMode
+        self.antigravityQuotaActivationMode = antigravityQuotaActivationMode
         self.quotaWindowActivationStartHour = min(max(quotaWindowActivationStartHour, 0), 23)
         self.quotaWindowActivationEndHour = min(max(quotaWindowActivationEndHour, 0), 23)
         self.locale = AppLocale.resolve(locale).identifier
@@ -241,6 +258,7 @@ struct AppSettings: Codable, Equatable {
             QuotaWindowActivationMode.self,
             forKey: .quotaWindowActivationMode
         ) ?? .off
+        antigravityQuotaActivationMode = try container.decodeIfPresent(QuotaRequestActivationMode.self, forKey: .antigravityQuotaActivationMode) ?? .off
         quotaWindowActivationStartHour = min(max(
             try container.decodeIfPresent(Int.self, forKey: .quotaWindowActivationStartHour) ?? 9,
             0
@@ -266,6 +284,7 @@ struct AppSettings: Codable, Equatable {
         try container.encode(usageProgressDisplayMode, forKey: .usageProgressDisplayMode)
         try container.encode(quotaVisibility, forKey: .quotaVisibility)
         try container.encode(quotaWindowActivationMode, forKey: .quotaWindowActivationMode)
+        try container.encode(antigravityQuotaActivationMode, forKey: .antigravityQuotaActivationMode)
         try container.encode(quotaWindowActivationStartHour, forKey: .quotaWindowActivationStartHour)
         try container.encode(quotaWindowActivationEndHour, forKey: .quotaWindowActivationEndHour)
         try container.encode(locale, forKey: .locale)
@@ -311,6 +330,7 @@ struct AppSettingsPatch {
     var usageProgressDisplayMode: UsageProgressDisplayMode? = nil
     var quotaVisibility: UsageQuotaVisibilityPreferences? = nil
     var quotaWindowActivationMode: QuotaWindowActivationMode? = nil
+    var antigravityQuotaActivationMode: QuotaRequestActivationMode? = nil
     var quotaWindowActivationStartHour: Int? = nil
     var quotaWindowActivationEndHour: Int? = nil
     var locale: String? = nil

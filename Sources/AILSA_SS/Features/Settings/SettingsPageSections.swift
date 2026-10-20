@@ -14,6 +14,7 @@ struct SettingsPageContent: View {
 
 enum SettingsPageSection: CaseIterable, Identifiable {
     case general
+    case accountPool
     case quotaDisplay
     case switchBehavior
     case language
@@ -24,6 +25,7 @@ enum SettingsPageSection: CaseIterable, Identifiable {
     var titleKey: String {
         switch self {
         case .general: "settings.group.general"
+        case .accountPool: "settings.group.account_pool"
         case .quotaDisplay: "settings.group.quota_display"
         case .switchBehavior: "settings.group.switch_behavior"
         case .language: "settings.group.language"
@@ -43,6 +45,8 @@ private struct MacSettingsPageContent: View {
             switch model.selectedSection {
             case .general:
                 SettingsGeneralSection(model: model)
+            case .accountPool:
+                ScrollView { SettingsAccountPoolSection(model: model) }
             case .quotaDisplay:
                 SettingsQuotaDisplaySection(model: model)
             case .switchBehavior:
