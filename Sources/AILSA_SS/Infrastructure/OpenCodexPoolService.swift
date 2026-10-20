@@ -1,5 +1,6 @@
 import Foundation
 import CryptoKit
+import Darwin
 
 struct OpenCodexPoolRange: Codable, Equatable, Sendable {
     var minimum: Int = 10
@@ -46,6 +47,7 @@ struct OpenCodexPoolSnapshot: Codable, Equatable, Sendable {
     var legacyConflict: Bool = false
     var lastSyncAt: Double? = nil
     var candidates: [OpenCodexPoolCandidate] = []
+    var lastDecision: OpenCodexPoolDecision? = nil
 }
 
 struct OpenCodexPoolCandidate: Identifiable, Equatable, Sendable, Codable { var id: String; var label: String }
@@ -254,18 +256,22 @@ struct OpenCodexPoolService: Sendable {
                     remainingPercent: used.map { 100 - $0 }, isAvailable: account.health == nil || account.health?.status == "healthy")
             }, monitoredFamily: family, policyRevision: local.revision,
             managementEnabled: local.managementEnabled, legacyConflict: ownership.hasConflictingWriter(),
-            lastSyncAt: local.lastSyncAt, candidates: savedCandidates(excluding: Set(identities.values.compactMap { AccountIdentity.normalizedEmail($0) })))
+            lastSyncAt: local.lastSyncAt, candidates: savedCandidates(excluding: Set(identities.values.compactMap { AccountIdentity.normalizedEmail($0) })),
+            lastDecision: try? OpenCodexPoolAudit.read(at: auditURL).last)
     }
     func setEnabled(_ enabled: Bool) async throws {
         let lease = try controlLease(); defer { withExtendedLifetime(lease) {} }
         try updatePolicy { $0.enabled = enabled }
+        recordDecision(OpenCodexPoolDecision(outcome: enabled ? .enabled : .disabled))
     }
     func setRange(id: String, range: OpenCodexPoolRange) async throws {
         let lease = try controlLease(); defer { withExtendedLifetime(lease) {} }
         guard range.isValid else { throw AppError.invalidData(L10n.tr("settings.pool.range_invalid")) }
         let pool = try await snapshot()
         guard pool.accounts.contains(where: { $0.id == id }) else { throw AppError.invalidData(L10n.tr("settings.pool.update_failed")) }
+        let previous = pool.accounts.first { $0.id == id }?.range
         try updatePolicy { $0.provider = pool.provider; $0.ranges[id] = range }
+        recordDecision(OpenCodexPoolDecision(outcome: .rangeChanged, activeAccountId: id, range: range, previousRange: previous))
     }
     func setSelected(id: String, selected: Bool) async throws {
         let lease = try controlLease(); defer { withExtendedLifetime(lease) {} }
@@ -273,35 +279,37 @@ struct OpenCodexPoolService: Sendable {
         guard pool.accounts.contains(where: { $0.id == id }) else { throw AppError.invalidData(L10n.tr("settings.pool.update_failed")) }
         _ = try await request("/api/oauth/accounts/pause", method: "PUT", body: ["provider": .string(pool.provider), "accountId": .string(id), "paused": .bool(!selected)])
     }
-    func selectNextIfNeeded(holding existingLease: OpenCodexControlLease? = nil) async throws -> Bool {
+    func selectNextIfNeeded(holding existingLease: OpenCodexControlLease? = nil, syncDeferred: Bool = false) async throws -> Bool {
         guard try policy().managementEnabled else { return false }
         let lease = try existingLease ?? controlLease(); defer { withExtendedLifetime(lease) {} }
-        guard try policy().enabled else { return false }
         let pool = try await snapshot()
-        guard pool.enabled else { return false }
-        let active = pool.accounts.first { $0.id == pool.activeAccountId }
-        let at: (OpenCodexPoolAccount) -> Int? = { pool.monitoredFamily == "claude" ? $0.effectiveClaudeThreshold : $0.effectiveThreshold }
-        if let active, active.selected && !active.needsReauth && active.isAvailable {
-            guard let remaining = active.remainingPercent, let threshold = at(active), remaining <= Double(threshold) else { return false }
+        var decision = OpenCodexPoolDecision.plan(pool)
+        decision.credentialSyncDeferred = syncDeferred
+        guard decision.outcome == .candidateChosen, let nextID = decision.targetAccountId else {
+            recordDecision(decision); return false
         }
-        let start = pool.accounts.firstIndex { $0.id == pool.activeAccountId } ?? -1
-        let ring = start < 0 ? pool.accounts : Array(pool.accounts.dropFirst(start + 1)) + Array(pool.accounts.prefix(start + 1))
-        guard let next = ring.first(where: { account in
-            guard account.id != pool.activeAccountId, account.selected, !account.needsReauth, account.isAvailable, let remaining = account.remainingPercent, let threshold = at(account) else { return false }
-            return remaining > Double(threshold)
-        }) else { return false }
+        func stopped(_ outcome: OpenCodexPoolOutcome) -> Bool {
+            decision.outcome = outcome; recordDecision(decision); return false
+        }
         // A manual account change or pause during quota IO wins over this scheduled decision.
         let rechecked = try JSONDecoder().decode(StockAccounts.self, from: await request("/api/oauth/accounts?provider=" + pool.provider))
-        guard rechecked.activeAccountId == pool.activeAccountId,
-              let candidate = rechecked.accounts.first(where: { $0.id == next.id }), candidate.paused != true,
-              candidate.needsReauth != true, candidate.health == nil || candidate.health?.status == "healthy" else { return false }
+        guard rechecked.activeAccountId == pool.activeAccountId else { return stopped(.manualSelectionChanged) }
+        guard let candidate = rechecked.accounts.first(where: { $0.id == nextID }), candidate.paused != true,
+              candidate.needsReauth != true, candidate.health == nil || candidate.health?.status == "healthy" else { return stopped(.targetUnavailable) }
         let latest = try policy()
-        guard latest.enabled, latest.revision == pool.policyRevision,
-              (try? savedSyncStore().currentAntigravityAccountId) == latest.desktopSelection else { return false }
+        guard latest.managementEnabled, latest.enabled, latest.revision == pool.policyRevision else { return stopped(.policyChanged) }
+        guard (try? savedSyncStore().currentAntigravityAccountId) == latest.desktopSelection else { return stopped(.desktopSelectionChanged) }
+        try ownership.requireNoLegacyWriter()
+        let preference = try JSONDecoder().decode(StockPreference.self, from: await request("/api/oauth/accounts/pool?provider=" + pool.provider))
+        guard !preference.enabled else { return stopped(.externalController) }
         try Task.checkCancellation()
-        _ = try await request("/api/oauth/accounts/active", method: "PUT", body: ["provider": .string(pool.provider), "accountId": .string(next.id)])
+        _ = try await request("/api/oauth/accounts/active", method: "PUT", body: ["provider": .string(pool.provider), "accountId": .string(nextID)])
+        let verified = try JSONDecoder().decode(StockAccounts.self, from: await request("/api/oauth/accounts?provider=" + pool.provider))
+        guard verified.activeAccountId == nextID else { return stopped(.selectionUnconfirmed) }
+        decision.outcome = .switched; recordDecision(decision)
         return true
     }
+
 }
 
 actor OpenCodexPoolRuntime {
@@ -320,4 +328,92 @@ private final class OpenCodexPoolNetworkSession: NSObject, URLSessionTaskDelegat
     static let shared = URLSession(configuration: .ephemeral, delegate: OpenCodexPoolNetworkSession(), delegateQueue: nil)
     func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
                     newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) { completionHandler(nil) }
+}
+
+
+enum OpenCodexPoolOutcome: String, Codable, Sendable {
+    case enabled, disabled, rangeChanged, managementStarted, managementStopped
+    case manualSelected, desktopFollowed, aboveThreshold, activeQuotaUnknown, activeThresholdUnknown
+    case noEligibleTarget, candidateChosen, switched, manualSelectionChanged, targetUnavailable
+    case policyChanged, desktopSelectionChanged, externalController, selectionUnconfirmed, checkFailed
+    var titleKey: String { "settings.pool.decision." + rawValue }
+}
+
+struct OpenCodexPoolDecision: Codable, Equatable, Sendable {
+    var timestamp = Date().timeIntervalSince1970
+    var outcome: OpenCodexPoolOutcome
+    var family: String? = nil
+    var activeAccountId: String? = nil
+    var targetAccountId: String? = nil
+    var remainingPercent: Double? = nil
+    var threshold: Int? = nil
+    var range: OpenCodexPoolRange? = nil
+    var previousRange: OpenCodexPoolRange? = nil
+    var credentialSyncDeferred = false
+    var stage: String? = nil
+    var candidates: [Candidate] = []
+    struct Candidate: Codable, Equatable, Sendable {
+        var id: String
+        var selected: Bool
+        var available: Bool
+        var remainingPercent: Double?
+        var threshold: Int?
+    }
+    static func plan(_ pool: OpenCodexPoolSnapshot) -> Self {
+        let threshold: (OpenCodexPoolAccount) -> Int? = { pool.monitoredFamily == "claude" ? $0.effectiveClaudeThreshold : $0.effectiveThreshold }
+        let active = pool.accounts.first { $0.id == pool.activeAccountId }
+        var decision = Self(outcome: .disabled, family: pool.monitoredFamily, activeAccountId: pool.activeAccountId,
+                            remainingPercent: active?.remainingPercent, threshold: active.flatMap(threshold), range: active?.range)
+        decision.candidates = pool.accounts.map { Candidate(id: $0.id, selected: $0.selected,
+            available: $0.isAvailable && !$0.needsReauth, remainingPercent: $0.remainingPercent, threshold: threshold($0)) }
+        guard pool.enabled else { return decision }
+        if let active, active.selected && !active.needsReauth && active.isAvailable {
+            guard let remaining = active.remainingPercent else { decision.outcome = .activeQuotaUnknown; return decision }
+            guard let limit = threshold(active) else { decision.outcome = .activeThresholdUnknown; return decision }
+            guard remaining <= Double(limit) else { decision.outcome = .aboveThreshold; return decision }
+        }
+        let start = pool.accounts.firstIndex { $0.id == pool.activeAccountId } ?? -1
+        let ring = start < 0 ? pool.accounts : Array(pool.accounts.dropFirst(start + 1)) + Array(pool.accounts.prefix(start + 1))
+        guard let next = ring.first(where: { account in
+            guard account.id != pool.activeAccountId, account.selected, !account.needsReauth, account.isAvailable,
+                  let remaining = account.remainingPercent, let limit = threshold(account) else { return false }
+            return remaining > Double(limit)
+        }) else { decision.outcome = .noEligibleTarget; return decision }
+        decision.outcome = .candidateChosen; decision.targetAccountId = next.id
+        return decision
+    }
+}
+
+/// Bounded diagnostic metadata only: no emails, credentials, prompts or raw error output.
+enum OpenCodexPoolAudit {
+    private static let lock = NSLock()
+    static let maximumEntries = 512
+    static func read(at url: URL) throws -> [OpenCodexPoolDecision] {
+        guard FileManager.default.fileExists(atPath: url.path) else { return [] }
+        let data = try Data(contentsOf: url)
+        guard data.count <= 2 * 1024 * 1024 else { throw AppError.invalidData("Pool diagnostic history is oversized.") }
+        return try JSONDecoder().decode([OpenCodexPoolDecision].self, from: data)
+    }
+    static func append(_ decision: OpenCodexPoolDecision, at url: URL) throws {
+        lock.lock(); defer { lock.unlock() }
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let descriptor = open(url.deletingLastPathComponent().appendingPathComponent("opencodex-pool-audit.lock").path, O_CREAT | O_RDWR, 0o600)
+        guard descriptor >= 0 else { throw AppError.io("Pool diagnostic lock is unavailable.") }
+        defer { close(descriptor) }
+        guard flock(descriptor, LOCK_EX | LOCK_NB) == 0 else { throw AppError.io("Pool diagnostic history is busy.") }
+        defer { _ = flock(descriptor, LOCK_UN) }
+        _ = fchmod(descriptor, 0o600)
+        var rows = try read(at: url); rows.append(decision)
+        if rows.count > maximumEntries { rows.removeFirst(rows.count - maximumEntries) }
+        let data = try JSONEncoder().encode(rows)
+        guard data.count <= 2 * 1024 * 1024 else { throw AppError.invalidData("Pool diagnostic history is oversized.") }
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try data.write(to: url, options: .atomic)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+    }
+}
+
+extension OpenCodexPoolService {
+    var auditURL: URL { policyURL.deletingLastPathComponent().appendingPathComponent("opencodex-pool-decisions.json") }
+    func recordDecision(_ value: OpenCodexPoolDecision) { try? OpenCodexPoolAudit.append(value, at: auditURL) }
 }

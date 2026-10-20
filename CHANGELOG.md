@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.0(o) — Unreleased
+
+- Add explicit account-pool decision history, exact quota headroom and read-only local diagnostics.
+- Keep credential-sync failures separate from healthy quota rotation, preserve manual changes and verify account selection through provider readback.
+
 ## 1.0.0(n) — 2026-10-20
 
 - Coordinate Antigravity credential sync, verified desktop selection and quota rotation under explicit SubSwitch ownership.

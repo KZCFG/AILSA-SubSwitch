@@ -109,6 +109,96 @@ final class OpenCodexUnifiedSyncTests: XCTestCase {
         XCTAssertEqual(try service.policy().revision, revision)
         XCTAssertEqual(f.workerCalls, before); XCTAssertEqual(f.activeWrites, 0)
     }
+    func testExactRemainingDoesNotCrossThreeButCrossesFour() throws {
+        func make(_ threshold: Int) -> OpenCodexPoolSnapshot {
+            OpenCodexPoolSnapshot(provider: "antigravity-pool", enabled: true, activeAccountId: "a", accounts: [
+                OpenCodexPoolAccount(id: "a", label: "A", selected: true, needsReauth: false, range: .init(minimum: 3, maximum: 7), effectiveThreshold: threshold, effectiveClaudeThreshold: 8, remainingPercent: 3.0685266),
+                OpenCodexPoolAccount(id: "b", label: "B", selected: true, needsReauth: false, range: .init(), effectiveThreshold: 10, effectiveClaudeThreshold: 10, remainingPercent: 70)])
+        }
+        let below = OpenCodexPoolDecision.plan(make(3)); XCTAssertEqual(below.outcome, .aboveThreshold)
+        XCTAssertEqual(below.remainingPercent, 3.0685266); XCTAssertNil(below.targetAccountId)
+        let crossed = OpenCodexPoolDecision.plan(make(4)); XCTAssertEqual(crossed.outcome, .candidateChosen); XCTAssertEqual(crossed.targetAccountId, "b")
+    }
+    func testPlanExplainsUnknownQuotaCycleAndMissingTargets() {
+        var pool = OpenCodexPoolSnapshot(provider: "antigravity-pool", enabled: true, activeAccountId: "a", accounts: [
+            OpenCodexPoolAccount(id: "a", label: "A", selected: true, needsReauth: false, range: .init(), effectiveThreshold: 10, effectiveClaudeThreshold: 10)])
+        XCTAssertEqual(OpenCodexPoolDecision.plan(pool).outcome, .activeQuotaUnknown)
+        pool.accounts[0].remainingPercent = 3; pool.accounts[0].effectiveThreshold = nil
+        XCTAssertEqual(OpenCodexPoolDecision.plan(pool).outcome, .activeThresholdUnknown)
+        pool.accounts[0].effectiveThreshold = 5
+        XCTAssertEqual(OpenCodexPoolDecision.plan(pool).outcome, .noEligibleTarget)
+        pool.enabled = false; XCTAssertEqual(OpenCodexPoolDecision.plan(pool).outcome, .disabled)
+    }
+    func testFailedCredentialSyncDoesNotBlockHealthyQuotaRotation() async throws {
+        let f = try UnifiedFixture(); defer { f.clean() }; f.active = "a"; f.provideQuota = true
+        let service = f.service(); try await service.setManagementEnabled(true); try await service.setEnabled(true)
+        f.changedGrant = true; f.workerFailure = true; try f.saveDesktop("local-a")
+        try await service.runManagedCycle()
+        XCTAssertEqual(f.active, "b"); XCTAssertEqual(f.workerCalls, 1); XCTAssertEqual(f.activeWrites, 1)
+        let event = try OpenCodexPoolAudit.read(at: service.auditURL).last!
+        XCTAssertEqual(event.outcome, .switched); XCTAssertTrue(event.credentialSyncDeferred)
+        XCTAssertEqual(event.activeAccountId, "a"); XCTAssertEqual(event.targetAccountId, "b")
+    }
+    func testFailedCredentialSyncDoesNotAuthorizeRotationOnUnknownQuota() async throws {
+        let f = try UnifiedFixture(); defer { f.clean() }; f.active = "a"
+        let service = f.service(); try await service.setManagementEnabled(true); try await service.setEnabled(true)
+        f.changedGrant = true; f.workerFailure = true; try f.saveDesktop("local-a")
+        try await service.runManagedCycle()
+        XCTAssertEqual(f.activeWrites, 0)
+        let event = try OpenCodexPoolAudit.read(at: service.auditURL).last!
+        XCTAssertEqual(event.outcome, .activeQuotaUnknown); XCTAssertTrue(event.credentialSyncDeferred)
+    }
+    func testCredentialSyncCancellationNeverContinuesToRotation() async throws {
+        let f = try UnifiedFixture(); defer { f.clean() }; f.active = "a"; f.provideQuota = true
+        let service = f.service(); try await service.setManagementEnabled(true); try await service.setEnabled(true)
+        f.changedGrant = true; f.cancelWorker = true; try f.saveDesktop("local-a")
+        do { try await service.runManagedCycle(); XCTFail("must cancel") } catch is CancellationError {} catch { XCTFail("wrong error") }
+        XCTAssertEqual(f.activeWrites, 0)
+    }
+    func testAutomaticSwitchRequiresProviderReadback() async throws {
+        let f = try UnifiedFixture(); defer { f.clean() }; f.active = "a"; f.provideQuota = true
+        let service = f.service(); try await service.setManagementEnabled(true); try await service.setEnabled(true)
+        f.ignoreActiveWrite = true
+        try await service.runManagedCycle()
+        XCTAssertEqual(f.active, "a")
+        XCTAssertEqual(try OpenCodexPoolAudit.read(at: service.auditURL).last?.outcome, .selectionUnconfirmed)
+    }
+    func testManualSelectionAndRangeChangesHaveSeparateReceipts() async throws {
+        let f = try UnifiedFixture(); defer { f.clean() }
+        let service = f.service(); try await service.setManagementEnabled(true)
+        try await service.selectAccount(id: "a")
+        XCTAssertEqual(try OpenCodexPoolAudit.read(at: service.auditURL).last?.outcome, .manualSelected)
+        try await service.setRange(id: "a", range: .init(minimum: 3, maximum: 7))
+        let event = try OpenCodexPoolAudit.read(at: service.auditURL).last!
+        XCTAssertEqual(event.outcome, .rangeChanged); XCTAssertEqual(event.range, .init(minimum: 3, maximum: 7))
+        XCTAssertEqual(event.previousRange, .init())
+    }
+    func testAuditPreservesExactNumbersWithoutCredentialsAndPolicyChanges() throws {
+        let f = try UnifiedFixture(); defer { f.clean() }; let service = f.service()
+        let before = try service.policy().revision
+        // Create a stable policy before proving that diagnostic writes do not change its revision.
+        try service.updatePolicy { _ in }; let revision = try service.policy().revision
+        let event = OpenCodexPoolDecision(outcome: .aboveThreshold, family: "gemini", activeAccountId: "a", remainingPercent: 3.0685266, threshold: 3)
+        try OpenCodexPoolAudit.append(event, at: service.auditURL)
+        XCTAssertEqual(try OpenCodexPoolAudit.read(at: service.auditURL), [event]); XCTAssertEqual(try service.policy().revision, revision)
+        let raw = try String(contentsOf: service.auditURL, encoding: .utf8)
+        XCTAssertFalse(raw.contains("@")); XCTAssertFalse(raw.contains("fixture-admin")); XCTAssertFalse(raw.contains("refresh"))
+        let mode = try FileManager.default.attributesOfItem(atPath: service.auditURL.path)[.posixPermissions] as! NSNumber
+        XCTAssertEqual(mode.intValue & 0o777, 0o600); XCTAssertNotEqual(before, revision)
+    }
+    func testAuditIsBoundedAndCorruptionIsPreserved() throws {
+        let f = try UnifiedFixture(); defer { f.clean() }; let service = f.service()
+        for number in 0...OpenCodexPoolAudit.maximumEntries {
+            var event = OpenCodexPoolDecision(outcome: .aboveThreshold); event.timestamp = Double(number)
+            try OpenCodexPoolAudit.append(event, at: service.auditURL)
+        }
+        let rows = try OpenCodexPoolAudit.read(at: service.auditURL)
+        XCTAssertEqual(rows.count, OpenCodexPoolAudit.maximumEntries); XCTAssertEqual(rows.first?.timestamp, 1)
+        let malformed = Data("{broken".utf8); try malformed.write(to: service.auditURL)
+        XCTAssertThrowsError(try OpenCodexPoolAudit.append(.init(outcome: .disabled), at: service.auditURL))
+        XCTAssertEqual(try Data(contentsOf: service.auditURL), malformed)
+    }
+
 }
 
 private final class UnifiedFixture: @unchecked Sendable {
@@ -117,6 +207,7 @@ private final class UnifiedFixture: @unchecked Sendable {
     var script: URL { folder.appendingPathComponent(".local/bin/codexbar-sync-creds.py") }
     var legacyLoaded = true, refuseStop = false, nativeEnabled = true
     var nativeEmail: String? = nil
+    var workerFailure = false, cancelWorker = false, provideQuota = false, ignoreActiveWrite = false
     var active = "b", activeWrites = 0, workerCalls = 0, validations = 0, changedGrant = false
     var jobCommands: [[String]] = [], lastPayload: Data?
     init() throws {
@@ -158,14 +249,23 @@ private final class UnifiedFixture: @unchecked Sendable {
                 if req.httpMethod == "PUT" { self.nativeEnabled = object["enabled"] as! Bool }
                 response = ["enabled": self.nativeEnabled]
             } else if req.url!.path.hasSuffix("/active") {
-                self.active = object["accountId"] as! String; self.activeWrites += 1
+                if !self.ignoreActiveWrite { self.active = object["accountId"] as! String }; self.activeWrites += 1
             } else {
-                response = ["activeAccountId": self.active, "accounts": ["a", "b"].map { ["id": $0, "email": $0 + "@example.com", "paused": false] as [String: Any] }]
+                response = ["activeAccountId": self.active, "accounts": ["a", "b"].map { id in
+                    var row: [String: Any] = ["id": id, "email": id + "@example.com", "paused": false]
+                    if self.provideQuota {
+                        let now = Date().timeIntervalSince1970 * 1000
+                        row["quota"] = ["updatedAt": now, "customWindows": [["label": "Gemini 5h", "percent": id == "a" ? 99 : 30, "resetAt": now + 3_600_000]]]
+                    }
+                    return row
+                }]
             }
             return (try JSONSerialization.data(withJSONObject: response), HTTPURLResponse(url: req.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
         }, ownershipOverride: owner, nativeSelection: { self.nativeEmail }, syncWorker: { data in
             if (try? JSONDecoder().decode(JSONValue.self, from: data)["action"]?.stringValue) == "probe" { return Data(#"{"supported":true}"#.utf8) }
             self.workerCalls += 1; self.lastPayload = data
+            if self.cancelWorker { throw CancellationError() }
+            if self.workerFailure { throw AppError.io("fixture sync failed") }
             return Data(#"{"inserted":1,"updated":0,"superseded":0}"#.utf8)
         }, credentialValidator: { auth, email in
             self.validations += 1

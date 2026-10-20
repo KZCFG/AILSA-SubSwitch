@@ -10,15 +10,19 @@ enum OpenCodexPoolCLI {
             case "stop": try await service.setManagementEnabled(false)
             case "check": try await service.runManagedCycle()
             case "verify": try await service.verifyRuntime()
-            case "status": break
-            default: throw AppError.invalidData("Expected status, verify, takeover, check, or stop.")
+            case "status", "diagnose": break
+            default: throw AppError.invalidData("Expected status, verify, takeover, check, stop, or diagnose.")
             }
             let pool = try await service.snapshot()
-            let output: [String: Any] = ["provider": pool.provider, "managementEnabled": pool.managementEnabled,
+            var output: [String: Any] = ["provider": pool.provider, "managementEnabled": pool.managementEnabled,
                 "legacyConflict": pool.legacyConflict, "rangeSwitchingEnabled": pool.enabled,
                 "accounts": pool.accounts.count, "selected": pool.accounts.filter(\.selected).count,
                 "freshQuotaAccounts": pool.accounts.filter { $0.remainingPercent != nil }.count,
                 "currentFound": pool.accounts.contains { $0.id == pool.activeAccountId }]
+            if command == "diagnose" {
+                output["monitoredFamily"] = pool.monitoredFamily
+                output["decisionHistory"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(OpenCodexPoolAudit.read(at: service.auditURL)))
+            }
             print(String(data: try JSONSerialization.data(withJSONObject: output, options: [.sortedKeys]), encoding: .utf8)!)
             return 0
         } catch {

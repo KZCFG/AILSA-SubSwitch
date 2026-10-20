@@ -26,6 +26,9 @@ struct SettingsQuotaPoolSection: View {
                         model.mutateOpenCodexPool { try await $0.setManagementEnabled(!pool.managementEnabled || pool.legacyConflict) }
                     }
                 }
+                if let decision = pool.lastDecision { SettingsPoolDecisionView(decision: decision, accounts: pool.accounts) }
+                Text(L10n.tr("settings.pool.inflight_note")).font(.system(size: 11)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(L10n.tr("settings.pool.control_detail")).font(.system(size: 11)).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Toggle(L10n.tr("settings.pool.follow_desktop"), isOn: Binding(
@@ -38,7 +41,7 @@ struct SettingsQuotaPoolSection: View {
                 }))
                 .toggleStyle(SettingsNeutralSwitchStyle()).disabled(!pool.managementEnabled || pool.legacyConflict)
                 ForEach(pool.accounts) { account in
-                    SettingsQuotaPoolAccountRow(account: account, active: pool.activeAccountId == account.id, enabled: pool.enabled, managed: pool.managementEnabled && !pool.legacyConflict, model: model)
+                    SettingsQuotaPoolAccountRow(account: account, active: pool.activeAccountId == account.id, enabled: pool.enabled, managed: pool.managementEnabled && !pool.legacyConflict, family: pool.monitoredFamily, model: model)
                 }
                 ForEach(pool.candidates) { candidate in
                     HStack {
@@ -65,11 +68,34 @@ struct SettingsQuotaPoolSection: View {
     }
 }
 
+private struct SettingsPoolDecisionView: View {
+    let decision: OpenCodexPoolDecision
+    let accounts: [OpenCodexPoolAccount]
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(L10n.tr("settings.pool.decision_time") + " " + Date(timeIntervalSince1970: decision.timestamp).formatted(date: .omitted, time: .standard))
+                .foregroundStyle(.secondary)
+            Text(L10n.tr(decision.outcome.titleKey))
+            if let id = decision.activeAccountId, let account = accounts.first(where: { $0.id == id }), let family = decision.family {
+                Text(L10n.tr("settings.pool.decision_metrics", account.label, family == "claude" ? "Claude" : "Gemini",
+                    decision.remainingPercent.map { String(format: "%.2f%%", $0) } ?? "—",
+                    decision.threshold.map { "\($0)%" } ?? "—")).foregroundStyle(.secondary)
+            }
+            if let stage = decision.stage {
+                let stageKey = "settings.pool.stage." + stage
+                Text(L10n.tr(stageKey)).foregroundStyle(.secondary)
+            }
+            if decision.credentialSyncDeferred { Text(L10n.tr("settings.pool.sync_deferred")).foregroundStyle(.secondary) }
+        }.font(.system(size: 11)).fixedSize(horizontal: false, vertical: true)
+    }
+}
+
 private struct SettingsQuotaPoolAccountRow: View {
     let account: OpenCodexPoolAccount
     let active: Bool
     let enabled: Bool
     let managed: Bool
+    let family: String
     @ObservedObject var model: SettingsPageModel
     @State private var minimum = 10
     @State private var maximum = 10
@@ -99,6 +125,11 @@ private struct SettingsQuotaPoolAccountRow: View {
                 Text(account.effectiveThreshold.map { L10n.tr("settings.pool.current_threshold", $0) } ?? L10n.tr(enabled ? "settings.pool.threshold_pending" : "settings.pool.disabled"))
                     .foregroundStyle(.secondary)
             }.font(.system(size: 11))
+            if let remaining = account.remainingPercent {
+                Text(L10n.tr("settings.pool.precise_remaining", family == "claude" ? "Claude" : "Gemini", String(format: "%.2f%%", remaining)))
+                    .help(L10n.tr("settings.pool.precise_remaining_help"))
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
+            }
             if let threshold = account.effectiveClaudeThreshold {
                 Text(L10n.tr("settings.pool.claude_threshold", threshold)).font(.system(size: 11)).foregroundStyle(.secondary)
             }

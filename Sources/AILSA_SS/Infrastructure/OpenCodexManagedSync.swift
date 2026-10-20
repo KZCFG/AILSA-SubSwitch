@@ -100,10 +100,12 @@ extension OpenCodexPoolService {
             }
             // A stopped legacy writer stays disabled; restoring it is never an implicit side effect.
         }
+        recordDecision(OpenCodexPoolDecision(outcome: enabled ? .managementStarted : .managementStopped))
     }
     func selectAccount(id: String) async throws {
         let lease = try controlLease(); defer { withExtendedLifetime(lease) {} }
         try await selectManagedAccount(id: id)
+        recordDecision(OpenCodexPoolDecision(outcome: .manualSelected, targetAccountId: id))
     }
     private func selectManagedAccount(id: String) async throws {
         let pool = try await snapshot()
@@ -124,12 +126,25 @@ extension OpenCodexPoolService {
         try await selectManagedAccount(id: account.id)
         let desktop = try? savedSyncStore().currentAntigravityAccountId
         try updatePolicy { $0.desktopSelection = desktop; $0.nativeSelectionFingerprint = Self.nativeFingerprint(email) }
+        recordDecision(OpenCodexPoolDecision(outcome: .desktopFollowed, targetAccountId: account.id))
     }
     func runManagedCycle() async throws {
+        var stage = "control"
+        do {
         let lease = try controlLease(); defer { withExtendedLifetime(lease) {} }
         let pref = try JSONDecoder().decode(StockPreference.self, from: await request("/api/oauth/accounts/pool?provider=" + policy().provider))
         guard !pref.enabled else { throw AppError.invalidData(L10n.tr("settings.pool.control_conflict")) }
-        try await synchronizeSavedAccounts(holding: lease)
+        var syncDeferred = false
+        stage = "credentials"
+        do { try await synchronizeSavedAccounts(holding: lease) }
+        catch is CancellationError { throw CancellationError() }
+        catch {
+            // A local grant refresh failure must not disable rotation of independently
+            // healthy proxy accounts with fresh, identity-matched quota.
+            try ownership.requireNoLegacyWriter()
+            syncDeferred = true
+        }
+        stage = "identity"
         let local = try policy(), saved = try savedSyncStore()
         let settingsURL = localQuotaURL.deletingLastPathComponent().appendingPathComponent("settings.json")
         let settings = FileManager.default.fileExists(atPath: settingsURL.path) ? try JSONDecoder().decode(AppSettings.self, from: Data(contentsOf: settingsURL)) : .defaultValue
@@ -146,6 +161,7 @@ extension OpenCodexPoolService {
            let target = try await snapshot().accounts.first(where: { AccountIdentity.normalizedEmail($0.email) == AccountIdentity.normalizedEmail(email) }),
            target.selected && target.isAvailable && !target.needsReauth {
             try await selectManagedAccount(id: target.id)
+            recordDecision(OpenCodexPoolDecision(outcome: .desktopFollowed, targetAccountId: target.id, credentialSyncDeferred: syncDeferred))
             followed = true
         }
         if desktopChanged || (fingerprint != nil && fingerprint != local.nativeSelectionFingerprint) {
@@ -155,7 +171,12 @@ extension OpenCodexPoolService {
             }
         }
         if followed { return }
-        _ = try await selectNextIfNeeded(holding: lease)
+        stage = "rotation"
+        _ = try await selectNextIfNeeded(holding: lease, syncDeferred: syncDeferred)
+        } catch {
+            if !(error is CancellationError) { recordDecision(OpenCodexPoolDecision(outcome: .checkFailed, stage: stage)) }
+            throw error
+        }
     }
     func importSavedAccount(id: String) async throws {
         let lease = try controlLease(); defer { withExtendedLifetime(lease) {} }
