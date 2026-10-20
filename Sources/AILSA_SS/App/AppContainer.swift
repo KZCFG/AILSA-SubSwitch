@@ -93,6 +93,7 @@ final class AppContainer {
                     #endif
                 },
                 runtimePlatform: PlatformCapabilities.currentPlatform,
+                poolActiveAccountLoader: { try await OpenCodexPoolService().poolActiveEmail() },
                 usageProgressDisplayMode: initialSettings.usageProgressDisplayMode,
                 quotaVisibility: initialSettings.quotaVisibility,
                 onLocalAccountsChanged: { accounts in

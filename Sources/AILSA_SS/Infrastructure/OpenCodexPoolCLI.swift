@@ -17,7 +17,8 @@ enum OpenCodexPoolCLI {
             var output: [String: Any] = ["provider": pool.provider, "managementEnabled": pool.managementEnabled,
                 "legacyConflict": pool.legacyConflict, "rangeSwitchingEnabled": pool.enabled,
                 "accounts": pool.accounts.count, "selected": pool.accounts.filter(\.selected).count,
-                "freshQuotaAccounts": pool.accounts.filter { $0.remainingPercent != nil }.count,
+                "freshQuotaAccounts": pool.accounts.filter { $0.remainingPercent != nil && $0.quotaIsStale != true }.count,
+                "staleQuotaAccounts": pool.accounts.filter { $0.remainingPercent != nil && $0.quotaIsStale == true }.count,
                 "currentFound": pool.accounts.contains { $0.id == pool.activeAccountId }]
             if command == "diagnose" {
                 output["monitoredFamily"] = pool.monitoredFamily

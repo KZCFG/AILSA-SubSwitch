@@ -582,3 +582,9 @@
 "settings.pool.decision.selectionUnconfirmed" = "服务方尚未确认本次账号切换。";
 "settings.pool.decision.checkFailed" = "轮换检查未完成，详见下方阶段。";
 "settings.pool.precise_remaining_help" = "取当前模型族的 5 小时与周额度中较低的剩余值；显示保留两位小数，判定使用未取整数值。";
+
+// Pool routing identity and quota freshness
+"accounts.card.pool_active" = "额度池当前";
+"settings.pool.data_status" = "%@ 主导 · 数据 %@ 秒前 · %@";
+"settings.pool.data_fresh" = "新鲜";
+"settings.pool.data_stale" = "已标旧（上次确认读数）";

@@ -574,3 +574,9 @@
 "settings.pool.decision.selectionUnconfirmed" = "The provider did not confirm the requested account selection.";
 "settings.pool.decision.checkFailed" = "Rotation check did not complete; see the stage below.";
 "settings.pool.precise_remaining_help" = "Uses the lower remaining quota across the current model family’s five-hour and weekly windows. Display shows two decimals; decisions use the unrounded value.";
+
+// Pool routing identity and quota freshness
+"accounts.card.pool_active" = "Pool Active";
+"settings.pool.data_status" = "%@ limiting · data %@s old · %@";
+"settings.pool.data_fresh" = "Fresh";
+"settings.pool.data_stale" = "Stale (last confirmed reading)";

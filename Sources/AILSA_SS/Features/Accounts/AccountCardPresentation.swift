@@ -57,6 +57,7 @@ struct AccountCompactUsagePresentation: Equatable {
 
 struct AccountCardPresentation: Equatable {
     let accountID: String
+    let isPoolActive: Bool
     let provider: AccountProvider
     let resetCreditInventory: ResetCreditInventory?
     let availableCompactItems: [AccountCompactQuotaPresentation]
@@ -104,8 +105,10 @@ struct AccountCardPresentation: Equatable {
         locale: Locale,
         usageProgressDisplayMode: UsageProgressDisplayMode,
         quotaVisibility: UsageQuotaVisibilityPreferences = .defaultValue,
-        isRefreshing: Bool = false
+        isRefreshing: Bool = false,
+        isPoolActive: Bool = false
     ) {
+        self.isPoolActive = account.provider == .antigravity && isPoolActive
         accountID = account.id
         hiddenQuotaKeys = quotaVisibility.hiddenKeys
         provider = account.provider

@@ -13,12 +13,25 @@ struct OpenCodexPoolWindow: Codable, Equatable, Sendable {
     var resetAt: Double?
     var modelId: String?
 }
+enum OpenCodexPoolFreshness {
+    static let freshSeconds: Double = 300
+    static let usableSeconds: Double = 900
+    static func age(updatedAt: Double, now: Date) -> Double? {
+        let age = now.timeIntervalSince1970 - updatedAt / 1000
+        return updatedAt.isFinite && updatedAt > 0 && age.isFinite && age >= 0 ? age : nil
+    }
+}
 struct OpenCodexPoolQuota: Codable, Equatable, Sendable {
     var customWindows: [OpenCodexPoolWindow]?
     var updatedAt: Double
-    func windows(for family: String) -> [OpenCodexPoolWindow] {
+    var lastRefreshFailed: Bool? = nil
+    func windows(for family: String, now: Date? = nil) -> [OpenCodexPoolWindow] {
         (customWindows ?? []).filter {
             guard $0.modelId == nil, $0.percent.isFinite, (0...100).contains($0.percent) else { return false }
+            if let now, let reset = $0.resetAt {
+                let seconds = reset < 1e11 ? reset : reset / 1000
+                guard seconds.isFinite, seconds > now.timeIntervalSince1970 else { return false }
+            }
             let label = $0.label.lowercased()
             return family == "gemini" ? label.hasPrefix("gem") : label.hasPrefix("cla")
         }
@@ -35,6 +48,9 @@ struct OpenCodexPoolAccount: Codable, Identifiable, Equatable, Sendable {
     var effectiveClaudeThreshold: Int?
     var remainingPercent: Double? = nil
     var isAvailable: Bool = true
+    var dataAgeSeconds: Double? = nil
+    var quotaIsStale: Bool? = nil
+    var limitingWindow: String? = nil
 }
 struct OpenCodexPoolSnapshot: Codable, Equatable, Sendable {
     var provider: String
@@ -88,9 +104,9 @@ struct OpenCodexLocalPoolPolicy: Codable, Equatable, Sendable {
 
     func threshold(id: String, quota: OpenCodexPoolQuota?, family: String, now: Date = Date()) -> Int? {
         let millis = now.timeIntervalSince1970 * 1000
-        guard let quota, quota.updatedAt <= millis, millis - quota.updatedAt <= 2 * 60_000 else { return nil }
+        guard let quota, let age = OpenCodexPoolFreshness.age(updatedAt: quota.updatedAt, now: now), age <= OpenCodexPoolFreshness.usableSeconds else { return nil }
         // Idle short-window end estimates may slide on every provider poll.
-        let cycleWindows = quota.windows(for: family).filter {
+        let cycleWindows = quota.windows(for: family, now: now).filter {
             let label = $0.label.lowercased()
             return $0.percent > 0 || label.contains("week") || label.contains("7d") || label.contains("1w")
         }
@@ -119,6 +135,7 @@ struct OpenCodexPoolService: Sendable {
     var credentialValidator: @Sendable (JSONValue, String) async throws -> (JSONValue, JSONValue) = { auth, email in
         try await AntigravityUsageService().validatedOpenCodexCredential(authJSON: auth, expectedEmail: email)
     }
+    var dateProvider: @Sendable () -> Date = { Date() }
     var ownership: OpenCodexControlOwnership { ownershipOverride ?? OpenCodexControlOwnership(home: home.deletingLastPathComponent()) }
     private static let policyLock = NSLock()
     private enum Failure: Error { case http(Int) }
@@ -206,10 +223,10 @@ struct OpenCodexPoolService: Sendable {
         guard let data = try? Data(contentsOf: localQuotaURL), data.count < 8 * 1024 * 1024,
               let store = try? JSONDecoder().decode(LocalAccounts.self, from: data) else { return [:] }
         var result: [String: OpenCodexPoolQuota] = [:]
-        for account in store.accounts where account.provider == "antigravity" && account.usageError == nil {
+        for account in store.accounts where account.provider == "antigravity" {
             guard let email = AccountIdentity.normalizedEmail(account.email), let usage = account.usage,
                   usage.sourceAccountMatched == true, Double(usage.fetchedAt) <= now.timeIntervalSince1970,
-                  now.timeIntervalSince1970 - Double(usage.fetchedAt) <= 120 else { continue }
+                  now.timeIntervalSince1970 - Double(usage.fetchedAt) <= OpenCodexPoolFreshness.usableSeconds else { continue }
             var windows: [OpenCodexPoolWindow] = []
             for family in usage.quotaFamilies ?? [] {
                 guard let key = QuotaActivationFamily.identify(family.id + " " + family.displayName) else { continue }
@@ -222,7 +239,7 @@ struct OpenCodexPoolService: Sendable {
                         resetAt: idle ? nil : Double(reset) * 1000, modelId: nil))
                 }
             }
-            let quota = OpenCodexPoolQuota(customWindows: windows, updatedAt: Double(usage.fetchedAt) * 1000)
+            let quota = OpenCodexPoolQuota(customWindows: windows, updatedAt: Double(usage.fetchedAt) * 1000, lastRefreshFailed: account.usageError?.isEmpty == false)
             if (result[email]?.updatedAt ?? 0) < quota.updatedAt { result[email] = quota }
         }
         return result
@@ -240,24 +257,46 @@ struct OpenCodexPoolService: Sendable {
         }
         let stock = try JSONDecoder().decode(StockAccounts.self, from: data)
         let identities = identityEmails(provider: provider)
-        let now = Date(), family = recentModelFamily(provider: provider, now: Date())
+        let now = dateProvider()
+        let family = recentModelFamily(provider: provider, now: now)
         let savedQuotas = localQuotas(now: now)
         return OpenCodexPoolSnapshot(provider: provider, enabled: local.enabled, activeAccountId: stock.activeAccountId,
             accounts: stock.accounts.map { account in
                 let email = identities[account.id] ?? account.email
-                let quota = AccountIdentity.normalizedEmail(email).flatMap { savedQuotas[$0] } ?? account.quota
-                let fresh = quota.map { $0.updatedAt <= now.timeIntervalSince1970 * 1000 && now.timeIntervalSince1970 * 1000 - $0.updatedAt <= 2 * 60_000 } ?? false
-                let used = fresh ? quota?.windows(for: family).map(\.percent).max() : nil
+                let saved = AccountIdentity.normalizedEmail(email).flatMap { savedQuotas[$0] }
+                let quota = [saved, account.quota].compactMap { $0 }.filter {
+                    guard let age = OpenCodexPoolFreshness.age(updatedAt: $0.updatedAt, now: now) else { return false }
+                    return age <= OpenCodexPoolFreshness.usableSeconds && !$0.windows(for: family, now: now).isEmpty
+                }.max { $0.updatedAt < $1.updatedAt } ?? saved ?? account.quota
+                let age = quota.flatMap { OpenCodexPoolFreshness.age(updatedAt: $0.updatedAt, now: now) }
+                let usable = age.map { $0 <= OpenCodexPoolFreshness.usableSeconds } ?? false
+                let limiting = usable ? quota?.windows(for: family, now: now).max(by: { $0.percent < $1.percent }) : nil
+                let used = limiting?.percent
+                let window = limiting.map { item in
+                    let label = item.label.lowercased()
+                    if ["week", "7d", "1w"].contains(where: label.contains) { return "1w" }
+                    if ["5h", "hour"].contains(where: label.contains) { return "5h" }
+                    return "unknown"
+
+                }
                 return OpenCodexPoolAccount(id: account.id, label: account.alias ?? account.email ?? account.id,
                     email: email, selected: account.paused != true, needsReauth: account.needsReauth == true || account.health?.status == "reauth_required",
                     range: local.ranges[account.id] ?? OpenCodexPoolRange(),
                     effectiveThreshold: local.enabled ? local.threshold(id: account.id, quota: quota, family: "gemini", now: now) : nil,
                     effectiveClaudeThreshold: local.enabled ? local.threshold(id: account.id, quota: quota, family: "claude", now: now) : nil,
-                    remainingPercent: used.map { 100 - $0 }, isAvailable: account.health == nil || account.health?.status == "healthy")
+                    remainingPercent: used.map { 100 - $0 }, isAvailable: account.health == nil || account.health?.status == "healthy",
+                    dataAgeSeconds: age, quotaIsStale: age.map { $0 > OpenCodexPoolFreshness.freshSeconds || quota?.lastRefreshFailed == true }, limitingWindow: window)
             }, monitoredFamily: family, policyRevision: local.revision,
             managementEnabled: local.managementEnabled, legacyConflict: ownership.hasConflictingWriter(),
             lastSyncAt: local.lastSyncAt, candidates: savedCandidates(excluding: Set(identities.values.compactMap { AccountIdentity.normalizedEmail($0) })),
             lastDecision: try? OpenCodexPoolAudit.read(at: auditURL).last)
+    }
+    /// Metadata-only lookup: never load quotas or confuse the legacy provider with the routing pool.
+    func poolActiveEmail() async throws -> String? {
+        let data = try await request("/api/oauth/accounts?provider=antigravity-pool")
+        let stock = try JSONDecoder().decode(StockAccounts.self, from: data)
+        guard let id = stock.activeAccountId, let account = stock.accounts.first(where: { $0.id == id }), account.paused != true else { return nil }
+        return AccountIdentity.normalizedEmail(identityEmails(provider: "antigravity-pool")[id] ?? account.email)
     }
     func setEnabled(_ enabled: Bool) async throws {
         let lease = try controlLease(); defer { withExtendedLifetime(lease) {} }
@@ -351,6 +390,10 @@ struct OpenCodexPoolDecision: Codable, Equatable, Sendable {
     var previousRange: OpenCodexPoolRange? = nil
     var credentialSyncDeferred = false
     var stage: String? = nil
+    var evalReason: String? = nil
+    var dataAgeSeconds: Double? = nil
+    var quotaIsStale: Bool? = nil
+    var limitingWindow: String? = nil
     var candidates: [Candidate] = []
     struct Candidate: Codable, Equatable, Sendable {
         var id: String
@@ -358,28 +401,50 @@ struct OpenCodexPoolDecision: Codable, Equatable, Sendable {
         var available: Bool
         var remainingPercent: Double?
         var threshold: Int?
+        var dataAgeSeconds: Double? = nil
+        var quotaIsStale: Bool? = nil
+        var limitingWindow: String? = nil
     }
     static func plan(_ pool: OpenCodexPoolSnapshot) -> Self {
         let threshold: (OpenCodexPoolAccount) -> Int? = { pool.monitoredFamily == "claude" ? $0.effectiveClaudeThreshold : $0.effectiveThreshold }
         let active = pool.accounts.first { $0.id == pool.activeAccountId }
         var decision = Self(outcome: .disabled, family: pool.monitoredFamily, activeAccountId: pool.activeAccountId,
-                            remainingPercent: active?.remainingPercent, threshold: active.flatMap(threshold), range: active?.range)
+                            remainingPercent: active?.remainingPercent, threshold: active.flatMap(threshold), range: active?.range,
+                            dataAgeSeconds: active?.dataAgeSeconds, quotaIsStale: active?.quotaIsStale, limitingWindow: active?.limitingWindow)
         decision.candidates = pool.accounts.map { Candidate(id: $0.id, selected: $0.selected,
-            available: $0.isAvailable && !$0.needsReauth, remainingPercent: $0.remainingPercent, threshold: threshold($0)) }
-        guard pool.enabled else { return decision }
+            available: $0.isAvailable && !$0.needsReauth, remainingPercent: $0.remainingPercent, threshold: threshold($0),
+            dataAgeSeconds: $0.dataAgeSeconds, quotaIsStale: $0.quotaIsStale, limitingWindow: $0.limitingWindow) }
+        guard pool.enabled else { decision.evalReason = "Automatic pool rotation is disabled."; return decision }
         if let active, active.selected && !active.needsReauth && active.isAvailable {
-            guard let remaining = active.remainingPercent else { decision.outcome = .activeQuotaUnknown; return decision }
-            guard let limit = threshold(active) else { decision.outcome = .activeThresholdUnknown; return decision }
-            guard remaining <= Double(limit) else { decision.outcome = .aboveThreshold; return decision }
+            guard let remaining = active.remainingPercent, remaining.isFinite, (0...100).contains(remaining) else {
+                decision.outcome = .activeQuotaUnknown
+                decision.evalReason = "Active quota unknown: no identity-confirmed, unexpired window within 900 seconds; data age=" + (active.dataAgeSeconds.map { String(format: "%.0fs", $0) } ?? "unknown") + "."
+                return decision
+            }
+            guard let limit = threshold(active) else {
+                decision.outcome = .activeThresholdUnknown
+                decision.evalReason = String(format: "Active remaining %.2f%%; threshold unknown: no valid cycle identity or range.", remaining)
+                return decision
+            }
+            guard remaining <= Double(limit) else {
+                decision.outcome = .aboveThreshold
+                decision.evalReason = String(format: "Active remaining (%.2f%%) > threshold (%.2f%%), delta=+%.2f%%; window=%@; data=%@.", remaining, Double(limit), remaining - Double(limit), active.limitingWindow ?? "unknown", active.quotaIsStale == true ? "stale" : "fresh")
+                return decision
+            }
         }
         let start = pool.accounts.firstIndex { $0.id == pool.activeAccountId } ?? -1
         let ring = start < 0 ? pool.accounts : Array(pool.accounts.dropFirst(start + 1)) + Array(pool.accounts.prefix(start + 1))
         guard let next = ring.first(where: { account in
-            guard account.id != pool.activeAccountId, account.selected, !account.needsReauth, account.isAvailable,
+            guard account.id != pool.activeAccountId, account.selected, !account.needsReauth, account.isAvailable, account.quotaIsStale != true,
                   let remaining = account.remainingPercent, let limit = threshold(account) else { return false }
-            return remaining > Double(limit)
-        }) else { decision.outcome = .noEligibleTarget; return decision }
+            return remaining.isFinite && remaining <= 100 && remaining > Double(limit)
+        }) else {
+            decision.outcome = .noEligibleTarget
+            decision.evalReason = "No other selected, healthy account has fresh quota above its threshold; stale candidates are excluded."
+            return decision
+        }
         decision.outcome = .candidateChosen; decision.targetAccountId = next.id
+        decision.evalReason = "Selected the next healthy account with fresh headroom; active remaining=" + (active?.remainingPercent.map { String(format: "%.2f%%", $0) } ?? "unknown") + "; threshold=" + (active.flatMap(threshold).map { "\($0)%" } ?? "unknown") + "; active data=" + (active?.quotaIsStale == true ? "stale" : "fresh") + "."
         return decision
     }
 }

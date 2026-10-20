@@ -57,6 +57,7 @@ struct AccountsPageView: View {
             triggerInitialCardEntranceIfNeeded(for: contentAccountCount)
         }
         .task { await model.refreshOnWindowOpen() }
+        .task { await model.observePoolActiveAccount() }
         .onChange(of: model.selectedProvider) { _, _ in
             Task { await model.refreshOnProviderSelection() }
         }

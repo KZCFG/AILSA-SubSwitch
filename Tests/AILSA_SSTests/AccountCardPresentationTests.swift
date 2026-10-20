@@ -2,6 +2,18 @@ import XCTest
 @testable import AILSA_SS
 
 final class AccountCardPresentationTests: XCTestCase {
+    func testPoolActiveBadgeDoesNotDependOnNativeCurrentAndNeverAppearsOnCodex() {
+        var account = AccountSummary(id: "fixture", label: "Pool", email: "pool@example.com", accountID: "different-native-id", planType: nil, teamName: nil, teamAlias: nil, addedAt: 1, updatedAt: 2, usage: nil, usageError: nil, isCurrent: false, provider: .antigravity)
+        func card(_ flag: Bool) -> AccountCardPresentation {
+            AccountCardPresentation(account: account, isCollapsed: false, locale: Locale(identifier: "en"), usageProgressDisplayMode: .used, isPoolActive: flag)
+        }
+        XCTAssertTrue(card(true).isPoolActive); XCTAssertFalse(card(false).isPoolActive)
+        account.isCurrent = true
+        XCTAssertTrue(card(true).isPoolActive)
+        account.provider = .codex
+        XCTAssertFalse(card(true).isPoolActive)
+    }
+
     func testCurrentAccountPaletteUsesOwnAccentForSelectionHighlight() {
         let palette = AccountCardPalette(accent: .orange, isCurrent: true)
 

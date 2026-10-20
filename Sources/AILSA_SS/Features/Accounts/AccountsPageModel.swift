@@ -38,6 +38,8 @@ final class AccountsPageModel: ObservableObject {
     let chooseAuthDocumentURL: (() -> URL?)?
     let onLocalAccountsChanged: (([AccountSummary]) -> Void)?
     let onSettingsUpdated: ((AppSettings) -> Void)?
+    let poolActiveAccountLoader: (@Sendable () async throws -> String?)?
+    @Published var poolActiveEmail: String? = nil
     let runtimePlatform: RuntimePlatform
 
     private let noticeScheduler = NoticeAutoDismissScheduler()
@@ -82,12 +84,14 @@ final class AccountsPageModel: ObservableObject {
         localAccountsMutationSyncService: AccountsLocalMutationSyncServiceProtocol? = nil,
         chooseAuthDocumentURL: (() -> URL?)? = nil,
         runtimePlatform: RuntimePlatform = PlatformCapabilities.currentPlatform,
+        poolActiveAccountLoader: (@Sendable () async throws -> String?)? = nil,
         usageProgressDisplayMode: UsageProgressDisplayMode = .used,
         quotaVisibility: UsageQuotaVisibilityPreferences = .defaultValue,
         onLocalAccountsChanged: (([AccountSummary]) -> Void)? = nil,
         onSettingsUpdated: ((AppSettings) -> Void)? = nil,
         initialAccounts: [AccountSummary]? = nil
     ) {
+        self.poolActiveAccountLoader = poolActiveAccountLoader
         self.coordinator = coordinator
         self.settingsCoordinator = settingsCoordinator
         self.manualRefreshService = manualRefreshService

@@ -1,6 +1,24 @@
 import Foundation
 
 extension AccountsPageModel {
+    func refreshPoolActiveAccount() async {
+        guard runtimePlatform == .macOS, let poolActiveAccountLoader else { return }
+        do {
+            let email = try await poolActiveAccountLoader()
+            guard !Task.isCancelled else { return }
+            poolActiveEmail = AccountIdentity.normalizedEmail(email)
+        } catch {
+            if !Task.isCancelled { poolActiveEmail = nil }
+        }
+    }
+    func observePoolActiveAccount() async {
+        guard runtimePlatform == .macOS, poolActiveAccountLoader != nil else { return }
+        while !Task.isCancelled {
+            await refreshPoolActiveAccount()
+            do { try await Task.sleep(for: .seconds(5)) } catch { return }
+        }
+    }
+
     /// Opening the menu is an explicit freshness boundary. Refresh every
     /// visible local subscription instead of relying on the background policy,
     /// which intentionally prioritizes the active account between reset

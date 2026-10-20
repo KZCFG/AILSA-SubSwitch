@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0(p) — 2026-10-21
+
+- Add a distinct Pool Active account-card badge independent of native sign-in.
+- Extend fresh quota to five minutes and retain marked stale readings up to fifteen minutes; only fresh candidates receive new traffic.
+- Report the limiting 5h/1w window, quota age and exact threshold comparison in pool diagnostics.
+- Preserve old journal compatibility and existing manual order, settings and provider installations.
+
+
 ## 1.0.0(o) — Unreleased
 
 - Add explicit account-pool decision history, exact quota headroom and read-only local diagnostics.

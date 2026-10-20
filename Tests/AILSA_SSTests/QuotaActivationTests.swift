@@ -178,7 +178,7 @@ final class QuotaActivationTests: XCTestCase {
         let restarted = try JSONDecoder().decode(OpenCodexLocalPoolPolicy.self, from: JSONEncoder().encode(policy))
         XCTAssertEqual(restarted.threshold(id: "fixture", quota: quota, family: "gemini", now: now.addingTimeInterval(30)), draw)
         XCTAssertNil(policy.threshold(id: "fixture", quota: quota, family: "claude", now: now))
-        XCTAssertNil(policy.threshold(id: "fixture", quota: quota, family: "gemini", now: now.addingTimeInterval(121)))
+        XCTAssertNil(policy.threshold(id: "fixture", quota: quota, family: "gemini", now: now.addingTimeInterval(901)))
         XCTAssertNil(policy.threshold(id: "fixture", quota: quota, family: "gemini", now: now.addingTimeInterval(-1)))
         var idle = quota
         idle.customWindows![0].percent = 0
@@ -261,7 +261,7 @@ final class QuotaActivationTests: XCTestCase {
         usage.sourceAccountMatched = false
         try save(usage)
         XCTAssertTrue(service.localQuotas().isEmpty)
-        usage.sourceAccountMatched = true; usage.fetchedAt = now - 121
+        usage.sourceAccountMatched = true; usage.fetchedAt = now - 901
         try save(usage)
         XCTAssertTrue(service.localQuotas().isEmpty)
     }

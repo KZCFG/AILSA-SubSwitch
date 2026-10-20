@@ -36,7 +36,8 @@ struct AccountCardViewState: Equatable, Identifiable {
     }
 
     static func == (lhs: AccountCardViewState, rhs: AccountCardViewState) -> Bool {
-        lhs.isCollapsed == rhs.isCollapsed
+        lhs.presentation.isPoolActive == rhs.presentation.isPoolActive
+            && lhs.isCollapsed == rhs.isCollapsed
             && lhs.switching == rhs.switching
             && lhs.refreshing == rhs.refreshing
             && lhs.showsRefreshButton == rhs.showsRefreshButton
@@ -157,7 +158,8 @@ extension AccountsPageModel {
                 locale: locale,
                 usageProgressDisplayMode: usageProgressDisplayMode,
                 quotaVisibility: quotaVisibilityPreferences,
-                isRefreshing: isUsageRefreshActive
+                isRefreshing: isUsageRefreshActive,
+                isPoolActive: poolActiveEmail != nil && account.provider == .antigravity && AccountIdentity.normalizedEmail(account.email) == poolActiveEmail
             ),
             isCollapsed: isCollapsed,
             switching: switchingAccountID == account.id,

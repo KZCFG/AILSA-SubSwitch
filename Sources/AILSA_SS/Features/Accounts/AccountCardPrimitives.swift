@@ -89,6 +89,13 @@ struct AccountCardHeaderSection: View {
                             foregroundColor: palette.toneColor
                         )
                     }
+                    if presentation.isPoolActive {
+                        AccountTagView(
+                            text: L10n.tr("accounts.card.pool_active"),
+                            backgroundColor: Color.blue.opacity(0.18),
+                            foregroundColor: .blue
+                        )
+                    }
                     if let teamNameTag = presentation.teamNameTag {
                         AccountTagView(
                             text: teamNameTag,

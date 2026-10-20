@@ -254,3 +254,10 @@ For local maintenance, run the application's executable with `--pool-control sta
 Settings → Account pool shows the last completed rotation decision separately from credential-sync time. The current model-family remainder is displayed to two decimals; it is the smaller remaining allowance across five-hour and weekly windows. Threshold decisions retain full precision. For example, 3.0685% is above a 3% threshold even if an account card rounds it to 3%.
 
 A local bounded journal keeps the last 512 decisions and explicit selection/range changes. It contains numeric control metadata and account IDs, not credentials, email addresses or request contents. Run the application executable with `--pool-control diagnose` for read-only diagnostic history. Credential-sync failures are reported separately and do not block rotation between already healthy provider accounts with fresh verified quota. A successful selection is confirmed through provider readback. Existing requests continue on their original account until completion or cancellation; automatic account selection does not replay them.
+
+
+### Pool selection badges and quota freshness
+
+Antigravity cards distinguish the native desktop **Current** account from the blue **Pool Active** account used by the OpenCodex routing pool. These identities can differ, and the same card can carry both badges. Pool metadata is checked while the account page is visible; a failed metadata lookup clears the pool badge instead of presenting a cached selection as current.
+
+Identity-confirmed quota is fresh for 300 seconds. A last confirmed reading up to 900 seconds old remains visible and is marked stale. A recent failed quota refresh also marks that reading stale. Stale active-account data can trigger departure at its existing threshold, but stale accounts cannot be chosen as replacement targets. Unknown, future-dated, expired-window or older readings cannot provide headroom. The limiting 5h/1w window, data age and precise decision reason are included in the protected local diagnostic journal.

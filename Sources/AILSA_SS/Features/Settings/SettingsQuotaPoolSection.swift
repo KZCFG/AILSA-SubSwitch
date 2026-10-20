@@ -81,6 +81,11 @@ private struct SettingsPoolDecisionView: View {
                     decision.remainingPercent.map { String(format: "%.2f%%", $0) } ?? "—",
                     decision.threshold.map { "\($0)%" } ?? "—")).foregroundStyle(.secondary)
             }
+            if let age = decision.dataAgeSeconds, let window = decision.limitingWindow {
+                Text(L10n.tr("settings.pool.data_status", window, String(format: "%.0f", age),
+                    L10n.tr(decision.quotaIsStale == true ? "settings.pool.data_stale" : "settings.pool.data_fresh")))
+                    .foregroundStyle(decision.quotaIsStale == true ? Color.orange : Color.secondary)
+            }
             if let stage = decision.stage {
                 let stageKey = "settings.pool.stage." + stage
                 Text(L10n.tr(stageKey)).foregroundStyle(.secondary)
@@ -129,6 +134,11 @@ private struct SettingsQuotaPoolAccountRow: View {
                 Text(L10n.tr("settings.pool.precise_remaining", family == "claude" ? "Claude" : "Gemini", String(format: "%.2f%%", remaining)))
                     .help(L10n.tr("settings.pool.precise_remaining_help"))
                     .font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+            if let age = account.dataAgeSeconds, let window = account.limitingWindow {
+                Text(L10n.tr("settings.pool.data_status", window, String(format: "%.0f", age),
+                    L10n.tr(account.quotaIsStale == true ? "settings.pool.data_stale" : "settings.pool.data_fresh")))
+                    .font(.system(size: 11)).foregroundStyle(account.quotaIsStale == true ? Color.orange : Color.secondary)
             }
             if let threshold = account.effectiveClaudeThreshold {
                 Text(L10n.tr("settings.pool.claude_threshold", threshold)).font(.system(size: 11)).foregroundStyle(.secondary)
