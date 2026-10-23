@@ -15,6 +15,7 @@ enum QuotaPricingProvenanceText {
         case .verifiedCatalog: label = qtext("已确认档位依据：已审计定价目录", "Confirmed-tier basis: audited pricing catalog")
         case .modelsDevCache: label = qtext("参考价依据：models.dev 本地缓存", "Reference basis: models.dev local cache")
         case .vendorReported: label = qtext("金额依据：供应商用量接口报告", "Amount basis: vendor usage API")
+        case .claudeLocalReference: label = qtext("等效金额依据：Claude 官方 API 价格 · 本地日志", "Equivalent cost: Claude API rates · local logs")
         }
         guard let date = item.auditDate else { return label + qtext("（无核对日期）", " (no verification date)") }
         return label + qtext("（核对日期 \(date)）", " (checked \(date))")
@@ -180,10 +181,10 @@ struct QuotaManagementPageView: View {
             selection: Binding(get: { selectedProvider }, set: { selectedProvider = $0 }),
             values: QuotaManagementProvider.allCases,
             title: { provider in
-                switch provider { case .codex: "Codex"; case .antigravity: "Antigravity"; case .cursor: "Cursor" }
+                switch provider { case .codex: "Codex"; case .antigravity: "Antigravity"; case .cursor: "Cursor"; case .claude: "Claude" }
             },
             icon: { provider in
-                switch provider { case .codex: "terminal"; case .antigravity: "sparkles"; case .cursor: "cube" }
+                switch provider { case .codex: "terminal"; case .antigravity: "sparkles"; case .cursor: "cube"; case .claude: "asterisk" }
             })
     }
 }
@@ -312,6 +313,10 @@ struct QuotaDashboard: View {
                 Text(qtext("当前账号的历史快照；每日仅保留刷新时最后一次记录，不等于当日实际消耗。", "History for the active account; one final refresh snapshot per day, not daily consumption.")).font(.caption2).foregroundStyle(.secondary)
                 quotaContent(layout: layout)
             } else {
+                if provider == .claude {
+                    Text(qtext("仅统计本机 Claude App 的 Code 日志；不查询在线额度。等效 API 金额不是订阅账单。", "Local Claude App Code logs only; no online quota queries. API equivalence is not your subscription bill."))
+                        .font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
                 HStack(spacing: 10) {
                     kpi(qtext("Token 词元消耗", "Token usage"), value: bucket.total.reported > 0 ? qtokens(bucket.total.tokens.total) : "—", detail: qtext("输入", "In") + " " + qtokens(bucket.total.tokens.input) + " · " + qtext("输出", "Out") + " " + qtokens(bucket.total.tokens.output))
                     kpi(qtext("等效 API 消费金额（美元）", "Equivalent API consumption (USD)"), value: qmoney(bucket.total.reference), detail: nil)

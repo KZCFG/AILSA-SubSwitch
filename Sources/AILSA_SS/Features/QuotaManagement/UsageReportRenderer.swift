@@ -30,7 +30,7 @@ struct UsageReportPoster: View {
     }
     private var title: String {
         report.request.period == .daily ? date(report.interval.start)
-            : date(report.interval.start, compact: true) + " — " + date(report.request.endingOn)
+            : date(report.interval.start, compact: Calendar.current.component(.year, from: report.interval.start) == Calendar.current.component(.year, from: report.request.endingOn)) + " — " + date(report.request.endingOn)
     }
     private var timeLabel: String {
         let f = DateFormatter(); f.dateFormat = "ZZZZ"; f.locale = Locale(identifier: "en_US")
@@ -57,7 +57,7 @@ struct UsageReportPoster: View {
                     .font(.system(size: 10, weight: .semibold, design: .monospaced)).tracking(1.3).foregroundStyle(muted)
             }
             VStack(alignment: .leading, spacing: 10) {
-                Label(report.request.providerName + text(" 用量", " usage"), systemImage: report.request.provider == .cursor ? "cube" : "terminal")
+                Label(report.request.providerName + text(" 用量", " usage"), systemImage: report.request.provider == .cursor ? "cube" : report.request.provider == .claude ? "asterisk" : "terminal")
                     .font(.system(size: 15, weight: .semibold))
                 HStack(alignment: .firstTextBaseline) {
                     Text(title).font(.system(size: report.request.period == .daily ? 31 : 25, weight: .bold))
@@ -110,7 +110,7 @@ struct UsageReportPoster: View {
                     Text(metric == .tokens ? text("Token 用量走势", "Token usage over time") : text("等效 API 金额走势", "Equivalent API cost over time"))
                         .font(.system(size: 16, weight: .semibold))
                     Spacer()
-                    Text(report.request.period == .daily ? text("每 30 分钟合计", "30-minute totals") : text("每日合计", "Daily totals"))
+                    Text(report.request.period == .daily ? text("每 30 分钟合计", "30-minute totals") : report.request.period.chartGroupDays > 1 ? text("每周合计", "Weekly totals") : text("每日合计", "Daily totals"))
                         .font(.system(size: 12)).foregroundStyle(muted)
                 }
                 chart.frame(height: 218)
@@ -120,7 +120,7 @@ struct UsageReportPoster: View {
                 Text(text("金额按可核算记录计算；未定价或字段矛盾的记录不估算金额。", "Amounts cover priced records only. Unpriced or inconsistent records are not estimated."))
                     .fixedSize(horizontal: false, vertical: true)
                 HStack {
-                    Text(text("本地真实用量 · 账号与个人信息已移除", "Local usage · Accounts and personal details omitted"))
+                    Text(text("仅含可用记录 · 账号与个人信息已移除", "Available records only · Accounts and personal details omitted"))
                     Spacer()
                     Text("AILSA SubSwitch").fontWeight(.medium)
                 }
@@ -131,21 +131,21 @@ struct UsageReportPoster: View {
     }
     private var chart: some View {
         let divisor = metric == .tokens ? (tokenUnit == "B" ? 1e9 : 1e6) : 1
-        let step = report.request.period == .daily ? 1800.0 : 86400
         return Chart(report.points) { point in
             // An empty interval is zero usage; a recorded but unpriced
             // interval remains a gap in a USD chart.
             let amount = point.value.requests == 0 ? 0 : metric.value(in: point.value)
             if let amount {
-                BarMark(x: .value("Time", point.date.addingTimeInterval(step / 2)), y: .value("Usage", amount / divisor),
-                        width: .fixed(report.request.period == .daily ? 9 : report.request.period == .weekly ? 46 : 13))
+                let end = report.request.period == .daily ? point.date.addingTimeInterval(1800)
+                    : min(Calendar.current.date(byAdding: .day, value: report.request.period.chartGroupDays, to: point.date)!, report.interval.end)
+                BarMark(x: .value("Time", point.date.addingTimeInterval(end.timeIntervalSince(point.date) / 2)), y: .value("Usage", amount / divisor), width: .fixed(max(1, min(46, 620 / Double(max(1, report.points.count)) * 0.78))))
                     .foregroundStyle(Color.indigo).cornerRadius(2)
             }
         }
         .chartXScale(domain: report.interval.start...report.interval.end)
         .chartXAxis {
             AxisMarks(values: .stride(by: report.request.period == .daily ? .hour : .day,
-                                      count: report.request.period == .daily ? 6 : report.request.period == .weekly ? 1 : 7)) { value in
+                                      count: report.request.period == .daily ? 6 : max(1, report.request.period.days / 5))) { value in
                 AxisValueLabel {
                     if let d = value.as(Date.self) {
                         Text(report.request.period == .daily ? clockLabel(d) : date(d, compact: true)).font(.system(size: 11))

@@ -257,7 +257,7 @@ final class QuotaManagementPageModel: ObservableObject {
         // minute buckets, even when exporting yesterday or an older date.
         let anchor = min(now, request.interval().end.addingTimeInterval(-0.001))
         let snapshot = try await Task.detached(priority: .userInitiated) {
-            try await service.loadDashboard(for: request.provider, now: anchor)
+            try await service.loadReportSnapshot(for: request.provider, historyDays: request.period.days, now: anchor)
         }.value
         return UsageReport.build(snapshot: snapshot, request: request, now: now)
     }

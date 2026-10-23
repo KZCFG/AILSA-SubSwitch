@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0(r) — 2026-10-23
+
+- Add offline Claude Desktop Code Token/API-equivalent USD accounting without Claude quota polling.
+- Add 60-day, 90-day and 365-day usage-image exports, full-range history loading and weekly annual trends.
+- Preserve available-history limits, stream deduplication and cache-aware per-request pricing.
+
+
 ## 1.0.0(p) — 2026-10-21
 
 - Add a distinct Pool Active account-card badge independent of native sign-in.

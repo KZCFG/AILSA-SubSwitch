@@ -261,3 +261,19 @@ A local bounded journal keeps the last 512 decisions and explicit selection/rang
 Antigravity cards distinguish the native desktop **Current** account from the blue **Pool Active** account used by the OpenCodex routing pool. These identities can differ, and the same card can carry both badges. Pool metadata is checked while the account page is visible; a failed metadata lookup clears the pool badge instead of presenting a cached selection as current.
 
 Identity-confirmed quota is fresh for 300 seconds. A last confirmed reading up to 900 seconds old remains visible and is marked stale. A recent failed quota refresh also marks that reading stale. Stale active-account data can trigger departure at its existing threshold, but stale accounts cannot be chosen as replacement targets. Unknown, future-dated, expired-window or older readings cannot provide headroom. The limiting 5h/1w window, data age and precise decision reason are included in the protected local diagnostic journal.
+
+
+## Claude local usage and longer reports
+
+Choose **Usage → Claude** for local Claude Desktop **Code-mode** usage. Token
+counts come from locally recorded assistant usage, with streamed repeats
+deduplicated. API-equivalent USD includes supported cache lifetimes and pricing
+modifiers; it is not a Claude subscription bill. This feature never queries
+Claude online quota and does not require a login, API key or Keychain access.
+Ordinary Chat sessions and activity missing from local logs are not included.
+
+The share dialog supports **Daily**, **7 days**, **30 days**, **60 days**,
+**90 days** and **Year (365 days)**, ending on your selected date. Annual
+trends group by week; all other multi-day reports use days. Totals always cover
+the entire selected interval. Only available records are included; selecting a
+year does not recreate deleted or never-recorded history.

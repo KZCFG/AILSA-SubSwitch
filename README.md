@@ -4,7 +4,7 @@
 
 <h1 align="center">AILSA SubSwitch</h1>
 <p align="center"><strong>Weekly usage at a glance. Switch accounts in a click.</strong></p>
-<p align="center">A native macOS menu bar app for Codex, Antigravity, and Cursor.</p>
+<p align="center">A native macOS menu bar app for Codex, Antigravity, and Cursor, with offline Claude Code usage analytics.</p>
 <p align="center">
   <img alt="macOS 14 or later" src="https://img.shields.io/badge/macOS-14%2B-111111">
   <img alt="Apple Silicon" src="https://img.shields.io/badge/Apple_Silicon-arm64-6554FF">
@@ -49,9 +49,13 @@ preserved in this repository.
 - **Understand reference costs.** Read token records from local Codex sessions
   or the OpenCodex ledger, including supported non-OpenAI routes. Keep API
   reference estimates separate from provider-reported amounts and billing.
+- **Read Claude usage locally.** Inspect Claude Desktop Code Token and API-equivalent USD usage from local logs. No Claude quota polling or account credentials are required.
+- **Share a longer view.** Export daily, 7-day, 30-day, 60-day, 90-day and rolling 365-day usage images. Annual trends group by week; missing history is never reconstructed.
 - **Make it yours.** Choose M/B token units, visible usage windows, restart
   behavior after switching, and the interface language. Open usage in its own
   window when you need more room.
+
+**1.0.0(r)** adds offline Claude usage and longer usage-image exports. See the [release notes](docs/RELEASE-1.0.0r.md).
 
 ### Provider support
 

@@ -1,14 +1,20 @@
 import Foundation
 
 enum UsageReportPeriod: String, CaseIterable, Identifiable, Sendable {
-    case daily, weekly, monthly
+    case daily, weekly, monthly, sixtyDays = "60-days", ninetyDays = "90-days", yearly
     var id: String { rawValue }
-    var days: Int { self == .daily ? 1 : self == .weekly ? 7 : 30 }
+    var days: Int {
+        switch self { case .daily: 1; case .weekly: 7; case .monthly: 30; case .sixtyDays: 60; case .ninetyDays: 90; case .yearly: 365 }
+    }
+    var chartGroupDays: Int { days > 90 ? 7 : 1 }
     var title: String {
         switch self {
         case .daily: return UsageReportText.text("日报", "Daily")
         case .weekly: return UsageReportText.text("周报 · 7 天", "Weekly · 7 days")
         case .monthly: return UsageReportText.text("月报 · 30 天", "Monthly · 30 days")
+        case .sixtyDays: return UsageReportText.text("60 天", "60 days")
+        case .ninetyDays: return UsageReportText.text("90 天", "90 days")
+        case .yearly: return UsageReportText.text("一年 · 365 天", "Year · 365 days")
         }
     }
 }
@@ -32,7 +38,7 @@ struct UsageReportRequest: Equatable, Sendable {
     }
 
     var providerName: String {
-        switch provider { case .codex: "Codex"; case .cursor: "Cursor"; case .antigravity: "Antigravity" }
+        switch provider { case .codex: "Codex"; case .cursor: "Cursor"; case .antigravity: "Antigravity"; case .claude: "Claude" }
     }
     func filename(calendar: Calendar = .current) -> String {
         let range = interval(calendar: calendar)
@@ -95,7 +101,7 @@ struct UsageReport: Sendable {
         var cursor = interval.start
         while cursor < interval.end && cursor <= now {
             let next = request.period == .daily ? cursor.addingTimeInterval(1800)
-                : calendar.date(byAdding: .day, value: 1, to: cursor)!
+                : min(calendar.date(byAdding: .day, value: request.period.chartGroupDays, to: cursor)!, interval.end)
             let value = request.period == .daily
                 ? snapshot.intradayBucket(from: cursor, intervalMinutes: 30).total
                 : snapshot.bucket(from: cursor, until: next).total

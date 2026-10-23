@@ -58,9 +58,9 @@ struct OpenCodexIncrementalLedger: Sendable {
         try readFile(url: url, catalogURL: catalogURL, compact: false)
         return reader!.result(state: state)
     }
-    mutating func snapshot(url: URL, catalogURL: URL?, now: Date) throws -> QuotaDashboardSnapshot {
+    mutating func snapshot(url: URL, catalogURL: URL?, now: Date, historyDays: Int = 30) throws -> QuotaDashboardSnapshot {
         try readFile(url: url, catalogURL: catalogURL, compact: true)
-        return QuotaDashboardSnapshot.compact(contributions.values, discarded: state.duplicateRowsDiscarded, now: now, pricingProvenance: reader?.pricingProvenance ?? [])
+        return QuotaDashboardSnapshot.compact(contributions.values, discarded: state.duplicateRowsDiscarded, now: now, pricingProvenance: reader?.pricingProvenance ?? [], historyDays: historyDays)
     }
     private mutating func readFile(url: URL, catalogURL: URL?, compact: Bool) throws {
         let handle = try FileHandle(forReadingFrom: url)

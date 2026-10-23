@@ -25,6 +25,19 @@ stored in local profile files, not exclusively in Keychain. Cursor profile and
 recovery files are written with owner-only permissions. Treat backups of this
 directory as sensitive.
 
+## Claude local usage
+
+The Claude usage tab is offline-only. It reads the Desktop Code session index
+under `~/Library/Application Support/Claude/claude-code-sessions/` and matching
+usage metadata under `~/.claude/projects/`. Source logs may contain conversations;
+only model, timestamp, request identity and numeric usage projections are retained.
+Do not share complete source logs. Ordinary Claude Chat usage is not included.
+
+This feature does not read Claude cookies, authentication files or Keychain
+items, contact a Claude quota or usage endpoint, or send model requests. Opening,
+refreshing and exporting this tab re-read local metadata only. Official public
+API rates ship with the application; no pricing request runs during normal use.
+
 ## Network behavior
 
 The integrations use provider authentication and usage endpoints (including

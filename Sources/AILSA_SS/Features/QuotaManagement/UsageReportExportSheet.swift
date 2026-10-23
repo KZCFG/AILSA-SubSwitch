@@ -32,10 +32,12 @@ struct UsageReportExportSheet: View {
         VStack(alignment: .leading, spacing: 20) {
             Label(UsageReportText.text("导出用量图", "Export usage image"), systemImage: "square.and.arrow.up")
                 .font(.title3.bold())
-            ASSegmentedControl(selection: $period, values: UsageReportPeriod.allCases, title: { $0.title })
-                .accessibilityLabel(UsageReportText.text("周期", "Period"))
+            VStack(spacing: 6) {
+                ASSegmentedControl(selection: $period, values: [.daily, .weekly, .monthly], title: { $0.title })
+                ASSegmentedControl(selection: $period, values: [.sixtyDays, .ninetyDays, .yearly], title: { $0.title })
+            }.accessibilityLabel(UsageReportText.text("周期", "Period"))
             DatePicker(UsageReportText.text("截止日期", "Ending on"), selection: $endingOn, in: ...Date(), displayedComponents: .date)
-            Text(UsageReportText.text("日报统计所选日期；周报和月报统计截至该日的 7 天和 30 天。图片包含用量、模型明细和趋势，不含账号或聊天内容。", "Daily covers the selected date. Weekly and monthly cover the 7 and 30 days ending on that date. Images include usage, models and trends, without accounts or conversations."))
+            Text(UsageReportText.text("统计截至所选日期的 1、7、30、60、90 或 365 天。一年趋势按周汇总，其余长周期按天显示。仅使用已有记录，缺失历史不会补造；图片不含账号或聊天内容。", "Covers 1, 7, 30, 60, 90 or 365 days ending on the selected date. Annual trends group by week; other multi-day trends show days. Only available records are included; missing history is never reconstructed. No accounts or conversations are exported."))
                 .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             if let errorMessage { Text(errorMessage).font(.caption).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true) }
             HStack {

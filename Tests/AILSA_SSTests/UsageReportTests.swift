@@ -22,6 +22,54 @@ final class UsageReportTests: XCTestCase {
         let month = UsageReportRequest(provider: .cursor, period: .monthly, endingOn: end)
         XCTAssertEqual(month.interval(calendar: calendar).start, date("2026-08-29T00:00:00Z"))
     }
+    func testLongRangesAndAnnualWeeklyPointsPreserveEveryDayAndBoundary() {
+        let last = date("2026-10-22T00:00:00Z")
+        for period in [UsageReportPeriod.sixtyDays, .ninetyDays, .yearly] {
+            let request = UsageReportRequest(provider: .claude, period: period, endingOn: last)
+            let interval = request.interval(calendar: calendar)
+            XCTAssertEqual(calendar.dateComponents([.day], from: interval.start, to: interval.end).day, period.days)
+            XCTAssertTrue(request.filename(calendar: calendar).hasPrefix("AILSA-SubSwitch-Claude-"))
+            var days: [Date: QuotaBucket] = [:]
+            for offset in 0..<period.days {
+                var bucket = QuotaBucket(); bucket.add(value(10, price: 100), key: .init(provider: "Claude", model: "claude-opus-5-5"))
+                days[calendar.date(byAdding: .day, value: offset, to: interval.start)!] = bucket
+            }
+            let report = UsageReport.build(snapshot: snapshot(days: days), request: request,
+                now: interval.end, calendar: calendar)
+            XCTAssertEqual(report.total.tokens.total, period.days * 10)
+            XCTAssertEqual(report.points.reduce(0) { $0 + $1.value.tokens.total }, report.total.tokens.total)
+            XCTAssertEqual(report.points.reduce(0) { $0 + $1.value.reference.pico }, report.total.reference.pico)
+            XCTAssertEqual(report.points.count, period == .yearly ? 53 : period.days)
+        }
+    }
+    @MainActor func testLongExportLoadsHistoryBeyondThirtyDaysWithoutReplacingDashboard() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let now = date("2026-10-22T12:00:00Z"), ledger = root.appendingPathComponent("usage.jsonl")
+        let offsets = [0, 45, 75, 300, 365]
+        let rows = try offsets.map { offset -> String in
+            let timestamp = calendar.date(byAdding: .day, value: -offset, to: now)!.timeIntervalSince1970 * 1000
+            let row: [String: Any] = ["requestId": "day-\(offset)", "timestamp": timestamp,
+                "provider": "openai", "resolvedModel": "gpt-6-sol", "usageStatus": "reported",
+                "usage": ["inputTokens": 100, "outputTokens": 10, "cachedInputTokens": 0]]
+            return String(decoding: try JSONSerialization.data(withJSONObject: row), as: UTF8.self)
+        }
+        try Data((rows.joined(separator: "\n") + "\n").utf8).write(to: ledger)
+        let absent = root.appendingPathComponent("absent")
+        let paths = QuotaManagementDataPaths(codexSessionsDirectory: absent,
+            codexArchivedSessionsDirectory: absent, codexBarPricingCatalogURL: absent,
+            opencodexUsageLedgerURL: ledger, antigravityQuotaHistoryURL: absent, antigravityInfoPlistURL: absent)
+        let model = QuotaManagementPageModel(usageService: LocalQuotaManagementUsageService(paths: paths), dateProvider: { now })
+        for (period, count) in [(UsageReportPeriod.sixtyDays, 2), (.ninetyDays, 3), (.yearly, 4)] {
+            let report = try await model.makeUsageReport(.init(provider: .codex, period: period, endingOn: now))
+            XCTAssertEqual(report.total.tokens.total, count * 110)
+            XCTAssertEqual(report.points.reduce(0) { $0 + $1.value.tokens.total }, count * 110)
+        }
+        XCTAssertTrue(model.dashboards.isEmpty)
+        await model.loadDashboard(for: .codex)
+        XCTAssertEqual(model.dashboards[.codex]?.days.count, 1, "Normal navigation remains a 30-day dashboard")
+    }
     func testDailyRangeUsesCalendarAcrossDST() {
         var c = calendar; c.timeZone = TimeZone(identifier: "America/Los_Angeles")!
         let request = UsageReportRequest(provider: .codex, period: .daily, endingOn: date("2026-03-08T12:00:00Z"))

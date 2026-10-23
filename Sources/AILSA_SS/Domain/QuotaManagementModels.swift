@@ -60,6 +60,7 @@ enum QuotaManagementProvider: String, CaseIterable, Identifiable, Sendable {
     case codex
     case antigravity
     case cursor
+    case claude
 
     var id: String { rawValue }
 
@@ -70,6 +71,7 @@ enum QuotaManagementProvider: String, CaseIterable, Identifiable, Sendable {
         case .antigravity:
             "accounts.provider.antigravity"
         case .cursor: "Cursor"
+        case .claude: "Claude"
         }
     }
 }
@@ -458,6 +460,7 @@ enum QuotaManagementData: Equatable, Sendable {
     /// legacy Codex-session fallback, so the two sources can never be summed.
     case openCodex(OpenCodexLedgerAnalytics)
     case antigravity(AntigravityUsageAnalytics)
+    case claude(ClaudeLocalUsageAnalytics)
 }
 
 // Compact presentation data. No request IDs or per-request records reach SwiftUI.
@@ -532,6 +535,7 @@ struct QuotaModelKey: Hashable, Sendable {
     /// Presentation grouping only. Monetary values remain the sum of each
     /// record's independently audited price; never reprice an entire family.
     var familyKey: Self {
+        if provider == "Claude" { return Self(provider: provider, model: ClaudeLocalPricing.displayName(model)) }
         let name = model.lowercased().replacingOccurrences(of: "_", with: "-")
         if name == "gpt-6.1-sol" { return Self(provider: provider, model: "GPT-6.1 Sol") }
         if name == "kimi-for-coding" { return Self(provider: provider, model: "Kimi K2.8 Preview") }
@@ -577,6 +581,8 @@ struct QuotaPricingProvenance: Hashable, Sendable {
         case modelsDevCache
         /// Amounts reported by the vendor's usage API (Cursor).
         case vendorReported
+        /// Bundled Claude API rates applied only to local Desktop Code logs.
+        case claudeLocalReference
     }
     let basis: Basis
     /// ISO `yyyy-MM-dd`; nil when the source carries no verification date.
@@ -598,10 +604,10 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
     var quotaTrends: [String: [Date: Double]] = [:]
     var pricingProvenance: [QuotaPricingProvenance] = []
 
-    static func build(_ data: QuotaManagementData, now: Date, calendar: Calendar = .current) -> Self {
+    static func build(_ data: QuotaManagementData, now: Date, calendar: Calendar = .current, historyDays: Int = 30) -> Self {
         let started = Date()
         let today = calendar.startOfDay(for: now)
-        let start = calendar.date(byAdding: .day, value: -29, to: today)!
+        let start = calendar.date(byAdding: .day, value: -(min(max(historyDays, 1), 365) - 1), to: today)!
         let end = calendar.date(byAdding: .day, value: 1, to: today)!
         var days: [Date: QuotaBucket] = [:]
         var all = QuotaAggregate()
@@ -622,6 +628,8 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
             days[day, default: QuotaBucket()].add(value, key: key)
         }
         switch data {
+        case .claude(let data):
+            return data.snapshot(now: now, historyDays: historyDays)
         case .openCodex(let data):
             scanned = data.scannedAt; source = "OpenCodex"
             discarded = data.coverage.ledgerDuplicateRowsDiscarded
@@ -713,10 +721,10 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
         }
         return QuotaContribution(minute: Date(timeIntervalSince1970: floor(record.occurredAt.timeIntervalSince1970 / 60) * 60), day: Calendar.current.startOfDay(for: record.occurredAt), key: resolved ? QuotaModelKey(provider: record.routeProvider ?? "", model: record.resolvedModel ?? "") : .unknown, value: value)
     }
-    static func compact(_ entries: Dictionary<String, QuotaContribution>.Values, discarded: Int, now: Date, pricingProvenance: [QuotaPricingProvenance] = []) -> Self {
+    static func compact(_ entries: Dictionary<String, QuotaContribution>.Values, discarded: Int, now: Date, pricingProvenance: [QuotaPricingProvenance] = [], source: String = "OpenCodex", historyDays: Int = 30) -> Self {
         let started = Date(), calendar = Calendar.current
         let today = calendar.startOfDay(for: now)
-        let start = calendar.date(byAdding: .day, value: -29, to: today)!
+        let start = calendar.date(byAdding: .day, value: -(min(max(historyDays, 1), 365) - 1), to: today)!
         let end = calendar.date(byAdding: .day, value: 1, to: today)!
         var days: [Date: QuotaBucket] = [:], all = QuotaAggregate()
         var minutes: [Date: Int] = [:]
@@ -732,7 +740,7 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
                 days[day, default: QuotaBucket()].add(entry.value, key: entry.key)
             }
         }
-        return Self(scannedAt: Date(), days: days, all: all, source: "OpenCodex", pricingSources: [], discardedRows: discarded, quotaWindows: [], quotaTrend: [:], buildMilliseconds: Date().timeIntervalSince(started) * 1000, minuteTokens: minutes, minuteBuckets: minuteBuckets, pricingProvenance: pricingProvenance)
+        return Self(scannedAt: Date(), days: days, all: all, source: source, pricingSources: [], discardedRows: discarded, quotaWindows: [], quotaTrend: [:], buildMilliseconds: Date().timeIntervalSince(started) * 1000, minuteTokens: minutes, minuteBuckets: minuteBuckets, pricingProvenance: pricingProvenance)
     }
     func bucket(from start: Date, until end: Date) -> QuotaBucket {
         var result = QuotaBucket()

@@ -2,6 +2,7 @@ import Foundation
 
 protocol QuotaManagementUsageServiceProtocol: Sendable {
     func loadDashboard(for provider: QuotaManagementProvider, now: Date) async throws -> QuotaDashboardSnapshot
+    func loadReportSnapshot(for provider: QuotaManagementProvider, historyDays: Int, now: Date) async throws -> QuotaDashboardSnapshot
     func loadData(
         for provider: QuotaManagementProvider,
         historyDays: Int,
@@ -10,6 +11,9 @@ protocol QuotaManagementUsageServiceProtocol: Sendable {
 }
 
 extension QuotaManagementUsageServiceProtocol {
+    func loadReportSnapshot(for provider: QuotaManagementProvider, historyDays: Int, now: Date) async throws -> QuotaDashboardSnapshot {
+        QuotaDashboardSnapshot.build(try await loadData(for: provider, historyDays: historyDays, now: now), now: now, historyDays: historyDays)
+    }
     func loadDashboard(for provider: QuotaManagementProvider, now: Date) async throws -> QuotaDashboardSnapshot {
         QuotaDashboardSnapshot.build(try await loadData(for: provider, historyDays: 30, now: now), now: now)
     }
@@ -29,6 +33,8 @@ struct QuotaManagementDataPaths: Equatable, Sendable {
     var opencodexVerifiedPricingCatalogURL: URL? = nil
     var antigravityQuotaHistoryURL: URL
     var antigravityInfoPlistURL: URL
+    var claudeDesktopSessionsDirectory: URL? = nil
+    var claudeProjectsDirectory: URL? = nil
 
     static func live(fileManager: FileManager = .default) -> QuotaManagementDataPaths {
         let homeDirectory = fileManager.homeDirectoryForCurrentUser
@@ -56,7 +62,9 @@ struct QuotaManagementDataPaths: Equatable, Sendable {
             antigravityInfoPlistURL: URL(
                 fileURLWithPath: "/Applications/Antigravity.app/Contents/Info.plist",
                 isDirectory: false
-            )
+            ),
+            claudeDesktopSessionsDirectory: homeDirectory.appendingPathComponent("Library/Application Support/Claude/claude-code-sessions"),
+            claudeProjectsDirectory: homeDirectory.appendingPathComponent(".claude/projects")
         )
     }
 }
@@ -68,17 +76,29 @@ struct QuotaManagementDataPaths: Equatable, Sendable {
 actor LocalQuotaManagementUsageService: QuotaManagementUsageServiceProtocol {
     private let paths: QuotaManagementDataPaths
     private var incrementalLedger = OpenCodexIncrementalLedger()
+    private var claudeUsageReader = ClaudeLocalUsageReader()
 
     init(paths: QuotaManagementDataPaths = .live()) {
         self.paths = paths
     }
 
     func loadDashboard(for provider: QuotaManagementProvider, now: Date) async throws -> QuotaDashboardSnapshot {
+        try await loadSnapshot(for: provider, historyDays: 30, now: now)
+    }
+    func loadReportSnapshot(for provider: QuotaManagementProvider, historyDays: Int, now: Date) async throws -> QuotaDashboardSnapshot {
+        if provider == .cursor { return try await CursorUsageService.shared.dashboard(now: now, historyDays: historyDays, forReport: true) }
+        return try await loadSnapshot(for: provider, historyDays: min(max(historyDays, 1), 365), now: now)
+    }
+    private func loadSnapshot(for provider: QuotaManagementProvider, historyDays: Int, now: Date) async throws -> QuotaDashboardSnapshot {
+        if provider == .claude {
+            return try claudeUsageReader.read(sessionsDirectory: paths.claudeDesktopSessionsDirectory,
+                projectsDirectory: paths.claudeProjectsDirectory).snapshot(now: now, historyDays: historyDays)
+        }
         if provider == .cursor { return try await CursorUsageService.shared.dashboard(now: now) }
         if provider == .codex, FileManager.default.fileExists(atPath: paths.opencodexUsageLedgerURL.path) {
-            return try incrementalLedger.snapshot(url: paths.opencodexUsageLedgerURL, catalogURL: paths.opencodexVerifiedPricingCatalogURL, now: now)
+            return try incrementalLedger.snapshot(url: paths.opencodexUsageLedgerURL, catalogURL: paths.opencodexVerifiedPricingCatalogURL, now: now, historyDays: historyDays)
         }
-        return QuotaDashboardSnapshot.build(try await loadData(for: provider, historyDays: 30, now: now), now: now)
+        return QuotaDashboardSnapshot.build(try await loadData(for: provider, historyDays: historyDays, now: now), now: now, historyDays: historyDays)
     }
 
     func loadData(
@@ -87,6 +107,8 @@ actor LocalQuotaManagementUsageService: QuotaManagementUsageServiceProtocol {
         now: Date = Date()
     ) async throws -> QuotaManagementData {
         switch provider {
+        case .claude:
+            return .claude(try claudeUsageReader.read(sessionsDirectory: paths.claudeDesktopSessionsDirectory, projectsDirectory: paths.claudeProjectsDirectory))
         case .cursor:
             throw CursorUsageError.invalidResponse // Legacy record API; Cursor uses loadDashboard.
         case .codex:

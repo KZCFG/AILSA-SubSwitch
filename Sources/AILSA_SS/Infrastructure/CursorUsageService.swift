@@ -255,10 +255,22 @@ actor CursorUsageService {
 }
 
 extension CursorUsageService {
-    func dashboard(now: Date) async throws -> QuotaDashboardSnapshot {
-        let refresh = pendingRefresh ?? .cachedIfFresh
-        pendingRefresh = nil
-        let events = try await loadEvents(now: now, refresh: refresh)
+    func dashboard(now: Date, historyDays: Int = 30, forReport: Bool = false) async throws -> QuotaDashboardSnapshot {
+        let events: [CursorUsageEventRecord]
+        let scannedAt: Date
+        if forReport {
+            // Explicit exports never replace the current 30-day refresh cache.
+            let auth = try nativeSession()
+            let start = Calendar.current.date(byAdding: .day, value: -(min(max(historyDays, 1), 365) - 1), to: Calendar.current.startOfDay(for: now))!
+            events = try await fetchRange(auth: auth, start: start, end: now)
+            guard try nativeSession().id == auth.id else { throw CursorUsageError.invalidIdentity }
+            scannedAt = now
+        } else {
+            let refresh = pendingRefresh ?? .cachedIfFresh
+            pendingRefresh = nil
+            events = try await loadEvents(now: now, refresh: refresh)
+            scannedAt = cachedEvents?.at ?? now
+        }
         let calendar = Calendar.current, today = Calendar.current.startOfDay(for: now)
         var days: [Date: QuotaBucket] = [:], all = QuotaAggregate(), minutes: [Date: Int] = [:]
         var minuteBuckets: [Date: QuotaBucket] = [:]
@@ -276,6 +288,6 @@ extension CursorUsageService {
                 minuteBuckets[minute, default: QuotaBucket()].add(value, key: QuotaModelKey(provider: "Cursor", model: event.model))
             }
         }
-        return QuotaDashboardSnapshot(scannedAt: cachedEvents?.at ?? now, days: days, all: all, source: "Cursor", pricingSources: ["https://cursor.com/dashboard"], discardedRows: 0, quotaWindows: [], quotaTrend: [:], buildMilliseconds: 0, minuteTokens: minutes, minuteBuckets: minuteBuckets, pricingProvenance: [QuotaPricingProvenance(basis: .vendorReported, auditDate: nil)])
+        return QuotaDashboardSnapshot(scannedAt: scannedAt, days: days, all: all, source: "Cursor", pricingSources: ["https://cursor.com/dashboard"], discardedRows: 0, quotaWindows: [], quotaTrend: [:], buildMilliseconds: 0, minuteTokens: minutes, minuteBuckets: minuteBuckets, pricingProvenance: [QuotaPricingProvenance(basis: .vendorReported, auditDate: nil)])
     }
 }
