@@ -188,6 +188,7 @@ struct OpenCodexLedgerMeteringRecord: Equatable, Identifiable, Sendable {
     /// Additive official-standard estimate. It never fills `pricing`.
     let standardReferenceEstimate: AILSA_SSStandardReferenceEstimate
     let streamAborted: Bool
+    var tokenSemanticIssue = false
 
     var id: String { requestID }
 }
@@ -774,7 +775,8 @@ struct AILSA_SSLedgerMeteringReader: Sendable {
             tokens: tokens,
             pricing: pricing,
             standardReferenceEstimate: standardReferenceEstimate,
-            streamAborted: candidate.streamAborted
+            streamAborted: candidate.streamAborted,
+            tokenSemanticIssue: candidate.parsedTokens.semanticIssue != nil
         )
     }
 

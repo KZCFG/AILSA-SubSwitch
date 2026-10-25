@@ -319,7 +319,7 @@ struct QuotaDashboard: View {
                 }
                 HStack(spacing: 10) {
                     kpi(qtext("Token 词元消耗", "Token usage"), value: bucket.total.reported > 0 ? qtokens(bucket.total.tokens.total) : "—", detail: qtext("输入", "In") + " " + qtokens(bucket.total.tokens.input) + " · " + qtext("输出", "Out") + " " + qtokens(bucket.total.tokens.output))
-                    kpi(qtext("等效 API 消费金额（美元）", "Equivalent API consumption (USD)"), value: qmoney(bucket.total.reference), detail: nil)
+                    kpi(qtext("等效 API 消费金额（美元）", "Equivalent API consumption (USD)"), value: qmoney(bucket.total.reference), detail: bucket.total.highEstimateRecords > 0 ? qtext("含高位估算", "Includes high estimates") : nil)
                 }.frame(height: 78)
                 HStack {
                     Text(qtext("按模型", "Models")).font(.subheadline.bold())
@@ -342,7 +342,7 @@ struct QuotaDashboard: View {
                                     Text(key == .unknown ? qtext("未解析路由", "Unresolved route") : key.model)
                                         .lineLimit(1).truncationMode(.middle).frame(maxWidth: .infinity, alignment: .leading)
                                     Text(value.reported > 0 ? qtokens(value.tokens.total) : "—").monospacedDigit().frame(width: 72, alignment: .trailing)
-                                    Text(qmoney(value.reference) + (value.reference.count > 0 && value.reference.count < value.reported ? "*" : "")).monospacedDigit().frame(width: 90, alignment: .trailing)
+                                    Text((value.highEstimateRecords > 0 ? "≈" : "") + qmoney(value.reference) + (value.reference.count > 0 && value.reference.count < value.reported ? "*" : "")).monospacedDigit().frame(width: 90, alignment: .trailing)
                                 }.font(.system(size: 12)).frame(height: 32).contentShape(Rectangle())
                             }.buttonStyle(.plain).help(key.provider.isEmpty ? key.model : key.provider + " / " + key.model)
                             Divider()
@@ -357,7 +357,7 @@ struct QuotaDashboard: View {
                     .accessibilityLabel(qtext("模型用量列表，可上下滚动", "Model usage list, scroll vertically"))
                 }
                 HStack {
-                    Text(qtext("点击查看详情 · * 部分记录有价格", "Details · * partially priced")).foregroundStyle(.secondary)
+                    Text(qtext("点击查看缺失原因 · * 仍有记录无法计价", "Details explain gaps · * some records remain unpriced")).foregroundStyle(.secondary)
                     Spacer()
                     Text(qtext("共 \(rows.count) 个模型", "\(rows.count) models"))
                     if rows.count > layout.rows {
@@ -896,13 +896,17 @@ private struct QuotaDetails: View {
                 row(qtext("已报告用量", "Usage reported"), "\(total.reported) / \(total.requests - total.aborted)")
                 row(qtext("缓存复用率", "Cached-input reuse"), total.cacheReuse.fraction.map { String(format: "%.1f%%", $0 * 100) } ?? "—")
                 row(qtext("缓存样本覆盖", "Cache samples"), "\(total.cacheReuse.samples) / \(total.reported)")
+                row(qtext("高位估算记录", "High-estimate records"), String(total.highEstimateRecords))
                 row(qtext("有参考价", "Reference priced"), "\(total.reference.count) / \(total.reported)")
                 row(qtext("已中止", "Aborted"), String(total.aborted))
                 row(qtext("未解析路由", "Unresolved routes"), String(total.unknownRoute))
+                ForEach(total.states.keys.filter { $0 != "reference_estimate" }.sorted(), id: \.self) { state in
+                    row(Self.priceReason(state), String(total.states[state] ?? 0))
+                }
                 Text(qtext("复用率只计算明确报告缓存的输入。缺失数据不会当作 0%；缓存词元已包含在输入中。", "Reuse uses input from samples that report cache metadata. Missing data is not 0%; cached tokens are already included in input.")).font(.caption).foregroundStyle(.secondary)
                 row(qtext("丢弃重复／跳过", "Duplicates / skipped"), String(data.discardedRows))
             } else if page == 2 {
-                Text(qtext("数据来自本机记录或供应商用量接口。未知金额显示 —，不会按请求别名猜测实际模型；未解析请求合并展示，仍保留真实用量。", "Data comes from local records or provider usage APIs. Unknown amounts show —. Requested aliases are not assumed to be resolved models; unresolved requests are grouped without discarding reported usage.")).font(.callout)
+                Text(qtext("数据来自本机记录或供应商用量接口。已知请求模型但缺少返回身份的记录，单独标为请求模型估算，采用最高已知档位且不计缓存优惠。缺少 Token、模型不明或字段矛盾仍显示 —。", "Data comes from local records or provider usage APIs. Known requested models without resolved identity are labeled as estimates, using highest known rates without cache discounts. Missing tokens, unknown models or conflicting fields remain unpriced.")).font(.callout)
                 Text(data.source == "Cursor" ? qtext("参考金额来自 Cursor 用量接口提供的供应商等效价格；Cursor-metered 单独展示接口报告的计费金额，二者不能相加。", "Reference amounts are vendor equivalents reported by Cursor. Cursor-metered is the separately reported charge; do not add them.") : qtext("已知价格生效日和峰谷时段按请求时间计算。参考价不是历史实付账单。", "Known effective dates and peak periods follow request time. Estimates are not historical bills.")).font(.callout)
                 ForEach(data.pricingProvenance, id: \.self) { item in
                     Text(QuotaPricingProvenanceText.line(item)).font(.caption).foregroundStyle(.secondary)
@@ -915,6 +919,17 @@ private struct QuotaDetails: View {
             Spacer(minLength: 0)
             if data.source != "Antigravity" { HStack { Button(qtext("上一页", "Previous")) { page -= 1 }.disabled(page == 0); Spacer(); Text("\(page + 1) / \(pageCount)"); Spacer(); Button(qtext("下一页", "Next")) { page += 1 }.disabled(page + 1 >= pageCount) }.font(.caption) }
         }.padding(20).frame(width: 430, height: 390)
+    }
+    private static func priceReason(_ state: String) -> String {
+        let labels = ["unknown_identity": ("缺少已解析模型身份", "Resolved model identity missing"),
+            "unknown_price": ("缺少模型官方定价", "Official model price missing"),
+            "usage_semantics_conflict": ("Token 字段矛盾或缓存写入语义不明", "Conflicting tokens or cache-write semantics"),
+            "unreported_tokens": ("缺少输入或输出 Token", "Input or output tokens missing"),
+            "cache_discount_unknown": ("缓存明细缺失：未计优惠", "Cache breakdown missing: no discount"),
+            "highest_known_rate_estimate": ("按最高已知费率估算", "Highest-known-rate estimate"),
+            "fast_not_in_standard_reference": ("缺少已确认 Fast 费率", "Confirmed Fast rate unavailable")]
+        guard let value = labels[state] else { return state }
+        return qtext(value.0, value.1)
     }
     private func row(_ title: String, _ value: String) -> some View {
         HStack { Text(title); Spacer(); Text(value).monospacedDigit() }.font(.caption)

@@ -608,3 +608,73 @@ final class WorkBuddyReferencePricingTests: XCTestCase {
         XCTAssertTrue(analytics.records.allSatisfy { $0.routeProvider == "workbuddy-ai" })
     }
 }
+
+final class ArgonAndHighReferenceTests: XCTestCase {
+    private func record(provider: String = "google-antigravity", model: String? = "gemini-4-argon",
+                        requested: String? = nil, at: String = "2026-10-25T10:00:00Z",
+                        cache: Int? = 40_000, status: String = "reported", aborted: Bool = false,
+                        tier: String? = nil, conflict: Bool = false) throws -> OpenCodexLedgerMeteringRecord {
+        var usage: [String: Any] = ["inputTokens":100_000,"outputTokens":20_000,"reasoningOutputTokens":4_000]
+        if let cache { usage["cachedInputTokens"] = cache }
+        if conflict { usage["totalTokens"] = 1 }
+        var row: [String: Any] = ["requestId":"fixture", "timestamp":at, "provider":provider,
+            "usageStatus":status, "streamAborted":aborted, "usage":usage]
+        if let model { row["resolvedModel"] = model }
+        if let requested { row["requestedModel"] = requested }
+        if let tier { row["tierOutcome"] = ["confirmation":"vendor","canonical":tier] }
+        let data = try JSONSerialization.data(withJSONObject: row)
+        return try XCTUnwrap(AILSA_SSLedgerMeteringReader(pricingCatalog: .empty).read(data:data).records.first)
+    }
+    func testArgonOfficialPromotionDecemberBoundaryPriorityAndNoDoubleThinking() throws {
+        let promo = try record(at: "2026-11-30T23:59:59Z")
+        XCTAssertEqual(promo.standardReferenceEstimate.picoUSD,324_000_000_000)
+        XCTAssertEqual(try record(at:"2026-12-01T00:00:00Z").standardReferenceEstimate.picoUSD,648_000_000_000)
+        XCTAssertEqual(try record(tier:"priority").standardReferenceEstimate.picoUSD,583_200_000_000)
+        XCTAssertEqual(QuotaDashboardSnapshot.contribution(promo).value.tokens.total,120_000)
+        XCTAssertEqual(QuotaModelKey(provider:"antigravity-pool",model:"gemini-4-argon").familyKey.model,"Gemini 4 Argon")
+        XCTAssertNil(promo.pricing.picoUSD)
+        XCTAssertNil(try record(model:"gemini-4-argon-lookalike").standardReferenceEstimate.picoUSD)
+    }
+    func testGLMOfficialCaseVariantsAndFlashAreSeparate() throws {
+        XCTAssertEqual(try record(provider:"glm",model:"GLM-5.3").standardReferenceEstimate.picoUSD,182_400_000_000)
+        XCTAssertEqual(try record(provider:"glm",model:"GLM-5.3-Flash").standardReferenceEstimate.picoUSD,20_200_000_000)
+        XCTAssertEqual(QuotaModelKey(provider:"glm",model:"GLM-5.3").familyKey.model,"GLM 5.3")
+        XCTAssertNil(try record(provider:"unverified-proxy",model:"GLM-5.3").standardReferenceEstimate.picoUSD)
+    }
+    func testRequestedModelUpperEstimatePreservesIdentityAndConfirmedPrice() throws {
+        let r = try record(model:nil,requested:"google-antigravity/gemini-4-argon")
+        XCTAssertNil(r.standardReferenceEstimate.picoUSD); XCTAssertNil(r.pricing.picoUSD)
+        XCTAssertEqual(r.routeIdentityStatus,.requestedOnly)
+        XCTAssertEqual(OpenCodexStandardReferenceEstimator.maximumReference(for:r)?.picoUSD,720_000_000_000)
+        let c = QuotaDashboardSnapshot.contribution(r)
+        XCTAssertEqual(c.value.reference.pico,720_000_000_000); XCTAssertEqual(c.value.highEstimateRecords,1)
+        XCTAssertEqual(c.value.unknownRoute,1); XCTAssertEqual(c.key.familyKey.provider,"request-estimate")
+        XCTAssertTrue(c.key.familyKey.model.contains("Gemini 4 Argon"))
+    }
+    func testUpperEstimateUsesLargestKnownRateAndDoesNotOverwriteGoodPrice() throws {
+        let unknown = try record(provider:"openai",model:nil,requested:"gpt-6.1-sol")
+        let known = try record(provider:"openai",model:"gpt-6.1-sol")
+        XCTAssertEqual(OpenCodexStandardReferenceEstimator.maximumReference(for:unknown)?.picoUSD,1_400_000_000_000)
+        XCTAssertNil(OpenCodexStandardReferenceEstimator.maximumReference(for:known))
+        XCTAssertEqual(QuotaDashboardSnapshot.contribution(known).value.reference.pico,known.standardReferenceEstimate.picoUSD)
+        let missingCache = QuotaDashboardSnapshot.contribution(try record(cache:nil)).value
+        XCTAssertEqual(missingCache.highEstimateRecords,1); XCTAssertEqual(missingCache.reference.pico,400_000_000_000)
+    }
+    func testUnknownAutoWrongPrefixAndInvalidUsageStayUnavailable() throws {
+        for r in [try record(provider:"cursor-proxy",model:nil,requested:"cursor-proxy/auto"),
+                  try record(model:nil,requested:"unrelated/gemini-4-argon"),
+                  try record(model:nil,requested:"google-antigravity/missing-model"),
+                  try record(model:nil,requested:"google-antigravity/gemini-4-argon",status:"unreported"),
+                  try record(model:nil,requested:"google-antigravity/gemini-4-argon",aborted:true),
+                  try record(model:nil,requested:"google-antigravity/gemini-4-argon",conflict:true)] {
+            XCTAssertNil(OpenCodexStandardReferenceEstimator.maximumReference(for:r))
+        }
+    }
+    func testUpperEstimateCountersMergeWithoutChangingTokenTotals() throws {
+        let a = QuotaDashboardSnapshot.contribution(try record(model:nil,requested:"google-antigravity/gemini-4-argon")).value
+        let b = QuotaDashboardSnapshot.contribution(try record()).value
+        var sum = a; sum.merge(b)
+        XCTAssertEqual(sum.tokens.total,240_000); XCTAssertEqual(sum.reference.pico,1_044_000_000_000)
+        XCTAssertEqual(sum.highEstimateRecords,1); XCTAssertEqual(sum.reported,2)
+    }
+}

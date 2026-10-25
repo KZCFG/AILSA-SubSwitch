@@ -514,6 +514,7 @@ struct QuotaAggregate: Equatable, Sendable {
     var reported = 0
     var aborted = 0
     var unknownRoute = 0
+    var highEstimateRecords = 0
     var reference = QuotaMoney()
     var confirmed = QuotaMoney()
     var metered = QuotaMoney()
@@ -523,6 +524,7 @@ struct QuotaAggregate: Equatable, Sendable {
         cacheReuse.merge(other.cacheReuse)
         requests += other.requests; reported += other.reported
         aborted += other.aborted; unknownRoute += other.unknownRoute
+        highEstimateRecords += other.highEstimateRecords
         reference.merge(other.reference); confirmed.merge(other.confirmed); metered.merge(other.metered)
         for (key, value) in other.states { states[key, default: 0] += value }
     }
@@ -535,6 +537,10 @@ struct QuotaModelKey: Hashable, Sendable {
     /// Presentation grouping only. Monetary values remain the sum of each
     /// record's independently audited price; never reprice an entire family.
     var familyKey: Self {
+        if provider.hasPrefix("request-estimate:") {
+            let actual = Self(provider: String(provider.dropFirst("request-estimate:".count)), model: model).familyKey
+            return Self(provider: "request-estimate", model: actual.model + UsageReportText.text("（请求模型估算）", " (requested-model estimate)"))
+        }
         if provider == "Claude" { return Self(provider: provider, model: ClaudeLocalPricing.displayName(model)) }
         let name = model.lowercased().replacingOccurrences(of: "_", with: "-")
         if name == "gpt-6.1-sol" { return Self(provider: provider, model: "GPT-6.1 Sol") }
@@ -544,7 +550,8 @@ struct QuotaModelKey: Hashable, Sendable {
         let families: [(String, String)] = [
             ("grok-4.7", "Grok 4.7"),
             ("grok-4.6", "Grok 4.6"), ("grok-4.5", "Grok 4.5"),
-            ("gemini-3.8-flash", "Gemini 3.8 Flash"),
+            ("gemini-3.8-flash", "Gemini 3.8 Flash"), ("gemini-4-argon", "Gemini 4 Argon"),
+            ("glm-5.3-flash", "GLM 5.3 Flash"), ("glm-5.3", "GLM 5.3"),
             ("hy3", "Hy3"), ("step-5-preview", "Step 5 Preview"),
             ("deepseek-v4.1-flash", "DeepSeek V4.1 Flash"),
             ("deepseek-v4-flash", "DeepSeek Flash"), ("deepseek-flash", "DeepSeek Flash"),
@@ -607,7 +614,7 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
     static func build(_ data: QuotaManagementData, now: Date, calendar: Calendar = .current, historyDays: Int = 30) -> Self {
         let started = Date()
         let today = calendar.startOfDay(for: now)
-        let start = calendar.date(byAdding: .day, value: -(min(max(historyDays, 1), 365) - 1), to: today)!
+        let start = calendar.date(byAdding: .day, value: -(max(historyDays, 1) - 1), to: today)!
         let end = calendar.date(byAdding: .day, value: 1, to: today)!
         var days: [Date: QuotaBucket] = [:]
         var all = QuotaAggregate()
@@ -703,6 +710,7 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
         value.requests = 1
         value.aborted = record.streamAborted ? 1 : 0
         let resolved = record.routeIdentityStatus == .resolved
+        let maximum = OpenCodexStandardReferenceEstimator.maximumReference(for: record)
         value.unknownRoute = resolved ? 0 : 1
         if !record.streamAborted {
             let reported = record.usageStatus == .reported && record.tokenSource == .upstreamReported && record.tokens.hasPrimaryTokens
@@ -715,16 +723,23 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
                     cachedInput: record.tokens.cacheReadInputTokens ?? record.tokens.cachedInputTokens ?? 0,
                     cacheWriteInput: record.tokens.cacheCreationInputTokens ?? 0,
                     output: record.tokens.outputTokens ?? 0, reasoningOutput: record.tokens.reasoningOutputTokens ?? 0)
-                if record.standardReferenceEstimate.status == .referenceEstimate { value.reference.add(record.standardReferenceEstimate.picoUSD) }
+                if record.standardReferenceEstimate.status == .referenceEstimate {
+                    value.reference.add(record.standardReferenceEstimate.picoUSD)
+                    if record.standardReferenceEstimate.estimatePartial { value.highEstimateRecords = 1; value.states["cache_discount_unknown"] = 1 }
+                } else if let maximum {
+                    value.reference.add(maximum.picoUSD); value.highEstimateRecords = 1
+                    value.states["highest_known_rate_estimate"] = 1
+                }
                 if record.pricing.valueKind == .exactDerived { value.confirmed.add(record.pricing.picoUSD) }
             }
         }
-        return QuotaContribution(minute: Date(timeIntervalSince1970: floor(record.occurredAt.timeIntervalSince1970 / 60) * 60), day: Calendar.current.startOfDay(for: record.occurredAt), key: resolved ? QuotaModelKey(provider: record.routeProvider ?? "", model: record.resolvedModel ?? "") : .unknown, value: value)
+        return QuotaContribution(minute: Date(timeIntervalSince1970: floor(record.occurredAt.timeIntervalSince1970 / 60) * 60), day: Calendar.current.startOfDay(for: record.occurredAt), key: resolved ? QuotaModelKey(provider: record.routeProvider ?? "", model: record.resolvedModel ?? "")
+                : maximum.map { QuotaModelKey(provider: "request-estimate:" + $0.provider, model: $0.model) } ?? .unknown, value: value)
     }
     static func compact(_ entries: Dictionary<String, QuotaContribution>.Values, discarded: Int, now: Date, pricingProvenance: [QuotaPricingProvenance] = [], source: String = "OpenCodex", historyDays: Int = 30) -> Self {
         let started = Date(), calendar = Calendar.current
         let today = calendar.startOfDay(for: now)
-        let start = calendar.date(byAdding: .day, value: -(min(max(historyDays, 1), 365) - 1), to: today)!
+        let start = calendar.date(byAdding: .day, value: -(max(historyDays, 1) - 1), to: today)!
         let end = calendar.date(byAdding: .day, value: 1, to: today)!
         var days: [Date: QuotaBucket] = [:], all = QuotaAggregate()
         var minutes: [Date: Int] = [:]

@@ -1,12 +1,11 @@
 import Foundation
 
 enum UsageReportPeriod: String, CaseIterable, Identifiable, Sendable {
-    case daily, weekly, monthly, sixtyDays = "60-days", ninetyDays = "90-days", yearly
+    case daily, weekly, monthly, sixtyDays = "60-days", ninetyDays = "90-days", custom
     var id: String { rawValue }
-    var days: Int {
-        switch self { case .daily: 1; case .weekly: 7; case .monthly: 30; case .sixtyDays: 60; case .ninetyDays: 90; case .yearly: 365 }
+    var presetDays: Int? {
+        switch self { case .daily: 1; case .weekly: 7; case .monthly: 30; case .sixtyDays: 60; case .ninetyDays: 90; case .custom: nil }
     }
-    var chartGroupDays: Int { days > 90 ? 7 : 1 }
     var title: String {
         switch self {
         case .daily: return UsageReportText.text("日报", "Daily")
@@ -14,7 +13,7 @@ enum UsageReportPeriod: String, CaseIterable, Identifiable, Sendable {
         case .monthly: return UsageReportText.text("月报 · 30 天", "Monthly · 30 days")
         case .sixtyDays: return UsageReportText.text("60 天", "60 days")
         case .ninetyDays: return UsageReportText.text("90 天", "90 days")
-        case .yearly: return UsageReportText.text("一年 · 365 天", "Year · 365 days")
+        case .custom: return UsageReportText.text("自定义", "Custom")
         }
     }
 }
@@ -29,10 +28,62 @@ struct UsageReportRequest: Equatable, Sendable {
     let provider: QuotaManagementProvider
     let period: UsageReportPeriod
     let endingOn: Date
+    var startingOn: Date? = nil
+    var customTitle: String = ""
+    static let maximumTitleLength = 80
 
+    /// Normalize a single-line display title; filenames are sanitized separately.
+    var normalizedTitle: String {
+        String(customTitle.components(separatedBy: .controlCharacters)
+            .joined(separator: " ").split(whereSeparator: { $0.isWhitespace })
+            .joined(separator: " ").prefix(Self.maximumTitleLength))
+    }
+    var displayTitle: String {
+        if !normalizedTitle.isEmpty { return normalizedTitle }
+        switch period {
+        case .daily: return UsageReportText.text("日报", "Daily usage")
+        case .weekly: return UsageReportText.text("周报", "Weekly usage")
+        case .monthly: return UsageReportText.text("月报", "Monthly usage")
+        case .sixtyDays: return UsageReportText.text("60 天用量报告", "60-day usage")
+        case .ninetyDays: return UsageReportText.text("90 天用量报告", "90-day usage")
+        case .custom: return UsageReportText.text("用量报告", "Usage report")
+        }
+    }
+    func validate(now: Date, calendar: Calendar = .current) throws {
+        if period == .custom {
+            guard let startingOn, startingOn.timeIntervalSince1970.isFinite,
+                  calendar.startOfDay(for: startingOn) <= calendar.startOfDay(for: endingOn) else {
+                throw ValidationError.invalidRange
+            }
+        }
+        guard endingOn.timeIntervalSince1970.isFinite,
+              calendar.startOfDay(for: endingOn) <= calendar.startOfDay(for: now) else {
+            throw ValidationError.futureDate
+        }
+    }
+    enum ValidationError: LocalizedError {
+        case invalidRange, futureDate
+        var errorDescription: String? {
+            switch self {
+            case .invalidRange: return UsageReportText.text("请选择开始日期，且不得晚于截止日期。", "Choose a start date on or before the end date.")
+            case .futureDate: return UsageReportText.text("截止日期不能晚于今天。", "The end date cannot be later than today.")
+            }
+        }
+    }
+    func dayCount(calendar: Calendar = .current) -> Int {
+        let range = interval(calendar: calendar)
+        return max(1, calendar.dateComponents([.day], from: range.start, to: range.end).day ?? 1)
+    }
+    /// Keep long-range charts legible without dropping any days from totals.
+    func chartGroupDays(calendar: Calendar = .current) -> Int {
+        let days = dayCount(calendar: calendar)
+        return days <= 90 ? 1 : max(7, ((days + 52) / 53 + 6) / 7 * 7)
+    }
     func interval(calendar: Calendar = .current) -> DateInterval {
         let day = calendar.startOfDay(for: endingOn)
-        let start = calendar.date(byAdding: .day, value: -(period.days - 1), to: day)!
+        // Invalid reversed ranges are rejected by validate before data loading.
+        let start = period == .custom ? min(calendar.startOfDay(for: startingOn ?? endingOn), day)
+            : calendar.date(byAdding: .day, value: -((period.presetDays ?? 1) - 1), to: day)!
         let end = calendar.date(byAdding: .day, value: 1, to: day)!
         return DateInterval(start: start, end: end)
     }
@@ -44,8 +95,16 @@ struct UsageReportRequest: Equatable, Sendable {
         let range = interval(calendar: calendar)
         let last = calendar.startOfDay(for: endingOn)
         let end = QuotaDashboardSnapshot.isoDay(last, calendar: calendar)
-        let dates = period == .daily ? end : QuotaDashboardSnapshot.isoDay(range.start, calendar: calendar) + "_" + end
-        return "AILSA-SubSwitch-\(providerName)-\(period.rawValue)-\(dates).png"
+        let dates = dayCount(calendar: calendar) == 1 ? end : QuotaDashboardSnapshot.isoDay(range.start, calendar: calendar) + "_" + end
+        let forbidden = CharacterSet(charactersIn: "/\\:?*\"<>|")
+        let safeTitle = normalizedTitle.components(separatedBy: forbidden).filter { !$0.isEmpty }.joined(separator: "-")
+        var filenameTitle = ""
+        for character in safeTitle.prefix(60) {
+            guard (filenameTitle + String(character)).utf8.count <= 160 else { break }
+            filenameTitle.append(character)
+        }
+        let titlePart = filenameTitle.isEmpty ? "" : "-" + filenameTitle
+        return "AILSA-SubSwitch-\(providerName)-\(period.rawValue)\(titlePart)-\(dates).png"
     }
 }
 
@@ -100,9 +159,9 @@ struct UsageReport: Sendable {
         var points: [Point] = []
         var cursor = interval.start
         while cursor < interval.end && cursor <= now {
-            let next = request.period == .daily ? cursor.addingTimeInterval(1800)
-                : min(calendar.date(byAdding: .day, value: request.period.chartGroupDays, to: cursor)!, interval.end)
-            let value = request.period == .daily
+            let next = request.dayCount(calendar: calendar) == 1 ? cursor.addingTimeInterval(1800)
+                : min(calendar.date(byAdding: .day, value: request.chartGroupDays(calendar: calendar), to: cursor)!, interval.end)
+            let value = request.dayCount(calendar: calendar) == 1
                 ? snapshot.intradayBucket(from: cursor, intervalMinutes: 30).total
                 : snapshot.bucket(from: cursor, until: next).total
             points.append(Point(date: cursor, value: value))

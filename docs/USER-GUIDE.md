@@ -207,14 +207,18 @@ poll provider APIs each second or imply that an expired usage snapshot has refre
 
 ## Export a usage image
 
-In Codex or Cursor usage, click **Export usage image** in the top-right toolbar.
+In Codex, Cursor or Claude usage, click **Export usage image** in the top-right toolbar.
 Choose Daily for one date, Weekly for the 7 days ending on that date, or Monthly
 for the 30 days ending on that date. These are rolling windows, not calendar
-weeks or months. Select **Generate and save**, then choose a folder and filename
+weeks or months. Use **Custom** to select both start and end dates, inclusive
+in your local time zone. **Share title** is optional (up to 80 characters);
+leave it blank for Daily, Weekly, Monthly or the selected period’s default.
+For example, select Friday through Sunday and enter “A wonderful weekend”.
+Select **Generate and save**, then choose a folder and filename
 in the native save dialog. Finder reveals the saved PNG.
 
 Reports use the saved chart metric and Token unit from Settings. Daily charts
-show 30-minute intervals; longer reports show daily totals. Current periods
+show 30-minute intervals; longer reports group daily totals as needed. Current periods
 include a cutoff time. Historical availability depends on locally retained
 records; an empty period cannot be exported.
 
@@ -273,7 +277,31 @@ Claude online quota and does not require a login, API key or Keychain access.
 Ordinary Chat sessions and activity missing from local logs are not included.
 
 The share dialog supports **Daily**, **7 days**, **30 days**, **60 days**,
-**90 days** and **Year (365 days)**, ending on your selected date. Annual
-trends group by week; all other multi-day reports use days. Totals always cover
-the entire selected interval. Only available records are included; selecting a
-year does not recreate deleted or never-recorded history.
+**90 days** and **Custom**. Custom replaces the former Year preset and lets
+you choose any start and end date through today, including a full year or
+longer. The selected dates are inclusive in your local time zone. Titles can
+be edited for every preset, not only Custom.
+
+Single-day trends use 30-minute buckets. Ranges through 90 days use daily
+totals; longer ranges group complete days into weeks or multiples of weeks
+to keep the chart legible. The final group may be shorter. Token and USD
+totals always cover the entire selected interval, including both endpoints.
+Only available records are included; longer ranges do not reconstruct deleted
+or never-recorded history, and empty ranges cannot be exported.
+
+
+### Interpreting incomplete reference prices
+
+A reference amount is an API-equivalent estimate, not a subscription bill.
+**Includes high estimates** / `≈` means some records use an assumption: cache
+breakdown is missing (no cache discount), or only a known requested model is
+available (highest known published context/priority Token rates). Requested-model
+rows remain visibly separate from resolved model rows; the original ledger and
+confirmed-tier amounts are unchanged. Details list the affected record counts
+and reasons. Existing valid per-request reference prices retain their own rates.
+
+Token counts are never invented. Missing input/output usage, unknown model
+identities (such as an automatic route), conflicting counters or unsupported
+prices remain unavailable, so `*` may still mark a partially priced model.
+These estimates do not bound unknown tool, region or other non-Token charges.
+Share titles are included as entered; avoid putting personal information in them.

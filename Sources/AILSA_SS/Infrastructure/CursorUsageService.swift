@@ -261,7 +261,7 @@ extension CursorUsageService {
         if forReport {
             // Explicit exports never replace the current 30-day refresh cache.
             let auth = try nativeSession()
-            let start = Calendar.current.date(byAdding: .day, value: -(min(max(historyDays, 1), 365) - 1), to: Calendar.current.startOfDay(for: now))!
+            let start = Calendar.current.date(byAdding: .day, value: -(max(historyDays, 1) - 1), to: Calendar.current.startOfDay(for: now))!
             events = try await fetchRange(auth: auth, start: start, end: now)
             guard try nativeSession().id == auth.id else { throw CursorUsageError.invalidIdentity }
             scannedAt = now

@@ -164,8 +164,11 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         let gpt61Fast = leafID == "gpt-6.1-sol"
             && input.fastGrantEvidence == .explicitlyGranted
             && ["priority", "fast"].contains(input.confirmedServiceTier ?? "")
-        let doubledReference = grokPriority || gpt61Fast
-        if input.fastGrantEvidence == .explicitlyGranted && !doubledReference {
+        let argonPriority = leafID == "gemini-4-argon"
+            && input.fastGrantEvidence == .explicitlyGranted
+            && ["priority", "fast"].contains(input.confirmedServiceTier ?? "")
+        let multiplier = argonPriority ? 18 : (grokPriority || gpt61Fast ? 20 : 10)
+        if input.fastGrantEvidence == .explicitlyGranted && multiplier == 10 {
             let context = contextAssumption(
                 input: input,
                 fastGranted: true,
@@ -214,10 +217,10 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         guard let standardRate = selected.rate else {
             return unavailable(.overThresholdNoLongLeaf, leaf: leafID, context: context)
         }
-        let rate = doubledReference ? Rate(
-            inputPicoUSDPerToken: standardRate.inputPicoUSDPerToken * 2,
-            cacheReadPicoUSDPerToken: standardRate.cacheReadPicoUSDPerToken * 2,
-            outputPicoUSDPerToken: standardRate.outputPicoUSDPerToken * 2
+        let rate = multiplier != 10 ? Rate(
+            inputPicoUSDPerToken: standardRate.inputPicoUSDPerToken * Int64(multiplier) / 10,
+            cacheReadPicoUSDPerToken: standardRate.cacheReadPicoUSDPerToken * Int64(multiplier) / 10,
+            outputPicoUSDPerToken: standardRate.outputPicoUSDPerToken * Int64(multiplier) / 10
         ) : standardRate
         guard let amount = Self.picoUSD(
             inputTokens: inputTokens,
@@ -231,7 +234,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         return AILSA_SSStandardReferenceEstimate(
             status: .referenceEstimate,
             picoUSD: amount,
-            priceBasis: grokPriority
+            priceBasis: grokPriority || argonPriority
                 ? (userReferenceAlias == nil ? "official_priority_reference" : "user_mapped_official_priority_reference")
                 : (gpt61Fast ? "official_fast_reference"
                    : (userReferenceAlias == nil ? Self.priceBasis : "user_mapped_official_standard_reference")),
@@ -243,6 +246,45 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
             identityAssumption: identity,
             contextTierAssumption: context
         )
+    }
+
+    struct MaximumReference: Sendable {
+        let picoUSD: Int64
+        let provider: String
+        let model: String
+        let assumedIdentity: Bool
+    }
+
+    /// Display-only fallback explicitly requested by the user. It does not
+    /// mutate the ledger, repair resolved identity or populate confirmed prices.
+    /// Use highest known published context/priority rates, without cache
+    /// discounts. Unknown models, invalid/missing counters and semantic conflicts
+    /// remain unavailable: there is no defensible upper bound for those.
+    static func maximumReference(for record: OpenCodexLedgerMeteringRecord) -> MaximumReference? {
+        guard !record.streamAborted, !record.tokenSemanticIssue, record.usageStatus == .reported,
+              record.tokenSource == .upstreamReported, record.tokens.hasPrimaryTokens,
+              [.unknownIdentity, .unknownPrice].contains(record.standardReferenceEstimate.status),
+              let provider = record.routeProvider?.lowercased(),
+              let input = record.tokens.inputTokens, let output = record.tokens.outputTokens,
+              input >= 0, output >= 0, (record.tokens.cacheCreationInputTokens ?? 0) == 0,
+              record.pricing.status != .usageSemanticsConflict else { return nil }
+        let assumed = record.routeIdentityStatus != .resolved
+        guard var model = (assumed ? record.requestedModel : record.resolvedModel)?.lowercased() else { return nil }
+        if assumed, model.contains("/") {
+            let parts = model.split(separator: "/", maxSplits: 1).map(String.init)
+            guard parts.count == 2, parts[0] == provider else { return nil }
+            model = parts[1]
+        }
+        // Exact proxy context aliases, not fuzzy model-name inference.
+        if provider == "cursor-proxy", ["grok-4.7-256k", "grok-4.7-500k"].contains(model) { model = "grok-4.7" }
+        guard let id = leafID(provider: provider, resolvedModel: model),
+              let leaf = referenceLeaf(id: id, occurredAt: record.occurredAt) else { return nil }
+        let numerator: Int64 = id == "gemini-4-argon" ? 18 : (["grok-4.7", "gpt-6.1-sol"].contains(id) ? 20 : 10)
+        let rate = Rate(inputPicoUSDPerToken: max(leaf.short.inputPicoUSDPerToken, leaf.long?.inputPicoUSDPerToken ?? 0) * numerator / 10,
+            cacheReadPicoUSDPerToken: 0,
+            outputPicoUSDPerToken: max(leaf.short.outputPicoUSDPerToken, leaf.long?.outputPicoUSDPerToken ?? 0) * numerator / 10)
+        guard let amount = picoUSD(inputTokens: input, cacheReadTokens: 0, outputTokens: output, rate: rate) else { return nil }
+        return MaximumReference(picoUSD: amount, provider: provider, model: model, assumedIdentity: assumed)
     }
 
     /// Never return a partial amount. A caller that aggregates reference
@@ -312,10 +354,20 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         return userReferenceAliases[resolvedModel]
     }
     private static let crossProviderReferences: Set<String> = [
-        "grok-4.7", "grok-4.6", "grok-4.5", "gemini-3.8-flash", "deepseek-flash",
+        "grok-4.7", "grok-4.6", "grok-4.5", "gemini-3.8-flash", "gemini-4-argon", "deepseek-flash",
         "claude-fable-5-1", "k3", "kimi-k3"
     ]
     private static func referenceLeaf(id: String, occurredAt: Date?) -> Leaf? {
+        if id == "gemini-4-argon" {
+            // Google Standard USD per 1M, verified 2026-10-25. Promotion
+            // ends at 2026-12-01 00:00 UTC; output includes thinking tokens.
+            // https://ai.google.dev/gemini-api/docs/pricing#gemini-4-argon
+            guard let occurredAt else { return nil }
+            let full = occurredAt >= Date(timeIntervalSince1970: 1_796_083_200)
+            return Leaf(short: Rate(inputPicoUSDPerToken: full ? 4_000_000 : 2_000_000,
+                cacheReadPicoUSDPerToken: full ? 200_000 : 100_000,
+                outputPicoUSDPerToken: full ? 20_000_000 : 10_000_000), long: nil, threshold: .allContexts)
+        }
         if id == "gemini-3.8-flash" {
             guard let occurredAt else { return nil }
             let fullPrice = occurredAt >= Date(timeIntervalSince1970: 1_798_761_600) // 2027-01-01 UTC
@@ -397,6 +449,8 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         "kimi-k3": ["kimi-code"],
         "kimi-k2.7-code": ["kimi-code", "kimi", "moonshot"],
         "kimi-k2.7-code-highspeed": ["kimi-code", "kimi", "moonshot"],
+        "glm-5.3": ["glm", "zai", "zhipu", "z.ai"],
+        "glm-5.3-flash": ["glm", "zai", "zhipu", "z.ai"],
         "hy3": ["tencent", "tencentcloud", "hunyuan", "workbuddy", "workbuddy-ai"],
         "step-5-preview": ["stepfun", "stepfun-ai", "workbuddy", "workbuddy-ai"],
     ]
@@ -406,6 +460,14 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
     private static let leaves: [String: Leaf] = [
         // USD per 1M, checked 2026-10-20 against Tencent's official USD table.
         // https://www.tencentcloud.com/document/product/1300/78937
+        // Z.AI official USD/1M, verified 2026-10-25:
+        // https://docs.z.ai/guides/overview/pricing
+        "glm-5.3": Leaf(
+            short: Rate(inputPicoUSDPerToken: 1_400_000, cacheReadPicoUSDPerToken: 260_000, outputPicoUSDPerToken: 4_400_000),
+            long: nil, threshold: .allContexts),
+        "glm-5.3-flash": Leaf(
+            short: Rate(inputPicoUSDPerToken: 150_000, cacheReadPicoUSDPerToken: 30_000, outputPicoUSDPerToken: 500_000),
+            long: nil, threshold: .allContexts),
         "hy3": Leaf(
             short: Rate(inputPicoUSDPerToken: 132_000, cacheReadPicoUSDPerToken: 33_000, outputPicoUSDPerToken: 528_000),
             long: nil, threshold: .allContexts),
@@ -532,6 +594,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
     }
 
     private static func leafID(provider: String, resolvedModel: String) -> String? {
+        let provider = provider.lowercased(), resolvedModel = resolvedModel.lowercased()
         if let alias = userReferenceAlias(provider: provider, resolvedModel: resolvedModel) { return alias }
         if crossProviderReferences.contains(resolvedModel) { return resolvedModel }
         if let alias = aliases["\(provider)/\(resolvedModel)"] { return alias }

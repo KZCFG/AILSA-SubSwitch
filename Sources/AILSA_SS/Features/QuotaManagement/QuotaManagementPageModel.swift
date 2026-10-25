@@ -253,11 +253,13 @@ final class QuotaManagementPageModel: ObservableObject {
     func makeUsageReport(_ request: UsageReportRequest) async throws -> UsageReport {
         let service = usageService
         let now = dateProvider()
+        try request.validate(now: now)
+        let historyDays = request.dayCount()
         // Ask for the selected ending day so daily reports retain that day's
         // minute buckets, even when exporting yesterday or an older date.
         let anchor = min(now, request.interval().end.addingTimeInterval(-0.001))
         let snapshot = try await Task.detached(priority: .userInitiated) {
-            try await service.loadReportSnapshot(for: request.provider, historyDays: request.period.days, now: anchor)
+            try await service.loadReportSnapshot(for: request.provider, historyDays: historyDays, now: anchor)
         }.value
         return UsageReport.build(snapshot: snapshot, request: request, now: now)
     }

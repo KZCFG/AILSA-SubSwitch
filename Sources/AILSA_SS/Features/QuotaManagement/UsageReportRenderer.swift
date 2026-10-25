@@ -28,8 +28,10 @@ struct UsageReportPoster: View {
         else { f.setLocalizedDateFormatFromTemplate(compact ? "MMMd" : "yyyyMMMMd") }
         return f.string(from: value)
     }
-    private var title: String {
-        report.request.period == .daily ? date(report.interval.start)
+    private var singleDay: Bool { report.request.dayCount() == 1 }
+    private var groupDays: Int { report.request.chartGroupDays() }
+    private var dateRange: String {
+        singleDay ? date(report.interval.start)
             : date(report.interval.start, compact: Calendar.current.component(.year, from: report.interval.start) == Calendar.current.component(.year, from: report.request.endingOn)) + " — " + date(report.request.endingOn)
     }
     private var timeLabel: String {
@@ -39,7 +41,7 @@ struct UsageReportPoster: View {
             let time = report.generatedAt.formatted(.dateTime.hour().minute().locale(L10n.currentLocale))
             return text("截至 \(time) · \(zone)", "Through \(time) · \(zone)")
         }
-        return report.request.period == .daily ? "00:00—24:00 · \(zone)" : "\(report.request.period.days) " + text("天", "days") + " · \(zone)"
+        return singleDay ? "00:00—24:00 · \(zone)" : "\(report.request.dayCount()) " + text("天", "days") + " · \(zone)"
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 26) {
@@ -59,8 +61,10 @@ struct UsageReportPoster: View {
             VStack(alignment: .leading, spacing: 10) {
                 Label(report.request.providerName + text(" 用量", " usage"), systemImage: report.request.provider == .cursor ? "cube" : report.request.provider == .claude ? "asterisk" : "terminal")
                     .font(.system(size: 15, weight: .semibold))
+                Text(report.request.displayTitle).font(.system(size: report.request.displayTitle.count > 42 ? 22 : 31, weight: .bold))
+                    .lineLimit(3).fixedSize(horizontal: false, vertical: true)
                 HStack(alignment: .firstTextBaseline) {
-                    Text(title).font(.system(size: report.request.period == .daily ? 31 : 25, weight: .bold))
+                    Text(dateRange).font(.system(size: 16, weight: .medium))
                         .lineLimit(1).minimumScaleFactor(0.75)
                     Spacer(minLength: 12)
                     Text(timeLabel).font(.system(size: 11)).foregroundStyle(muted)
@@ -70,7 +74,7 @@ struct UsageReportPoster: View {
                 card(text("Token 词元消耗", "Token usage"), report.total.reported > 0 ? tokens(report.total.tokens.total) : "—",
                      text("输入", "In") + " " + tokens(report.total.tokens.input) + " · " + text("输出", "Out") + " " + tokens(report.total.tokens.output))
                 card(text("等效 API 消费金额（美元）", "Equivalent API cost (USD)"), money(report.total.reference),
-                     text("可核算记录合计 · 非实际账单", "Priced records · Not an actual bill"))
+                     report.total.highEstimateRecords > 0 ? text("含高位估算 · 非实际账单", "Includes high estimates · Not a bill") : text("可核算记录合计 · 非实际账单", "Priced records · Not an actual bill"))
             }
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
@@ -94,7 +98,7 @@ struct UsageReportPoster: View {
                         }
                         Spacer(minLength: 0)
                         Text(row.value.reported > 0 ? tokens(row.value.tokens.total) : "—").frame(width: 126, alignment: .trailing)
-                        Text(money(row.value.reference)).frame(width: 100, alignment: .trailing)
+                        Text((row.value.highEstimateRecords > 0 ? "≈" : "") + money(row.value.reference)).frame(width: 100, alignment: .trailing)
                     }.font(.system(size: 16, weight: .medium)).monospacedDigit().frame(height: 45)
                     if row.id != visibleRows.last?.id { Rectangle().fill(ink.opacity(0.055)).frame(height: 1) }
                 }
@@ -110,14 +114,14 @@ struct UsageReportPoster: View {
                     Text(metric == .tokens ? text("Token 用量走势", "Token usage over time") : text("等效 API 金额走势", "Equivalent API cost over time"))
                         .font(.system(size: 16, weight: .semibold))
                     Spacer()
-                    Text(report.request.period == .daily ? text("每 30 分钟合计", "30-minute totals") : report.request.period.chartGroupDays > 1 ? text("每周合计", "Weekly totals") : text("每日合计", "Daily totals"))
+                    Text(singleDay ? text("每 30 分钟合计", "30-minute totals") : groupDays == 7 ? text("每周合计", "Weekly totals") : groupDays > 1 ? text("每 \(groupDays) 天合计", "\(groupDays)-day totals") : text("每日合计", "Daily totals"))
                         .font(.system(size: 12)).foregroundStyle(muted)
                 }
                 chart.frame(height: 218)
             }
             VStack(alignment: .leading, spacing: 9) {
                 Rectangle().fill(ink.opacity(0.1)).frame(height: 1)
-                Text(text("金额按可核算记录计算；未定价或字段矛盾的记录不估算金额。", "Amounts cover priced records only. Unpriced or inconsistent records are not estimated."))
+                Text(text("金额含已知参考价；身份或缓存不全时标记高位估算。未知模型、缺失或矛盾 Token 不计金额。", "Amounts include reference prices and labeled high estimates for incomplete identity or cache data. Unknown models and missing/conflicting tokens remain unpriced."))
                     .fixedSize(horizontal: false, vertical: true)
                 HStack {
                     Text(text("仅含可用记录 · 账号与个人信息已移除", "Available records only · Accounts and personal details omitted"))
@@ -136,19 +140,19 @@ struct UsageReportPoster: View {
             // interval remains a gap in a USD chart.
             let amount = point.value.requests == 0 ? 0 : metric.value(in: point.value)
             if let amount {
-                let end = report.request.period == .daily ? point.date.addingTimeInterval(1800)
-                    : min(Calendar.current.date(byAdding: .day, value: report.request.period.chartGroupDays, to: point.date)!, report.interval.end)
+                let end = singleDay ? point.date.addingTimeInterval(1800)
+                    : min(Calendar.current.date(byAdding: .day, value: groupDays, to: point.date)!, report.interval.end)
                 BarMark(x: .value("Time", point.date.addingTimeInterval(end.timeIntervalSince(point.date) / 2)), y: .value("Usage", amount / divisor), width: .fixed(max(1, min(46, 620 / Double(max(1, report.points.count)) * 0.78))))
                     .foregroundStyle(Color.indigo).cornerRadius(2)
             }
         }
         .chartXScale(domain: report.interval.start...report.interval.end)
         .chartXAxis {
-            AxisMarks(values: .stride(by: report.request.period == .daily ? .hour : .day,
-                                      count: report.request.period == .daily ? 6 : max(1, report.request.period.days / 5))) { value in
+            AxisMarks(values: .stride(by: singleDay ? .hour : .day,
+                                      count: singleDay ? 6 : max(1, report.request.dayCount() / 5))) { value in
                 AxisValueLabel {
                     if let d = value.as(Date.self) {
-                        Text(report.request.period == .daily ? clockLabel(d) : date(d, compact: true)).font(.system(size: 11))
+                        Text(singleDay ? clockLabel(d) : date(d, compact: true)).font(.system(size: 11))
                     }
                 }
             }

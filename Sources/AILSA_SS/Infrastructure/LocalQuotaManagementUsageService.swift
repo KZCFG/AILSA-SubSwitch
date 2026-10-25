@@ -87,7 +87,7 @@ actor LocalQuotaManagementUsageService: QuotaManagementUsageServiceProtocol {
     }
     func loadReportSnapshot(for provider: QuotaManagementProvider, historyDays: Int, now: Date) async throws -> QuotaDashboardSnapshot {
         if provider == .cursor { return try await CursorUsageService.shared.dashboard(now: now, historyDays: historyDays, forReport: true) }
-        return try await loadSnapshot(for: provider, historyDays: min(max(historyDays, 1), 365), now: now)
+        return try await loadSnapshot(for: provider, historyDays: max(historyDays, 1), now: now)
     }
     private func loadSnapshot(for provider: QuotaManagementProvider, historyDays: Int, now: Date) async throws -> QuotaDashboardSnapshot {
         if provider == .claude {
@@ -133,7 +133,7 @@ actor LocalQuotaManagementUsageService: QuotaManagementUsageServiceProtocol {
     }
 
     private func loadCodexUsage(historyDays: Int, now: Date) throws -> CodexUsageAnalytics {
-        let boundedDays = min(max(historyDays, 1), 365)
+        let boundedDays = max(historyDays, 1)
         let calendar = Calendar.current
         let start = calendar.date(
             byAdding: .day,

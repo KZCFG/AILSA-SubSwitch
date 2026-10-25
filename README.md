@@ -50,12 +50,12 @@ preserved in this repository.
   or the OpenCodex ledger, including supported non-OpenAI routes. Keep API
   reference estimates separate from provider-reported amounts and billing.
 - **Read Claude usage locally.** Inspect Claude Desktop Code Token and API-equivalent USD usage from local logs. No Claude quota polling or account credentials are required.
-- **Share a longer view.** Export daily, 7-day, 30-day, 60-day, 90-day and rolling 365-day usage images. Annual trends group by week; missing history is never reconstructed.
+- **Share a longer view.** Export daily, 7-day, 30-day, 60-day and 90-day usage images, or select a custom start and end date. Add your own share title, such as “A wonderful weekend”; missing history is never reconstructed.
 - **Make it yours.** Choose M/B token units, visible usage windows, restart
   behavior after switching, and the interface language. Open usage in its own
   window when you need more room.
 
-**1.0.0(r)** adds offline Claude usage and longer usage-image exports. See the [release notes](docs/RELEASE-1.0.0r.md).
+**1.0.0(s)** adds custom date ranges and editable titles for usage-image sharing. See the [release notes](docs/RELEASE-1.0.0s.md).
 
 ### Provider support
 

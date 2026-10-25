@@ -24,22 +24,23 @@ final class UsageReportTests: XCTestCase {
     }
     func testLongRangesAndAnnualWeeklyPointsPreserveEveryDayAndBoundary() {
         let last = date("2026-10-22T00:00:00Z")
-        for period in [UsageReportPeriod.sixtyDays, .ninetyDays, .yearly] {
-            let request = UsageReportRequest(provider: .claude, period: period, endingOn: last)
+        for (period, days) in [(UsageReportPeriod.sixtyDays, 60), (.ninetyDays, 90), (.custom, 365), (.custom, 800)] {
+            let request = UsageReportRequest(provider: .claude, period: period, endingOn: last,
+                startingOn: calendar.date(byAdding: .day, value: -(days - 1), to: last))
             let interval = request.interval(calendar: calendar)
-            XCTAssertEqual(calendar.dateComponents([.day], from: interval.start, to: interval.end).day, period.days)
+            XCTAssertEqual(calendar.dateComponents([.day], from: interval.start, to: interval.end).day, days)
             XCTAssertTrue(request.filename(calendar: calendar).hasPrefix("AILSA-SubSwitch-Claude-"))
-            var days: [Date: QuotaBucket] = [:]
-            for offset in 0..<period.days {
+            var dayBuckets: [Date: QuotaBucket] = [:]
+            for offset in 0..<days {
                 var bucket = QuotaBucket(); bucket.add(value(10, price: 100), key: .init(provider: "Claude", model: "claude-opus-5-5"))
-                days[calendar.date(byAdding: .day, value: offset, to: interval.start)!] = bucket
+                dayBuckets[calendar.date(byAdding: .day, value: offset, to: interval.start)!] = bucket
             }
-            let report = UsageReport.build(snapshot: snapshot(days: days), request: request,
+            let report = UsageReport.build(snapshot: snapshot(days: dayBuckets), request: request,
                 now: interval.end, calendar: calendar)
-            XCTAssertEqual(report.total.tokens.total, period.days * 10)
+            XCTAssertEqual(report.total.tokens.total, days * 10)
             XCTAssertEqual(report.points.reduce(0) { $0 + $1.value.tokens.total }, report.total.tokens.total)
             XCTAssertEqual(report.points.reduce(0) { $0 + $1.value.reference.pico }, report.total.reference.pico)
-            XCTAssertEqual(report.points.count, period == .yearly ? 53 : period.days)
+            XCTAssertEqual(report.points.count, (days + request.chartGroupDays(calendar: calendar) - 1) / request.chartGroupDays(calendar: calendar))
         }
     }
     @MainActor func testLongExportLoadsHistoryBeyondThirtyDaysWithoutReplacingDashboard() async throws {
@@ -47,7 +48,7 @@ final class UsageReportTests: XCTestCase {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let now = date("2026-10-22T12:00:00Z"), ledger = root.appendingPathComponent("usage.jsonl")
-        let offsets = [0, 45, 75, 300, 365]
+        let offsets = [0, 45, 75, 300, 365, 600, 800]
         let rows = try offsets.map { offset -> String in
             let timestamp = calendar.date(byAdding: .day, value: -offset, to: now)!.timeIntervalSince1970 * 1000
             let row: [String: Any] = ["requestId": "day-\(offset)", "timestamp": timestamp,
@@ -61,8 +62,9 @@ final class UsageReportTests: XCTestCase {
             codexArchivedSessionsDirectory: absent, codexBarPricingCatalogURL: absent,
             opencodexUsageLedgerURL: ledger, antigravityQuotaHistoryURL: absent, antigravityInfoPlistURL: absent)
         let model = QuotaManagementPageModel(usageService: LocalQuotaManagementUsageService(paths: paths), dateProvider: { now })
-        for (period, count) in [(UsageReportPeriod.sixtyDays, 2), (.ninetyDays, 3), (.yearly, 4)] {
-            let report = try await model.makeUsageReport(.init(provider: .codex, period: period, endingOn: now))
+        for (period, count, days) in [(UsageReportPeriod.sixtyDays, 2, 60), (.ninetyDays, 3, 90), (.custom, 4, 365), (.custom, 6, 800)] {
+            let report = try await model.makeUsageReport(.init(provider: .codex, period: period, endingOn: now,
+                startingOn: calendar.date(byAdding: .day, value: -(days - 1), to: now)))
             XCTAssertEqual(report.total.tokens.total, count * 110)
             XCTAssertEqual(report.points.reduce(0) { $0 + $1.value.tokens.total }, count * 110)
         }
@@ -171,4 +173,76 @@ final class UsageReportTests: XCTestCase {
         XCTAssertEqual(report.points.reduce(0) { $0 + $1.value.tokens.total }, 110)
         XCTAssertTrue(model.dashboards.isEmpty)
     }
+    func testCustomWeekendIncludesBothDatesAndExcludesNeighboringDays() throws {
+        let start = date("2026-10-23T00:00:00Z"), end = date("2026-10-25T00:00:00Z")
+        let request = UsageReportRequest(provider: .codex, period: .custom, endingOn: end,
+            startingOn: start, customTitle: "美好周末")
+        try request.validate(now: end, calendar: calendar)
+        XCTAssertEqual(request.dayCount(calendar: calendar), 3)
+        XCTAssertEqual(request.displayTitle, "美好周末")
+        XCTAssertTrue(request.filename(calendar: calendar).contains("美好周末-2026-10-23_2026-10-25.png"))
+        var days: [Date: QuotaBucket] = [:]
+        for offset in -1...3 {
+            var bucket = QuotaBucket()
+            bucket.add(value(offset == -1 || offset == 3 ? 999 : 10, price: 100),
+                       key: .init(provider: "xai", model: "grok-4.7"))
+            days[calendar.date(byAdding: .day, value: offset, to: start)!] = bucket
+        }
+        let report = UsageReport.build(snapshot: snapshot(days: days), request: request,
+            now: date("2026-10-26T00:00:00Z"), calendar: calendar)
+        XCTAssertEqual(report.total.tokens.total, 30)
+        XCTAssertEqual(report.total.reference.pico, 300)
+        XCTAssertEqual(report.points.count, 3)
+        XCTAssertEqual(report.points.reduce(0) { $0 + $1.value.tokens.total }, 30)
+        XCTAssertFalse(report.partialPeriod)
+    }
+    func testCustomSingleDayUsesIntradayAndCalendarDaysAcrossDST() {
+        var c = calendar; c.timeZone = TimeZone(identifier: "America/Los_Angeles")!
+        let last = date("2026-03-08T12:00:00Z")
+        let request = UsageReportRequest(provider: .claude, period: .custom, endingOn: last, startingOn: last)
+        XCTAssertEqual(request.dayCount(calendar: c), 1)
+        XCTAssertEqual(request.interval(calendar: c).duration, 23 * 3600)
+        let report = UsageReport.build(snapshot: snapshot(days: [:]), request: request,
+            now: date("2026-03-09T12:00:00Z"), calendar: c)
+        XCTAssertEqual(report.points.count, 46)
+        let weekend = UsageReportRequest(provider: .claude, period: .custom, endingOn: last,
+            startingOn: date("2026-03-06T12:00:00Z"))
+        XCTAssertEqual(weekend.dayCount(calendar: c), 3)
+        XCTAssertEqual(weekend.interval(calendar: c).duration, 71 * 3600)
+    }
+    @MainActor func testInvalidCustomRangesAreRejectedBeforeReadingUsage() async {
+        let now = date("2026-10-25T12:00:00Z")
+        let model = QuotaManagementPageModel(usageService: LocalQuotaManagementUsageService(), dateProvider: { now })
+        for request in [
+            UsageReportRequest(provider: .cursor, period: .custom, endingOn: now),
+            UsageReportRequest(provider: .cursor, period: .custom, endingOn: now, startingOn: now.addingTimeInterval(86400)),
+            UsageReportRequest(provider: .cursor, period: .daily, endingOn: now.addingTimeInterval(86400))
+        ] {
+            XCTAssertThrowsError(try request.validate(now: now))
+            do { _ = try await model.makeUsageReport(request); XCTFail("Invalid range should fail before loading") }
+            catch { XCTAssertTrue(error is UsageReportRequest.ValidationError) }
+        }
+        XCTAssertTrue(model.dashboards.isEmpty)
+    }
+    func testShareTitlesHaveDefaultsAndSafeFilenames() {
+        let day = date("2026-10-25T12:00:00Z")
+        for period in UsageReportPeriod.allCases {
+            let blank = UsageReportRequest(provider: .codex, period: period, endingOn: day, customTitle: "  \n ")
+            let normal = UsageReportRequest(provider: .codex, period: period, endingOn: day)
+            XCTAssertEqual(blank.displayTitle, normal.displayTitle)
+            XCTAssertFalse(blank.displayTitle.isEmpty)
+        }
+        let request = UsageReportRequest(provider: .claude, period: .weekly, endingOn: day,
+            customTitle: "  美好周末 / 分享\n快乐: 用量  ")
+        XCTAssertEqual(request.displayTitle, "美好周末 / 分享 快乐: 用量")
+        let filename = request.filename(calendar: calendar)
+        XCTAssertFalse(filename.contains("/")); XCTAssertFalse(filename.contains(":")); XCTAssertFalse(filename.contains("\n"))
+        XCTAssertEqual((filename as NSString).lastPathComponent, filename)
+        let long = UsageReportRequest(provider: .codex, period: .daily, endingOn: day, customTitle: String(repeating: "好", count: 100))
+        XCTAssertEqual(long.displayTitle.count, 80)
+        let emoji = UsageReportRequest(provider: .antigravity, period: .custom, endingOn: day,
+            startingOn: day.addingTimeInterval(-10 * 86400), customTitle: String(repeating: "🌞", count: 80))
+        XCTAssertLessThanOrEqual(emoji.filename(calendar: calendar).utf8.count, 255)
+    }
+
 }

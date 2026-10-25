@@ -14,7 +14,24 @@ separate steps.
 - [x] Publish a clean source snapshot to KZCFG/AILSA-SubSwitch; verify remote readback.
 - [x] Enable private vulnerability reporting.
 
-## Current release: 1.0.0(l) (2026102003)
+## Current release: 1.0.0(s) (2026102502)
+
+This revision replaces the Year sharing preset with inclusive custom dates and
+adds editable report titles. Normal 30-day dashboards remain unchanged.
+
+- 473 public and 550 private regression checks passed in the CLT asserting
+  XCTest-compatible harness, not Apple XCTest.
+- Custom three-day and 800-day ranges preserve exact Token/USD totals; DST,
+  invalid dates, default headings and safe filenames are covered.
+- Network-denied native offscreen checks cover Chinese/English controls,
+  weekend Token/USD reports and long titles. Native save-dialog interaction
+  and clean-machine installation remain unverified.
+- Public/private boundaries, signatures, versions, source hashes and archive
+  checksums are checked separately for both packages.
+
+See [1.0.0(s) release notes](RELEASE-1.0.0s.md).
+
+## Historical release: 1.0.0(l) (2026102003)
 
 This revision adds official USD reference prices and WorkBuddy model-ID mapping.
 See [the release notes](RELEASE-1.0.0l.md) for the verified rates and sources.

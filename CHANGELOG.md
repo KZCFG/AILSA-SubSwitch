@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0(s) — 2026-10-25
+
+- Add Gemini 4 Argon and GLM 5.3 reference pricing, readable identities and explicit high estimates for known requested models missing resolved identity.
+- Replace the Year export preset with Custom start and end dates, inclusive in the local time zone.
+- Add an optional share title for every preset, with default Daily, Weekly and Monthly headings.
+- Read the complete selected history, including ranges longer than a year, while keeping normal dashboards at 30 days.
+- Preserve full-range Token and USD totals, available-history limits and export privacy.
+
 ## 1.0.0(r) — 2026-10-23
 
 - Add offline Claude Desktop Code Token/API-equivalent USD accounting without Claude quota polling.
