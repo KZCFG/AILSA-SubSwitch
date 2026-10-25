@@ -333,7 +333,7 @@ struct QuotaDashboard: View {
                         .accessibilityLabel(qtext("按 USD 排序", "Sort by USD")).accessibilityAddTraits(sortUSD ? .isSelected : [])
                 }.font(.caption).frame(height: 24)
                 if rows.isEmpty {
-                    Text(qtext("此范围暂无请求", "No requests in this range")).foregroundStyle(.secondary).frame(maxWidth: .infinity).frame(height: CGFloat(layout.rows * 33))
+                    Text(bucket.total.requests > 0 ? qtext("暂无可显示的模型明细", "No model details to display") : qtext("此范围暂无请求", "No requests in this range")).foregroundStyle(.secondary).frame(maxWidth: .infinity).frame(height: CGFloat(layout.rows * 33))
                 } else {
                     ScrollView(.vertical) {
                       LazyVStack(spacing: 0) {
