@@ -49,6 +49,7 @@ preserved in this repository.
 - **Understand reference costs.** Read token records from local Codex sessions
   or the OpenCodex ledger, including supported non-OpenAI routes. Keep API
   reference estimates separate from provider-reported amounts and billing.
+- **Include native Antigravity usage.** Read local App/CLI generation metadata and combine matching Gemini model versions with OpenCodex usage, including charts and share images. No CLI process or model request is started for Token statistics.
 - **Read Claude usage locally.** Inspect Claude Desktop Code Token and API-equivalent USD usage from local logs. No Claude quota polling or account credentials are required.
 - **Share a longer view.** Export daily, 7-day, 30-day, 60-day and 90-day usage images, or select a custom start and end date. Add your own share title, such as “A wonderful weekend”; missing history is never reconstructed.
 - **Make it yours.** Choose M/B token units, visible usage windows, restart

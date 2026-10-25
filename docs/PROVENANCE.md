@@ -31,3 +31,11 @@ python3 scripts/generate_provenance.py --upstream /path/to/Copool
 ```
 
 所选的上游检出目录必须包含该基线提交。干净的公开仓库有意不包含开发者的私有工作历史。
+
+## CodexBar 0.81 本机 Token 读取器
+
+`AILSA_SS-AntigravityTokenScanner.swift` 的有界扫描、Protobuf、精确 JSON/JSONL、
+SQLite schema / WAL 读取与辅助函数改编自 CodexBar v0.81.0，提交
+`ee890b5f392e70d6e20162d3e95cf9f1be265b60`，适用 MIT 许可并保留 Peter Steinberger
+的版权及许可声明。测试使用改编的合成编码夹具，不包含开发者的会话数据库。
+`AILSA_SS-AntigravityTokenUsage.swift` 负责本项目的汇总、价格、缓存和跨来源去重。

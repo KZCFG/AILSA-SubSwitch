@@ -619,6 +619,8 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
     var minuteBuckets: [Date: QuotaBucket] = [:]
     var quotaTrends: [String: [Date: Double]] = [:]
     var pricingProvenance: [QuotaPricingProvenance] = []
+    var providerResponseKeys: Set<String> = []
+    var antigravityTokenUsage: AntigravityTokenDiagnostics? = nil
 
     static func build(_ data: QuotaManagementData, now: Date, calendar: Calendar = .current, historyDays: Int = 30) -> Self {
         let started = Date()
@@ -635,6 +637,7 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
         var minutes: [Date: Int] = [:]
         var minuteBuckets: [Date: QuotaBucket] = [:]
         var provenance: [QuotaPricingProvenance] = []
+        var responseKeys = Set<String>()
         let scanned: Date
         let source: String
         func insert(_ value: QuotaAggregate, at date: Date, key: QuotaModelKey) {
@@ -653,6 +656,7 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
             var catalogAuditDates = Set<String>()
             for record in data.records {
                 let contribution = Self.contribution(record)
+                responseKeys.formUnion(contribution.providerResponseKeys)
                 if let url = record.pricing.officialSourceURL { sources.insert(url) }
                 if let audit = OpenCodexPricingCatalog.auditDate(fromCatalogVersion: record.pricing.catalogVersion) { catalogAuditDates.insert(audit) }
                 all.merge(contribution.value)
@@ -708,7 +712,7 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
                     pricingSources: sources.sorted(), discardedRows: discarded,
                     quotaWindows: windows, quotaTrend: trend,
                     buildMilliseconds: Date().timeIntervalSince(started) * 1000, minuteTokens: minutes, minuteBuckets: minuteBuckets, quotaTrends: trends,
-                    pricingProvenance: provenance)
+                    pricingProvenance: provenance, providerResponseKeys: responseKeys)
     }
     static func isoDay(_ date: Date, calendar: Calendar = .current) -> String {
         let parts = calendar.dateComponents([.year, .month, .day], from: date)
@@ -742,8 +746,16 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
                 if record.pricing.valueKind == .exactDerived { value.confirmed.add(record.pricing.picoUSD) }
             }
         }
-        return QuotaContribution(minute: Date(timeIntervalSince1970: floor(record.occurredAt.timeIntervalSince1970 / 60) * 60), day: Calendar.current.startOfDay(for: record.occurredAt), key: resolved ? QuotaModelKey(provider: record.routeProvider ?? "", model: record.resolvedModel ?? "")
+        var contribution = QuotaContribution(minute: Date(timeIntervalSince1970: floor(record.occurredAt.timeIntervalSince1970 / 60) * 60), day: Calendar.current.startOfDay(for: record.occurredAt), key: resolved ? QuotaModelKey(provider: record.routeProvider ?? "", model: record.resolvedModel ?? "")
                 : maximum.map { QuotaModelKey(provider: "request-estimate:" + $0.provider, model: $0.model) } ?? .unknown, value: value)
+        if resolved, !record.streamAborted, record.usageStatus == .reported,
+           record.tokenSource == .upstreamReported, record.tokens.hasPrimaryTokens,
+           !record.tokenSemanticIssue, let model = record.resolvedModel {
+            for id in [record.requestID,record.upstreamResponseID].compactMap({$0}) {
+                if let key = AntigravityTokenUsage.responseKey(model:model,responseID:id) { contribution.providerResponseKeys.insert(key) }
+            }
+        }
+        return contribution
     }
     static func compact(_ entries: Dictionary<String, QuotaContribution>.Values, discarded: Int, now: Date, pricingProvenance: [QuotaPricingProvenance] = [], source: String = "OpenCodex", historyDays: Int = 30) -> Self {
         let started = Date(), calendar = Calendar.current
@@ -751,9 +763,11 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
         let start = calendar.date(byAdding: .day, value: -(max(historyDays, 1) - 1), to: today)!
         let end = calendar.date(byAdding: .day, value: 1, to: today)!
         var days: [Date: QuotaBucket] = [:], all = QuotaAggregate()
+        var responseKeys = Set<String>()
         var minutes: [Date: Int] = [:]
         var minuteBuckets: [Date: QuotaBucket] = [:]
         for entry in entries {
+            responseKeys.formUnion(entry.providerResponseKeys)
             all.merge(entry.value)
             if entry.day == today, let minute = entry.minute {
                 minutes[minute, default: 0] += entry.value.tokens.total
@@ -764,7 +778,7 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
                 days[day, default: QuotaBucket()].add(entry.value, key: entry.key)
             }
         }
-        return Self(scannedAt: Date(), days: days, all: all, source: source, pricingSources: [], discardedRows: discarded, quotaWindows: [], quotaTrend: [:], buildMilliseconds: Date().timeIntervalSince(started) * 1000, minuteTokens: minutes, minuteBuckets: minuteBuckets, pricingProvenance: pricingProvenance)
+        return Self(scannedAt: Date(), days: days, all: all, source: source, pricingSources: [], discardedRows: discarded, quotaWindows: [], quotaTrend: [:], buildMilliseconds: Date().timeIntervalSince(started) * 1000, minuteTokens: minutes, minuteBuckets: minuteBuckets, pricingProvenance: pricingProvenance, providerResponseKeys: responseKeys)
     }
     func bucket(from start: Date, until end: Date) -> QuotaBucket {
         var result = QuotaBucket()
@@ -806,4 +820,5 @@ struct QuotaContribution: Equatable, Sendable {
     let day: Date
     let key: QuotaModelKey
     let value: QuotaAggregate
+    var providerResponseKeys: Set<String> = []
 }

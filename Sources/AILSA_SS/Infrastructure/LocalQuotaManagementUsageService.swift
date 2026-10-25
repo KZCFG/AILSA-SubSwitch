@@ -35,6 +35,8 @@ struct QuotaManagementDataPaths: Equatable, Sendable {
     var antigravityInfoPlistURL: URL
     var claudeDesktopSessionsDirectory: URL? = nil
     var claudeProjectsDirectory: URL? = nil
+    var antigravityConversationDirectories: [URL] = []
+    var antigravityTokenCacheDirectory: URL? = nil
 
     static func live(fileManager: FileManager = .default) -> QuotaManagementDataPaths {
         let homeDirectory = fileManager.homeDirectoryForCurrentUser
@@ -64,7 +66,9 @@ struct QuotaManagementDataPaths: Equatable, Sendable {
                 isDirectory: false
             ),
             claudeDesktopSessionsDirectory: homeDirectory.appendingPathComponent("Library/Application Support/Claude/claude-code-sessions"),
-            claudeProjectsDirectory: homeDirectory.appendingPathComponent(".claude/projects")
+            claudeProjectsDirectory: homeDirectory.appendingPathComponent(".claude/projects"),
+            antigravityConversationDirectories: [".gemini/antigravity", ".gemini/antigravity/conversations", ".gemini/antigravity-cli/conversations"].map { homeDirectory.appendingPathComponent($0) },
+            antigravityTokenCacheDirectory: homeDirectory.appendingPathComponent(".config/tokscale/antigravity-cache/sessions")
         )
     }
 }
@@ -77,6 +81,7 @@ actor LocalQuotaManagementUsageService: QuotaManagementUsageServiceProtocol {
     private let paths: QuotaManagementDataPaths
     private var incrementalLedger = OpenCodexIncrementalLedger()
     private var claudeUsageReader = ClaudeLocalUsageReader()
+    private var antigravityTokenReader = AntigravityTokenUsageReader()
 
     init(paths: QuotaManagementDataPaths = .live()) {
         self.paths = paths
@@ -96,9 +101,23 @@ actor LocalQuotaManagementUsageService: QuotaManagementUsageServiceProtocol {
         }
         if provider == .cursor { return try await CursorUsageService.shared.dashboard(now: now) }
         if provider == .codex, FileManager.default.fileExists(atPath: paths.opencodexUsageLedgerURL.path) {
-            return try incrementalLedger.snapshot(url: paths.opencodexUsageLedgerURL, catalogURL: paths.opencodexVerifiedPricingCatalogURL, now: now, historyDays: historyDays)
+            let dashboard = try incrementalLedger.snapshot(url: paths.opencodexUsageLedgerURL, catalogURL: paths.opencodexVerifiedPricingCatalogURL, now: now, historyDays: historyDays)
+            return try mergeNativeUsage(into: dashboard, now: now, historyDays: historyDays)
         }
-        return QuotaDashboardSnapshot.build(try await loadData(for: provider, historyDays: historyDays, now: now), now: now, historyDays: historyDays)
+        let dashboard = QuotaDashboardSnapshot.build(try await loadData(for: provider, historyDays: historyDays, now: now), now: now, historyDays: historyDays)
+        return provider == .codex ? try mergeNativeUsage(into: dashboard, now: now, historyDays: historyDays) : dashboard
+    }
+
+    private func mergeNativeUsage(into dashboard: QuotaDashboardSnapshot, now: Date, historyDays: Int) throws -> QuotaDashboardSnapshot {
+        do {
+            let native = try antigravityTokenReader.read(roots: paths.antigravityConversationDirectories, cacheRoot: paths.antigravityTokenCacheDirectory)
+            return native.merging(into: dashboard, now: now, historyDays: historyDays)
+        } catch is CancellationError { throw CancellationError() }
+        catch {
+            var result = dashboard
+            result.antigravityTokenUsage = AntigravityTokenDiagnostics(partial:true,unavailable:true)
+            return result
+        }
     }
 
     func loadData(

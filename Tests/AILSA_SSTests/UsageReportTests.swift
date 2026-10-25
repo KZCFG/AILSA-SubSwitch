@@ -119,20 +119,35 @@ final class UsageReportTests: XCTestCase {
         XCTAssertTrue(report.rows.isEmpty)
     }
 
-    func testShareFilterKeepsZeroUSDAndPreservesTotalsAndTrends() {
+    func testShareFilterHidesZeroAndRoundedZeroUSDAndPreservesTotalsAndTrends() {
         let day = date("2026-09-27T00:00:00Z")
         var bucket = QuotaBucket()
         bucket.add(value(10), key: .init(provider: "fixture", model: "unpriced"))
         bucket.add(value(20, price: 0), key: .init(provider: "fixture", model: "zero-usd"))
-        bucket.add(value(30, price: 1_000), key: .init(provider: "fixture", model: "paid"))
+        bucket.add(value(30, price: 1_000_000_000_000), key: .init(provider: "fixture", model: "paid"))
+        bucket.add(value(25, price: 1_000), key: .init(provider: "fixture", model: "rounded-zero"))
         let report = UsageReport.build(snapshot: snapshot(days: [day:bucket]),
             request: .init(provider: .codex, period: .weekly, endingOn: day),
             now: day.addingTimeInterval(86400), calendar: calendar)
-        XCTAssertEqual(report.visibleRows(hideUnpricedModels: false).map(\.name), report.rows.map(\.name))
-        XCTAssertEqual(report.visibleRows(hideUnpricedModels: true).map(\.name), ["paid", "zero-usd"])
-        XCTAssertEqual(report.total.tokens.total, 60)
-        XCTAssertEqual(report.points.reduce(0) { $0 + $1.value.tokens.total }, 60)
-        XCTAssertEqual(report.total.reference.pico, 1_000)
+        XCTAssertEqual(report.visibleRows(hideUnpricedModels: false).map(\.name), ["paid", "unpriced"])
+        XCTAssertEqual(report.visibleRows(hideUnpricedModels: true).map(\.name), ["paid"])
+        XCTAssertEqual(report.total.tokens.total, 85)
+        XCTAssertEqual(report.points.reduce(0) { $0 + $1.value.tokens.total }, 85)
+        XCTAssertEqual(report.total.reference.pico, 1_000_000_001_000)
+    }
+
+    func testShareModelOrderCanUseTokensOrUSDWithoutChangingTotals() {
+        let day = date("2026-09-27T00:00:00Z")
+        var bucket = QuotaBucket()
+        bucket.add(value(500, price: 100_000_000_000), key: .init(provider: "fixture", model: "high-token"))
+        bucket.add(value(100, price: 3_000_000_000_000), key: .init(provider: "fixture", model: "high-usd"))
+        bucket.add(value(200, price: 2_000_000_000_000), key: .init(provider: "fixture", model: "middle"))
+        bucket.add(value(0, price: 0), key: .init(provider: "fixture", model: "empty-estimate"))
+        let report = UsageReport.build(snapshot: snapshot(days: [day:bucket]), request: .init(provider: .codex, period: .weekly, endingOn: day), now: day.addingTimeInterval(86400), calendar: calendar)
+        XCTAssertEqual(report.visibleRows(hideUnpricedModels: true, sortBy: .tokens).map(\.name), ["high-token", "middle", "high-usd"])
+        XCTAssertEqual(report.visibleRows(hideUnpricedModels: true, sortBy: .usd).map(\.name), ["high-usd", "middle", "high-token"])
+        XCTAssertEqual(report.total.tokens.total, 800)
+        XCTAssertEqual(report.total.reference.pico, 5_100_000_000_000)
     }
 
     func testShareFilterHandlesAllUnpricedAndOverflowAmounts() {

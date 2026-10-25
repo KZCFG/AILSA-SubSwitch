@@ -108,8 +108,14 @@ struct UsageReportRequest: Equatable, Sendable {
     }
 }
 
+enum UsageReportSortOrder: String, CaseIterable, Sendable {
+    case tokens, usd
+    var title: String { self == .tokens ? UsageReportText.text("Token 用量", "Token usage") : UsageReportText.text("USD 金额", "USD amount") }
+}
+
 enum UsageReportPreferences {
     static let hideUnpricedModelsKey = "ass.usageReport.hideUnpricedModels"
+    static let modelSortOrderKey = "ass.usageReport.modelSortOrder"
 }
 
 /// Only aggregates enter the renderer. No account labels, request IDs,
@@ -135,10 +141,22 @@ struct UsageReport: Sendable {
     let partialPeriod: Bool
     let missingPriceRecords: Int
 
-    /// Filters exported model details only. Totals and trends keep every record.
-    /// An explicit zero-dollar amount is priced and remains visible.
-    func visibleRows(hideUnpricedModels: Bool) -> [Row] {
-        hideUnpricedModels ? rows.filter { $0.value.reference.usd != nil } : rows
+    /// Share-image details only. Zero Token rows and amounts displayed as $0.00
+    /// never appear; the preference additionally hides missing prices. Totals stay complete.
+    func visibleRows(hideUnpricedModels: Bool, sortBy: UsageReportSortOrder = .tokens) -> [Row] {
+        rows.filter { row in
+            guard row.value.tokens.total > 0 else { return false }
+            guard let usd = row.value.reference.usd else { return !hideUnpricedModels }
+            return usd.formatted(.currency(code: "USD").locale(Locale(identifier: "en_US"))) != "$0.00"
+        }.sorted { lhs, rhs in
+            if sortBy == .usd {
+                let left = lhs.value.reference.usd == nil ? -1 : lhs.value.reference.pico
+                let right = rhs.value.reference.usd == nil ? -1 : rhs.value.reference.pico
+                if left != right { return left > right }
+            }
+            if lhs.value.tokens.total != rhs.value.tokens.total { return lhs.value.tokens.total > rhs.value.tokens.total }
+            return lhs.name < rhs.name
+        }
     }
 
     static func build(snapshot: QuotaDashboardSnapshot, request: UsageReportRequest,

@@ -5,15 +5,15 @@ path,baseline_comparison,bytes,license_note
 .gitignore,upstream_modified,525,MIT; see LICENSE and bundled third-party notices
 AILSA_SS.entitlements,upstream_modified,485,MIT; see LICENSE and bundled third-party notices
 AILSA_SS.release.entitlements,upstream_modified,642,MIT; see LICENSE and bundled third-party notices
-AILSA_SS.xcodeproj/project.pbxproj,upstream_modified,109907,MIT; see LICENSE and bundled third-party notices
+AILSA_SS.xcodeproj/project.pbxproj,upstream_modified,121855,MIT; see LICENSE and bundled third-party notices
 AILSA_SS.xcodeproj/project.xcworkspace/contents.xcworkspacedata,upstream_identical,135,MIT; see LICENSE and bundled third-party notices
 AILSA_SS.xcodeproj/xcshareddata/xcschemes/AILSA_SS.xcscheme,upstream_identical,4262,MIT; see LICENSE and bundled third-party notices
 AILSA_SSWidgetsMac.entitlements,upstream_modified,354,MIT; see LICENSE and bundled third-party notices
-CHANGELOG.md,local_addition,5397,MIT; see LICENSE and bundled third-party notices
+CHANGELOG.md,local_addition,13770,MIT; see LICENSE and bundled third-party notices
 CONTRIBUTING.md,local_addition,3045,MIT; see LICENSE and bundled third-party notices
 LICENSE,local_addition,1169,MIT; see LICENSE and bundled third-party notices
 Package.swift,upstream_modified,1380,MIT; see LICENSE and bundled third-party notices
-README.md,upstream_modified,9668,MIT; see LICENSE and bundled third-party notices
+README.md,upstream_modified,13991,MIT; see LICENSE and bundled third-party notices
 SECURITY.md,local_addition,1451,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/AILSA_SSApp.swift,upstream_modified,9747,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/App/AppContainer.swift,upstream_modified,10315,MIT; see LICENSE and bundled third-party notices
@@ -44,7 +44,7 @@ Sources/AILSA_SS/Domain/L10n.swift,upstream_modified,1915,MIT; see LICENSE and b
 Sources/AILSA_SS/Domain/Notice.swift,upstream_identical,895,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Domain/PlatformCapabilities.swift,upstream_modified,442,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Domain/Protocols.swift,upstream_modified,5320,MIT; see LICENSE and bundled third-party notices
-Sources/AILSA_SS/Domain/QuotaManagementModels.swift,local_addition,25346,MIT; see LICENSE and bundled third-party notices
+Sources/AILSA_SS/Domain/QuotaManagementModels.swift,local_addition,35568,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Domain/SettingsModels.swift,upstream_modified,13871,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Domain/ViewState.swift,upstream_identical,208,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Features/Accounts/AccountCardInteractionPresentation.swift,upstream_identical,855,MIT; see LICENSE and bundled third-party notices
@@ -71,7 +71,7 @@ Sources/AILSA_SS/Features/Accounts/AntigravityAccountsSection.swift,local_additi
 Sources/AILSA_SS/Features/Accounts/CursorAccountsView.swift,local_addition,8666,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Features/QuotaManagement/QuotaIntradayChart.swift,local_addition,7832,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Features/QuotaManagement/QuotaManagementPageModel.swift,local_addition,10929,MIT; see LICENSE and bundled third-party notices
-Sources/AILSA_SS/Features/QuotaManagement/QuotaManagementPageView.swift,local_addition,30132,MIT; see LICENSE and bundled third-party notices
+Sources/AILSA_SS/Features/QuotaManagement/QuotaManagementPageView.swift,local_addition,59207,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Features/Settings/AboutView.swift,local_addition,2742,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Features/Settings/SettingsControlPresentation.swift,upstream_modified,6648,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Features/Settings/SettingsControlPrimitives.swift,upstream_modified,5237,MIT; see LICENSE and bundled third-party notices
@@ -82,8 +82,10 @@ Sources/AILSA_SS/Features/Settings/SettingsPageModel.swift,upstream_modified,714
 Sources/AILSA_SS/Features/Settings/SettingsPageSections.swift,upstream_modified,22154,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Features/Settings/SettingsPageView.swift,upstream_modified,199,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Info-macOS.plist,upstream_modified,1418,MIT; see LICENSE and bundled third-party notices
+Sources/AILSA_SS/Infrastructure/AILSA_SS-AntigravityTokenScanner.swift,local_addition,72048,MIT; CodexBar v0.81.0 adaptations and SubSwitch integration; see bundled notices
+Sources/AILSA_SS/Infrastructure/AILSA_SS-AntigravityTokenUsage.swift,local_addition,13641,MIT; CodexBar v0.81.0 adaptations and SubSwitch integration; see bundled notices
 Sources/AILSA_SS/Infrastructure/AILSA_SS-AuthSyncService.swift,upstream_identical,10897,MIT; see LICENSE and bundled third-party notices
-Sources/AILSA_SS/Infrastructure/AILSA_SS-LedgerMeteringReader.swift,local_addition,49656,MIT; see LICENSE and bundled third-party notices
+Sources/AILSA_SS/Infrastructure/AILSA_SS-LedgerMeteringReader.swift,local_addition,50349,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Infrastructure/AILSA_SS-LedgerQuotaLoader.swift,local_addition,5213,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Infrastructure/AILSA_SS-StandardReferenceEstimate.swift,local_addition,21866,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Infrastructure/AILSA_SS-VerifiedPricingCatalogLoader.swift,local_addition,14855,MIT; see LICENSE and bundled third-party notices
@@ -106,7 +108,7 @@ Sources/AILSA_SS/Infrastructure/EditorAppService.swift,upstream_modified,9008,MI
 Sources/AILSA_SS/Infrastructure/EndpointRequestCoordinator.swift,upstream_identical,6395,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Infrastructure/FileSystemPaths.swift,upstream_modified,1298,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Infrastructure/LaunchAtStartupService.swift,upstream_identical,1676,MIT; see LICENSE and bundled third-party notices
-Sources/AILSA_SS/Infrastructure/LocalQuotaManagementUsageService.swift,local_addition,22580,MIT; see LICENSE and bundled third-party notices
+Sources/AILSA_SS/Infrastructure/LocalQuotaManagementUsageService.swift,local_addition,26706,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Infrastructure/OpenAIChatGPTOAuthLoginService.swift,upstream_identical,14751,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Infrastructure/OpenAIChatGPTOAuthSupport.swift,upstream_modified,8583,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Infrastructure/ShellCommandRunner.swift,upstream_modified,9187,MIT; see LICENSE and bundled third-party notices
@@ -117,7 +119,7 @@ Sources/AILSA_SS/Layout/LayoutRules.swift,upstream_modified,10522,MIT; see LICEN
 Sources/AILSA_SS/Layout/PanelViewportEnvironment.swift,local_addition,520,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Resources/AILSASubSwitch.icns,local_addition,2147008,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Resources/AILSA_SS-runtime-pricing-bindings-v1.json,local_addition,110114,MIT; see LICENSE and bundled third-party notices
-Sources/AILSA_SS/Resources/THIRD_PARTY_NOTICES.md,local_addition,5843,MIT; see LICENSE and bundled third-party notices
+Sources/AILSA_SS/Resources/THIRD_PARTY_NOTICES.md,local_addition,7040,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Resources/de.lproj/Localizable.strings,upstream_modified,32171,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Resources/en.lproj/Localizable.strings,upstream_modified,32524,MIT; see LICENSE and bundled third-party notices
 Sources/AILSA_SS/Resources/es.lproj/Localizable.strings,upstream_modified,32143,MIT; see LICENSE and bundled third-party notices
@@ -162,6 +164,7 @@ Tests/AILSA_SSTests/AccountsWidgetSnapshotStoreTests.swift,upstream_modified,893
 Tests/AILSA_SSTests/AntiGravityAuthRepositoryTests.swift,local_addition,21582,MIT; see LICENSE and bundled third-party notices
 Tests/AILSA_SSTests/AntigravityAccountsCoordinatorTests.swift,local_addition,6448,MIT; see LICENSE and bundled third-party notices
 Tests/AILSA_SSTests/AntigravityNativeLoginTests.swift,local_addition,25129,MIT; see LICENSE and bundled third-party notices
+Tests/AILSA_SSTests/AntigravityNativeUsageTests.swift,local_addition,19636,MIT; CodexBar v0.81.0 adaptations and SubSwitch integration; see bundled notices
 Tests/AILSA_SSTests/AntigravityObservedSelectionTests.swift,local_addition,5153,MIT; see LICENSE and bundled third-party notices
 Tests/AILSA_SSTests/AppLocaleTests.swift,upstream_identical,886,MIT; see LICENSE and bundled third-party notices
 Tests/AILSA_SSTests/AppSettingsCodableTests.swift,upstream_modified,4462,MIT; see LICENSE and bundled third-party notices
@@ -184,22 +187,22 @@ Tests/AILSA_SSTests/StoreFileRepositoryTests.swift,upstream_modified,18426,MIT; 
 Tests/AILSA_SSTests/UsageServiceTests.swift,upstream_modified,7441,MIT; see LICENSE and bundled third-party notices
 Tests/AILSA_SSTests/UsageWindowSelectorTests.swift,upstream_modified,1249,MIT; see LICENSE and bundled third-party notices
 Tests/AILSA_SSTests/WorkspaceMetadataServiceTests.swift,upstream_identical,6926,MIT; see LICENSE and bundled third-party notices
-VERSION,local_addition,278,MIT; see LICENSE and bundled third-party notices
+VERSION,local_addition,69,MIT; see LICENSE and bundled third-party notices
 docs/ACCEPTANCE-PLAN-20260918.md,local_addition,4704,MIT; see LICENSE and bundled third-party notices
 docs/ACCEPTANCE-RESULTS-20260918.md,local_addition,9348,MIT; see LICENSE and bundled third-party notices
-docs/PRIVACY.md,local_addition,3571,MIT; see LICENSE and bundled third-party notices
-docs/PROVENANCE.md,local_addition,2013,MIT; see LICENSE and bundled third-party notices
+docs/PRIVACY.md,local_addition,5217,MIT; see LICENSE and bundled third-party notices
+docs/PROVENANCE.md,local_addition,2525,MIT; see LICENSE and bundled third-party notices
 docs/RELEASE-CHECKLIST.md,local_addition,3653,MIT; see LICENSE and bundled third-party notices
 docs/RELEASE-READINESS-20260917.md,local_addition,5049,MIT; see LICENSE and bundled third-party notices
 docs/ROADMAP.md,local_addition,1017,MIT; see LICENSE and bundled third-party notices
 docs/TEST-CHECKLIST.md,local_addition,4328,MIT; see LICENSE and bundled third-party notices
-docs/USER-GUIDE.md,local_addition,9386,MIT; see LICENSE and bundled third-party notices
+docs/USER-GUIDE.md,local_addition,23179,MIT; see LICENSE and bundled third-party notices
 docs/assets/accounts-demo.png,local_addition,119921,MIT; see LICENSE and bundled third-party notices
 docs/assets/app-icon.png,local_addition,1501731,MIT; see LICENSE and bundled third-party notices
 docs/assets/compact-demo.png,local_addition,56630,MIT; see LICENSE and bundled third-party notices
 docs/assets/usage-demo.png,local_addition,137248,MIT; see LICENSE and bundled third-party notices
 docs/release-macos.md,upstream_modified,2118,MIT; see LICENSE and bundled third-party notices
-project.yml,upstream_modified,1469,MIT; see LICENSE and bundled third-party notices
+project.yml,upstream_modified,1472,MIT; see LICENSE and bundled third-party notices
 scripts/antigravity_coordinator_driver.swift,local_addition,24273,MIT; see LICENSE and bundled third-party notices
 scripts/build_antigravity_coordinator_driver.sh,local_addition,1585,MIT; see LICENSE and bundled third-party notices
 scripts/build_app.sh,local_addition,10939,MIT; see LICENSE and bundled third-party notices

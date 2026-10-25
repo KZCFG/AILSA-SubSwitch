@@ -70,3 +70,18 @@ attach `accounts.json`, `cursor-profiles.json`, `auth.json`, an entire Cursor
 profile database, or a full Codex session log to a public issue.
 
 For a suspected credential exposure, follow [SECURITY.md](../SECURITY.md).
+
+## Native Antigravity usage metadata
+
+The local Token reader uses read-only SQLite access to Antigravity App/CLI
+conversation databases under `~/.gemini/antigravity/` and
+`~/.gemini/antigravity-cli/conversations/`. A tokscale local sessions cache is an
+optional fallback only when no native databases are present. Generation blobs
+may also contain conversation content; the bounded decoder projects only model,
+usage counters, timestamp and request/step identity. Conversation content is not
+retained in usage aggregates, exported or uploaded. Do not share source databases.
+
+This reader does not launch the Antigravity CLI, refresh OAuth, query quota or
+send inference requests. Stable response identities are hashed for cross-source
+deduplication. File caches are in memory and invalidated when main/WAL evidence
+changes. Unverifiable or conflicting evidence stays excluded with partial coverage.

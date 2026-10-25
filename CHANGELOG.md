@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.0(u) — 2026-10-26
+
+Native Antigravity Token usage now joins OpenCodex model totals, charts and share images. Verified metadata timestamps, cache/reasoning accounting and stable response identities protect the combined figures. Share images now hide displayed-zero model rows, support Token/USD model order and use a neutral Grok style. See [release details](docs/RELEASE-1.0.0u.md).
+
 ## 1.0.0(t) — 2026-10-25
 
 - Keep unidentified routes visible in the application, but omit them from share-image details while retaining reported Token totals and original records.

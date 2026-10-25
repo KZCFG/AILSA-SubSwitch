@@ -189,6 +189,7 @@ struct OpenCodexLedgerMeteringRecord: Equatable, Identifiable, Sendable {
     let standardReferenceEstimate: AILSA_SSStandardReferenceEstimate
     let streamAborted: Bool
     var tokenSemanticIssue = false
+    var upstreamResponseID: String? = nil
 
     var id: String { requestID }
 }
@@ -584,6 +585,10 @@ struct AILSA_SSLedgerMeteringReader: Sendable {
                     ?? Self.nonemptyString(root["api_equivalent_eligibility"]),
                 streamAborted: (root["streamAborted"] as? Bool) == true
                     || (root["stream_aborted"] as? Bool) == true,
+                upstreamResponseID: Self.nonemptyString(root["upstreamResponseId"])
+                    ?? Self.nonemptyString(root["upstream_response_id"])
+                    ?? Self.nonemptyString(root["providerResponseId"])
+                    ?? Self.nonemptyString(root["responseId"]),
                 parsedTokens: Self.parseTokens(usage)
             )
 
@@ -776,7 +781,8 @@ struct AILSA_SSLedgerMeteringReader: Sendable {
             pricing: pricing,
             standardReferenceEstimate: standardReferenceEstimate,
             streamAborted: candidate.streamAborted,
-            tokenSemanticIssue: candidate.parsedTokens.semanticIssue != nil
+            tokenSemanticIssue: candidate.parsedTokens.semanticIssue != nil,
+            upstreamResponseID: candidate.upstreamResponseID
         )
     }
 
@@ -967,6 +973,7 @@ struct AILSA_SSLedgerMeteringReader: Sendable {
         let currency: String?
         let apiEquivalentEligibility: String?
         let streamAborted: Bool
+        let upstreamResponseID: String?
         let parsedTokens: ParsedTokens
 
         /// Same requestId is one logical turn.  Prefer a client-received

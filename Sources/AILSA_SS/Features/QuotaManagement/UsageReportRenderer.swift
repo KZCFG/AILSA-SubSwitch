@@ -7,7 +7,8 @@ struct UsageReportPoster: View {
     var metric: QuotaChartMetric = .tokens
     var tokenUnit = "M"
     var hideUnpricedModels = false
-    private var visibleRows: [UsageReport.Row] { report.visibleRows(hideUnpricedModels: hideUnpricedModels) }
+    var modelSortOrder: UsageReportSortOrder = .tokens
+    private var visibleRows: [UsageReport.Row] { report.visibleRows(hideUnpricedModels: hideUnpricedModels, sortBy: modelSortOrder) }
     private var hiddenModelCount: Int { report.rows.count - visibleRows.count }
     private let ink = Color(white: 0.07)
     private let muted = Color(white: 0.44)
@@ -80,8 +81,8 @@ struct UsageReportPoster: View {
                 HStack {
                     Text(text("按模型", "Models")).font(.system(size: 16, weight: .semibold))
                     Spacer()
-                    Text("Token").frame(width: 126, alignment: .trailing)
-                    Text("USD").frame(width: 100, alignment: .trailing)
+                    Text("Token" + (modelSortOrder == .tokens ? " ↓" : "")).frame(width: 126, alignment: .trailing)
+                    Text("USD" + (modelSortOrder == .usd ? " ↓" : "")).frame(width: 100, alignment: .trailing)
                 }.font(.system(size: 12)).foregroundStyle(muted).padding(.bottom, 12)
                 if visibleRows.isEmpty {
                     Text(hiddenModelCount > 0 ? text("当前时段没有可显示的已定价模型。", "No priced models to display for this period.") : text("此时段暂无可显示的模型明细。", "No model details to display for this period."))
@@ -89,13 +90,9 @@ struct UsageReportPoster: View {
                 }
                 ForEach(visibleRows) { row in
                     HStack(spacing: 10) {
-                        RoundedRectangle(cornerRadius: 2).fill(row.name == "Grok 4.7" ? Color.indigo : ink.opacity(0.22)).frame(width: 4, height: 22)
-                        Text(modelName(row.name)).font(.system(size: 16, weight: row.name == "Grok 4.7" ? .semibold : .medium))
+                        RoundedRectangle(cornerRadius: 2).fill(ink.opacity(0.22)).frame(width: 4, height: 22)
+                        Text(modelName(row.name)).font(.system(size: 16, weight: .medium))
                             .lineLimit(1).minimumScaleFactor(0.7)
-                        if row.includesGrokBuildFast {
-                            Text(text("含 Fast", "incl. Fast")).font(.system(size: 10, weight: .medium)).foregroundStyle(Color.indigo)
-                                .padding(.horizontal, 7).padding(.vertical, 4).background(Color.indigo.opacity(0.08), in: Capsule())
-                        }
                         Spacer(minLength: 0)
                         Text(row.value.reported > 0 ? tokens(row.value.tokens.total) : "—").frame(width: 126, alignment: .trailing)
                         Text((row.value.highEstimateRecords > 0 ? "≈" : "") + money(row.value.reference)).frame(width: 100, alignment: .trailing)
@@ -104,8 +101,8 @@ struct UsageReportPoster: View {
                 }
             }
             if hiddenModelCount > 0 {
-                Text(text("已隐藏 \(hiddenModelCount) 个无 USD 金额的模型明细；总量与走势包含全部用量。",
-                          "\(hiddenModelCount) unpriced model details hidden. Totals and trends include all usage."))
+                Text(text("已隐藏 \(hiddenModelCount) 个零金额或无价格的模型明细；总量与走势包含全部用量。",
+                          "\(hiddenModelCount) zero-cost or unpriced model details hidden. Totals and trends include all usage."))
                     .font(.system(size: 11)).foregroundStyle(muted)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -182,8 +179,8 @@ struct UsageReportPoster: View {
 }
 
 enum UsageReportRenderer {
-    @MainActor static func png(_ report: UsageReport, metric: QuotaChartMetric = .tokens, tokenUnit: String = "M", hideUnpricedModels: Bool = false) throws -> Data {
-        let host = NSHostingView(rootView: UsageReportPoster(report: report, metric: metric, tokenUnit: tokenUnit, hideUnpricedModels: hideUnpricedModels))
+    @MainActor static func png(_ report: UsageReport, metric: QuotaChartMetric = .tokens, tokenUnit: String = "M", hideUnpricedModels: Bool = false, modelSortOrder: UsageReportSortOrder = .tokens) throws -> Data {
+        let host = NSHostingView(rootView: UsageReportPoster(report: report, metric: metric, tokenUnit: tokenUnit, hideUnpricedModels: hideUnpricedModels, modelSortOrder: modelSortOrder))
         let size = host.fittingSize
         guard size.height > 0, size.height <= 16_000 else {
             throw NSError(domain: "AILSA.SubSwitch.UsageReport", code: 1,

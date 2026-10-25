@@ -115,3 +115,15 @@ root, and the upstream screenshots were removed from this fork in September
 2026 and are not part of the app or its build. Backups live outside the
 repository for review only.
 
+
+## CodexBar v0.81.0 — local Antigravity usage metadata (MIT)
+
+`AILSA_SS-AntigravityTokenScanner.swift` adapts the bounded local scan, protobuf,
+exact-integer JSON/JSONL and SQLite schema/WAL metadata readers from CodexBar
+v0.81.0, commit `ee890b5f392e70d6e20162d3e95cf9f1be265b60`:
+<https://github.com/steipete/CodexBar/tree/ee890b5f392e70d6e20162d3e95cf9f1be265b60/Sources/CodexBarCore/Providers/Antigravity>.
+The idle SQLite identity and checked-sum helpers and synthetic test fixture
+encoding are also adapted from that release. Copyright (c) 2026 Peter Steinberger.
+The full MIT notice above and in the scanner source applies to these portions.
+`AILSA_SS-AntigravityTokenUsage.swift` adds SubSwitch aggregation, incremental
+file caching, reference-price integration and cross-source identity handling.

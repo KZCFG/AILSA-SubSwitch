@@ -311,3 +311,26 @@ Unidentified model rows stay visible in the application for auditing, but are
 omitted from exported share-image details. Their reported usage remains in
 totals and trends; original local records are kept. A report with real reported usage can be exported even if it has no named
 model rows.
+
+## Native Antigravity Token usage
+
+The Codex usage dashboard also includes local Antigravity App/CLI generation
+metadata. Matching Gemini versions from the native app and OpenCodex appear in
+one model row, including historical charts and exported reports. Native Claude
+and other models keep their actual recorded names. The Antigravity quota tab
+continues to show provider quota windows; percentages are not converted to Tokens.
+
+The reader checks `.gemini/antigravity/`, its `conversations/` directory, and
+`.gemini/antigravity-cli/conversations/`. If no databases exist and discovery
+completes, it can use a local tokscale Antigravity sessions cache. It never runs
+`agy`, signs in or sends model requests for Token statistics. Source blobs may
+contain conversations; only usage metadata is decoded and retained.
+
+Input includes new input and cache reads/writes. Output includes reasoning once.
+Dates require embedded timestamps or a verified step join; records without a
+verifiable date are excluded with an incomplete-coverage message. Identical
+model/response identities are counted once across sources when both expose the
+identity. Independent requests remain additive. Product variants with a supported
+public API equivalent use a disclosed reference estimate, not a confirmed bill.
+
+Share images omit zero-Token details and model amounts that display as `$0.00`. The existing setting can also hide models with missing prices. Select Token or USD model order in the export dialog; the choice is remembered. This affects model details only, not total usage or trends.

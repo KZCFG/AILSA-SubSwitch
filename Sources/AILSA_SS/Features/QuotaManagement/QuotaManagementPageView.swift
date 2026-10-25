@@ -313,6 +313,10 @@ struct QuotaDashboard: View {
                 Text(qtext("当前账号的历史快照；每日仅保留刷新时最后一次记录，不等于当日实际消耗。", "History for the active account; one final refresh snapshot per day, not daily consumption.")).font(.caption2).foregroundStyle(.secondary)
                 quotaContent(layout: layout)
             } else {
+                if provider == .codex, let native = data.antigravityTokenUsage {
+                    Text(native.unavailable ? qtext("Antigravity 本机记录暂不可读；当前未计入这部分。", "Antigravity local records unavailable; this part is not included.") : native.partial ? qtext("含 Antigravity 本机 Token；部分记录无法核验，仅计入可确认用量。", "Includes Antigravity local tokens; some records could not be verified.") : qtext("含 Antigravity 本机 Token，按实际模型合并。", "Includes Antigravity local tokens, grouped by recorded model."))
+                        .font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal:false,vertical:true)
+                }
                 if provider == .claude {
                     Text(qtext("仅统计本机 Claude App 的 Code 日志；不查询在线额度。等效 API 金额不是订阅账单。", "Local Claude App Code logs only; no online quota queries. API equivalence is not your subscription bill."))
                         .font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -926,6 +930,7 @@ private struct QuotaDetails: View {
             "usage_semantics_conflict": ("Token 字段矛盾或缓存写入语义不明", "Conflicting tokens or cache-write semantics"),
             "unreported_tokens": ("缺少输入或输出 Token", "Input or output tokens missing"),
             "cache_discount_unknown": ("缓存明细缺失：未计优惠", "Cache breakdown missing: no discount"),
+            "native_model_reference_alias": ("Antigravity 模型变体参考价", "Antigravity model-variant reference"),
             "highest_known_rate_estimate": ("按最高已知费率估算", "Highest-known-rate estimate"),
             "fast_not_in_standard_reference": ("缺少已确认 Fast 费率", "Confirmed Fast rate unavailable")]
         guard let value = labels[state] else { return state }

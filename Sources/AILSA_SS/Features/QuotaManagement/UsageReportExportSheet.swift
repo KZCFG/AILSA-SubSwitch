@@ -29,6 +29,7 @@ struct UsageReportExportSheet: View {
     @AppStorage(QuotaChartMetric.defaultsKey) private var chartMetric: QuotaChartMetric = .tokens
     @AppStorage("ass.tokenUnit") private var tokenUnit = "M"
     @AppStorage(UsageReportPreferences.hideUnpricedModelsKey) private var hideUnpricedModels = false
+    @AppStorage(UsageReportPreferences.modelSortOrderKey) private var modelSortOrder: UsageReportSortOrder = .tokens
     @State private var generating = false
     @State private var saving = false
     @State private var document: UsageReportPNG?
@@ -62,6 +63,11 @@ struct UsageReportExportSheet: View {
                     }
                 Text(UsageReportText.text("可填写「美好周末」等标题，最多 80 字；留空使用默认标题。", "Use a title such as “A wonderful weekend”, up to 80 characters. Leave blank for the default."))
                     .font(.caption).foregroundStyle(.secondary)
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                Text(UsageReportText.text("模型排序", "Model order")).font(.callout.weight(.medium))
+                ASSegmentedControl(selection: $modelSortOrder, values: UsageReportSortOrder.allCases, title: { $0.title })
+                    .accessibilityIdentifier("usageReport.modelSortOrder")
             }
             Text(UsageReportText.text("开始与截止日期均包含在统计中，按本机时区计算。长时段趋势自动分组合计，总量覆盖完整时段。仅使用已有记录；图片不含账号或聊天内容。", "Both dates are included, using your local time zone. Longer trends are grouped automatically; totals cover the full range. Only available records are included. No accounts or conversations are exported."))
                 .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -101,7 +107,7 @@ struct UsageReportExportSheet: View {
                 errorMessage = UsageReportText.text("所选时段暂无可导出的用量记录。", "No usage records are available for this period.")
                 return
             }
-            document = UsageReportPNG(data: try UsageReportRenderer.png(report, metric: chartMetric, tokenUnit: tokenUnit, hideUnpricedModels: hideUnpricedModels))
+            document = UsageReportPNG(data: try UsageReportRenderer.png(report, metric: chartMetric, tokenUnit: tokenUnit, hideUnpricedModels: hideUnpricedModels, modelSortOrder: modelSortOrder))
             filename = request.filename()
             saving = true
         } catch { errorMessage = error.localizedDescription }
