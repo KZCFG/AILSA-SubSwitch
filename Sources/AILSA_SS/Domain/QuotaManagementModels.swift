@@ -533,8 +533,8 @@ struct QuotaModelKey: Hashable, Sendable {
     var provider: String
     var model: String
     static let unknown = Self(provider: "", model: "")
-    /// Hide unidentified model details without dropping their recorded totals.
-    var isVisibleUsageModel: Bool { !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    /// Whether a model may be named in share-image details. In-app diagnostics keep every key.
+    var hasIdentifiedModel: Bool { !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
     /// Presentation grouping only. Monetary values remain the sum of each
     /// record's independently audited price; never reprice an entire family.

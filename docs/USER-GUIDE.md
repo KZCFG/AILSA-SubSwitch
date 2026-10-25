@@ -307,7 +307,7 @@ prices remain unavailable, so `*` may still mark a partially priced model.
 These estimates do not bound unknown tool, region or other non-Token charges.
 Share titles are included as entered; avoid putting personal information in them.
 
-Unidentified model rows are omitted from the model list and shared details.
-Their reported usage remains in totals and trends; original local records are
-kept. A report with real reported usage can be exported even if it has no named
+Unidentified model rows stay visible in the application for auditing, but are
+omitted from exported share-image details. Their reported usage remains in
+totals and trends; original local records are kept. A report with real reported usage can be exported even if it has no named
 model rows.

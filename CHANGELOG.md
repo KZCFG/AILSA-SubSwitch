@@ -2,7 +2,7 @@
 
 ## 1.0.0(t) — 2026-10-25
 
-- Remove unidentified model rows from usage and share details while retaining reported Token totals and original records.
+- Keep unidentified routes visible in the application, but omit them from share-image details while retaining reported Token totals and original records.
 
 - Merge requested-model GLM 5.3 estimates into the GLM 5.3 model row in usage dashboards and shared images.
 - Preserve original route metadata, independently calculated amounts and high-estimate details; other model grouping is unchanged.

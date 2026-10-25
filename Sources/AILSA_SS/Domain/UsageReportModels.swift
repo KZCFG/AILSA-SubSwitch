@@ -147,7 +147,7 @@ struct UsageReport: Sendable {
         let bucket = snapshot.bucket(from: interval.start, until: interval.end)
         var families: [String: QuotaAggregate] = [:]
         var fastFamilies = Set<String>()
-        for (key, value) in bucket.models where key.isVisibleUsageModel && (value.reported > 0 || value.reference.count > 0) {
+        for (key, value) in bucket.models where key.hasIdentifiedModel && (value.reported > 0 || value.reference.count > 0) {
             let name = key.familyKey.model.isEmpty ? UsageReportText.text("未知模型", "Unknown model") : key.familyKey.model
             families[name, default: QuotaAggregate()].merge(value)
             if key.model.lowercased() == "grok-4.7-build-fast" { fastFamilies.insert(name) }

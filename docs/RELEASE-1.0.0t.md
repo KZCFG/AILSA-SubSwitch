@@ -4,7 +4,7 @@
 - Keep the original per-request amounts, Token totals, unresolved-route metadata and high-estimate counts. The amount can still show an approximation marker; details explain which records were estimated.
 - Match the exact GLM 5.3 identity for supported providers. GLM 5.3 Flash and other requested-model estimates keep their existing grouping. No pricing tables, quota requests or account settings change.
 
-- Remove unidentified model rows from dashboards and share-image details. Keep their original records, reported Token totals and trends; an export with reported usage can still be generated when no named model details are available.
+- Keep unidentified model rows visible in the application for auditing, and omit them only from exported share-image details. Keep original records, reported Token totals and trends; an export with reported usage can still be generated when no named model details are available.
 
 ## Validation
 
