@@ -295,9 +295,10 @@ or never-recorded history, and empty ranges cannot be exported.
 A reference amount is an API-equivalent estimate, not a subscription bill.
 **Includes high estimates** / `≈` means some records use an assumption: cache
 breakdown is missing (no cache discount), or only a known requested model is
-available (highest known published context/priority Token rates). Requested-model
-rows remain visibly separate from resolved model rows; the original ledger and
-confirmed-tier amounts are unchanged. Details list the affected record counts
+available (highest known published context/priority Token rates). GLM 5.3 combines requested-model estimates and resolved entries in one row,
+while retaining estimate counts and the approximate-amount marker. Other
+requested-model rows stay separate. The original ledger and confirmed-tier
+amounts are unchanged. Details list the affected record counts
 and reasons. Existing valid per-request reference prices retain their own rates.
 
 Token counts are never invented. Missing input/output usage, unknown model

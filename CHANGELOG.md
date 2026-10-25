@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.0(t) — 2026-10-25
+
+- Merge requested-model GLM 5.3 estimates into the GLM 5.3 model row in usage dashboards and shared images.
+- Preserve original route metadata, independently calculated amounts and high-estimate details; other model grouping is unchanged.
+
 ## 1.0.0(s) — 2026-10-25
 
 - Add Gemini 4 Argon and GLM 5.3 reference pricing, readable identities and explicit high estimates for known requested models missing resolved identity.

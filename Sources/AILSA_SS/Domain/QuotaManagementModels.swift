@@ -538,7 +538,14 @@ struct QuotaModelKey: Hashable, Sendable {
     /// record's independently audited price; never reprice an entire family.
     var familyKey: Self {
         if provider.hasPrefix("request-estimate:") {
-            let actual = Self(provider: String(provider.dropFirst("request-estimate:".count)), model: model).familyKey
+            let sourceProvider = String(provider.dropFirst("request-estimate:".count))
+            let actual = Self(provider: sourceProvider, model: model).familyKey
+            // Merge only GLM 5.3's supported requested identity for display.
+            // Raw route identity, per-request USD and estimate counts stay intact.
+            if model.lowercased() == "glm-5.3",
+               ["glm", "zai", "zhipu", "z.ai"].contains(sourceProvider.lowercased()) {
+                return actual
+            }
             return Self(provider: "request-estimate", model: actual.model + UsageReportText.text("（请求模型估算）", " (requested-model estimate)"))
         }
         if provider == "Claude" { return Self(provider: provider, model: ClaudeLocalPricing.displayName(model)) }

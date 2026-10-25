@@ -677,4 +677,50 @@ final class ArgonAndHighReferenceTests: XCTestCase {
         XCTAssertEqual(sum.tokens.total,240_000); XCTAssertEqual(sum.reference.pico,1_044_000_000_000)
         XCTAssertEqual(sum.highEstimateRecords,1); XCTAssertEqual(sum.reported,2)
     }
+    func testGLM53RequestedAndResolvedRowsMergeInDashboardAndShareReport() throws {
+        let requested = try record(provider:"glm",model:nil,requested:"glm/GLM-5.3")
+        let resolved = try record(provider:"glm",model:"GLM-5.3")
+        let a = QuotaDashboardSnapshot.contribution(requested)
+        let b = QuotaDashboardSnapshot.contribution(resolved)
+        XCTAssertEqual(a.key.familyKey,b.key.familyKey)
+        XCTAssertEqual(a.key.familyKey.model,"GLM 5.3")
+        XCTAssertNil(requested.standardReferenceEstimate.picoUSD)
+        XCTAssertNil(requested.pricing.picoUSD)
+        XCTAssertEqual(requested.routeIdentityStatus,.requestedOnly)
+        var grouped: [QuotaModelKey:QuotaAggregate] = [:]
+        var bucket = QuotaBucket()
+        for c in [a,b] {
+            grouped[c.key.familyKey,default:QuotaAggregate()].merge(c.value)
+            bucket.add(c.value,key:c.key)
+        }
+        XCTAssertEqual(grouped.count,1)
+        let value = try XCTUnwrap(grouped.values.first)
+        XCTAssertEqual(value.tokens.total,240_000)
+        XCTAssertEqual(value.reference.pico,410_400_000_000)
+        XCTAssertEqual(value.highEstimateRecords,1)
+        XCTAssertEqual(value.unknownRoute,1)
+        XCTAssertEqual(value.reference.count,2)
+        let day = Calendar.current.startOfDay(for:requested.occurredAt)
+        let snapshot = QuotaDashboardSnapshot(scannedAt:requested.occurredAt,days:[day:bucket],all:value,
+            source:"fixture",pricingSources:[],discardedRows:0,quotaWindows:[],quotaTrend:[:],buildMilliseconds:0)
+        let report = UsageReport.build(snapshot:snapshot,request:.init(provider:.codex,period:.weekly,endingOn:day),now:day.addingTimeInterval(86400))
+        XCTAssertEqual(report.rows.count,1)
+        XCTAssertEqual(report.rows.first?.name,"GLM 5.3")
+        XCTAssertEqual(report.total.tokens.total,240_000)
+        XCTAssertEqual(report.total.reference.pico,410_400_000_000)
+        XCTAssertEqual(report.rows.first?.value.highEstimateRecords,1)
+    }
+    func testGLM53GroupingIsExactAndLeavesFlashAndOtherModelsSeparate() {
+        for provider in ["glm","zai","zhipu","z.ai"] {
+            XCTAssertEqual(QuotaModelKey(provider:"request-estimate:"+provider,model:"GLM-5.3").familyKey,
+                QuotaModelKey(provider:provider,model:"glm-5.3").familyKey)
+        }
+        for key in [QuotaModelKey(provider:"request-estimate:glm",model:"GLM-5.3-Flash"),
+                    QuotaModelKey(provider:"request-estimate:unknown",model:"GLM-5.3"),
+                    QuotaModelKey(provider:"request-estimate:glm",model:"GLM-5.3-future"),
+                    QuotaModelKey(provider:"request-estimate:google-antigravity",model:"gemini-4-argon")] {
+            XCTAssertEqual(key.familyKey.provider,"request-estimate")
+        }
+    }
+
 }

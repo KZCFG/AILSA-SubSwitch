@@ -55,7 +55,7 @@ preserved in this repository.
   behavior after switching, and the interface language. Open usage in its own
   window when you need more room.
 
-**1.0.0(s)** adds custom date ranges and editable titles for usage-image sharing. See the [release notes](docs/RELEASE-1.0.0s.md).
+**1.0.0(t)** combines GLM 5.3 usage in one model row while retaining estimate details. See the [release notes](docs/RELEASE-1.0.0t.md).
 
 ### Provider support
 

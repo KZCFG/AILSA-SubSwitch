@@ -14,7 +14,15 @@ separate steps.
 - [x] Publish a clean source snapshot to KZCFG/AILSA-SubSwitch; verify remote readback.
 - [x] Enable private vulnerability reporting.
 
-## Current release: 1.0.0(s) (2026102502)
+## Current release: 1.0.0(t) (2026102503)
+
+This revision merges GLM 5.3 requested-model estimates into its existing model
+row in dashboards and shared images. Original pricing and diagnostic metadata
+are retained. Eight focused checks pass in each edition with the CLT asserting
+compatibility harness; package source hashes, signatures, versions and privacy
+boundaries are verified separately. See [release notes](RELEASE-1.0.0t.md).
+
+## Historical release: 1.0.0(s) (2026102502)
 
 This revision replaces the Year sharing preset with inclusive custom dates and
 adds editable report titles. Normal 30-day dashboards remain unchanged.
