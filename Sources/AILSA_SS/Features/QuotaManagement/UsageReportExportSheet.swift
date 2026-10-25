@@ -97,7 +97,7 @@ struct UsageReportExportSheet: View {
         do {
             let request = self.request
             let report = try await model.makeUsageReport(request)
-            guard !report.rows.isEmpty else {
+            guard report.total.reported > 0 || report.total.reference.count > 0 else {
                 errorMessage = UsageReportText.text("所选时段暂无可导出的用量记录。", "No usage records are available for this period.")
                 return
             }

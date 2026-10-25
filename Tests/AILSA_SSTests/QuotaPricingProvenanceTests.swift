@@ -723,4 +723,31 @@ final class ArgonAndHighReferenceTests: XCTestCase {
         }
     }
 
+    func testUnidentifiedModelRowsAreHiddenButTokenAndCostTotalsStayIntact() throws {
+        let named = QuotaDashboardSnapshot.contribution(try record(provider:"glm",model:"GLM-5.3"))
+        let unknown = QuotaDashboardSnapshot.contribution(try record(provider:"unknown",model:nil))
+        XCTAssertTrue(named.key.isVisibleUsageModel)
+        XCTAssertFalse(unknown.key.isVisibleUsageModel)
+        var bucket = QuotaBucket(); bucket.add(named.value,key:named.key); bucket.add(unknown.value,key:unknown.key)
+        let day = Calendar.current.startOfDay(for:ISO8601DateFormatter().date(from:"2026-10-25T10:00:00Z")!)
+        let data = QuotaDashboardSnapshot(scannedAt:day,days:[day:bucket],all:bucket.total,
+            source:"fixture",pricingSources:[],discardedRows:0,quotaWindows:[],quotaTrend:[:],buildMilliseconds:0)
+        let report = UsageReport.build(snapshot:data,request:.init(provider:.codex,period:.weekly,endingOn:day),now:day.addingTimeInterval(86400))
+        XCTAssertEqual(report.rows.count,1); XCTAssertEqual(report.rows.first?.name,"GLM 5.3")
+        XCTAssertEqual(report.total.tokens.total,240_000)
+        XCTAssertEqual(report.total.reference.pico,182_400_000_000)
+        XCTAssertEqual(report.points.reduce(0){$0+$1.value.tokens.total},240_000)
+    }
+    func testUnidentifiedOnlyReportRetainsRealUsageWithEmptyModelDetails() throws {
+        let unknown = QuotaDashboardSnapshot.contribution(try record(provider:"unknown",model:nil))
+        var bucket = QuotaBucket(); bucket.add(unknown.value,key:unknown.key)
+        let day = Calendar.current.startOfDay(for:ISO8601DateFormatter().date(from:"2026-10-25T10:00:00Z")!)
+        let data = QuotaDashboardSnapshot(scannedAt:day,days:[day:bucket],all:bucket.total,
+            source:"fixture",pricingSources:[],discardedRows:0,quotaWindows:[],quotaTrend:[:],buildMilliseconds:0)
+        let report = UsageReport.build(snapshot:data,request:.init(provider:.codex,period:.weekly,endingOn:day),now:day.addingTimeInterval(86400))
+        XCTAssertTrue(report.rows.isEmpty); XCTAssertEqual(report.total.reported,1)
+        XCTAssertEqual(report.total.tokens.total,120_000); XCTAssertNil(report.total.reference.usd)
+        XCTAssertEqual(report.points.reduce(0){$0+$1.value.tokens.total},120_000)
+    }
+
 }

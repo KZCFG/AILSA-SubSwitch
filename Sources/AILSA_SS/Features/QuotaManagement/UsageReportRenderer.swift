@@ -83,8 +83,8 @@ struct UsageReportPoster: View {
                     Text("Token").frame(width: 126, alignment: .trailing)
                     Text("USD").frame(width: 100, alignment: .trailing)
                 }.font(.system(size: 12)).foregroundStyle(muted).padding(.bottom, 12)
-                if visibleRows.isEmpty && hiddenModelCount > 0 {
-                    Text(text("当前时段没有可显示的已定价模型。", "No priced models to display for this period."))
+                if visibleRows.isEmpty {
+                    Text(hiddenModelCount > 0 ? text("当前时段没有可显示的已定价模型。", "No priced models to display for this period.") : text("此时段暂无可显示的模型明细。", "No model details to display for this period."))
                         .font(.system(size: 13)).foregroundStyle(muted).padding(.vertical, 12)
                 }
                 ForEach(visibleRows) { row in
@@ -124,7 +124,7 @@ struct UsageReportPoster: View {
                 Text(text("金额含已知参考价；身份或缓存不全时标记高位估算。未知模型、缺失或矛盾 Token 不计金额。", "Amounts include reference prices and labeled high estimates for incomplete identity or cache data. Unknown models and missing/conflicting tokens remain unpriced."))
                     .fixedSize(horizontal: false, vertical: true)
                 HStack {
-                    Text(text("仅含可用记录 · 账号与个人信息已移除", "Available records only · Accounts and personal details omitted"))
+                    Text(text("总量含全部已报告用量 · 明细仅列可识别模型 · 账号与个人信息已移除", "Totals include all reported usage · Identified models only · Personal details omitted"))
                     Spacer()
                     Text("AILSA SubSwitch").fontWeight(.medium)
                 }

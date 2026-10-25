@@ -277,6 +277,7 @@ struct QuotaDashboard: View {
         let bucket = displayedBucket
         let layout = QuotaDashboardLayout(height: availableHeight, provider: provider, range: range)
         let families = bucket.models.reduce(into: [QuotaModelKey: QuotaAggregate]()) { result, entry in
+            guard entry.key.isVisibleUsageModel else { return }
             result[entry.key.familyKey, default: QuotaAggregate()].merge(entry.value)
         }
         let rows = families.sorted { left, right in

@@ -18,7 +18,7 @@ separate steps.
 
 This revision merges GLM 5.3 requested-model estimates into its existing model
 row in dashboards and shared images. Original pricing and diagnostic metadata
-are retained. Eight focused checks pass in each edition with the CLT asserting
+are retained. Ten focused checks pass in each edition with the CLT asserting
 compatibility harness; package source hashes, signatures, versions and privacy
 boundaries are verified separately. See [release notes](RELEASE-1.0.0t.md).
 
