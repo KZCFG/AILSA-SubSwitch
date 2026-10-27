@@ -73,6 +73,7 @@ final class AppContainer {
             )
             let accountsModel = AccountsPageModel(
                 coordinator: accountsCoordinator,
+                weeklyUsageActivator: { account in try await accountsCoordinator.activateWeeklyUsage(id:account.id) },
                 settingsCoordinator: settingsCoordinator,
                 manualRefreshService: trayModel,
                 localAccountsMutationSyncService: trayModel,

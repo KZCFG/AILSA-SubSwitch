@@ -411,6 +411,10 @@ struct AccountCardBottomOverlay: View {
     let showsRefreshButton: Bool
     let showsReauthenticateButton: Bool
     let isRefreshEnabled: Bool
+    var weeklyActivation: WeeklyUsageActivationState? = nil
+    var weeklyActivating = false
+    var weeklyActivationAvailable = false
+    var onActivateWeekly: () -> Void = {}
     let usageError: String?
     let palette: AccountCardPalette
     let onSwitch: () -> Void
@@ -427,6 +431,7 @@ struct AccountCardBottomOverlay: View {
                     Spacer(minLength: 0)
                 }
 
+                WeeklyUsageActivationButton(state:weeklyActivation,busy:weeklyActivating,available:weeklyActivationAvailable,action:onActivateWeekly)
                 AccountTrailingActionCluster(
                     isCurrent: isCurrent,
                     switching: switching,

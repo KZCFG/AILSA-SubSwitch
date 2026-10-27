@@ -5,8 +5,8 @@ import Darwin
 /// Offline API equivalence, not a subscription charge. No network client or
 /// credential access is reachable from this reader or its bundled rate table.
 enum ClaudeLocalPricing {
-    static let source = "https://platform.claude.com/docs/en/about-claude/pricing"
-    static let auditDate = "2026-10-23"
+    static let source = "https://claude.com/pricing"
+    static let auditDate = "2026-10-27"
 
     struct Usage: Decodable, Equatable, Sendable {
         struct Creation: Decodable, Equatable, Sendable {
@@ -51,11 +51,14 @@ enum ClaudeLocalPricing {
         "claude-opus-4-7": Rate(input: 5_000_000, output: 25_000_000, read: 500_000),
         "claude-opus-4-6": Rate(input: 5_000_000, output: 25_000_000, read: 500_000),
         "claude-sonnet-5": Rate(input: 2_000_000, output: 10_000_000, read: 200_000),
+        "claude-opus-4-5": Rate(input: 5_000_000, output: 25_000_000, read: 500_000),
+        "claude-sonnet-4-5": Rate(input: 3_000_000, output: 15_000_000, read: 300_000),
         "claude-sonnet-4-6": Rate(input: 3_000_000, output: 15_000_000, read: 300_000),
         "claude-haiku-4-5": Rate(input: 1_000_000, output: 5_000_000, read: 100_000)
     ]
     static func canonical(_ model: String) -> String {
-        let name = model.lowercased()
+        let raw = model.lowercased()
+        let name = raw.hasSuffix("-thinking") ? String(raw.dropLast(9)) : raw
         if rates[name] != nil { return name }
         // Only an exact model followed by an eight-digit dated version.
         if let dash = name.lastIndex(of: "-") {
@@ -63,6 +66,10 @@ enum ClaudeLocalPricing {
             if suffix.count == 8, suffix.allSatisfy({ $0.isASCII && $0.isNumber }), rates[base] != nil { return base }
         }
         return name
+    }
+    static func referenceRate(_ model:String) -> (input:Int64,read:Int64,output:Int64)? {
+        guard let rate=rates[canonical(model)] else{return nil}
+        return (rate.input,rate.read,rate.output)
     }
     static func displayName(_ model: String) -> String {
         let id = canonical(model), parts = id.split(separator: "-")

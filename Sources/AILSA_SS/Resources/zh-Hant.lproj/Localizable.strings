@@ -562,3 +562,17 @@
 "settings.pool.data_status" = "%@ 主導 · 資料 %@ 秒前 · %@";
 "settings.pool.data_fresh" = "最新";
 "settings.pool.data_stale" = "已標舊（上次確認讀數）";
+
+// Explicit weekly usage activation
+"accounts.weekly.active" = "周用量已激活";
+"accounts.weekly.idle" = "周用量未激活";
+"accounts.weekly.unknown" = "周用量待确认";
+"accounts.weekly.activating" = "正在激活…";
+"accounts.weekly.help" = "发送一次极短请求，会消耗真实额度。周重置时间以服务方为准。";
+"accounts.weekly.refresh_first" = "请先刷新额度，确认本周状态。";
+"accounts.weekly.success" = "小请求已成功，周用量已激活。";
+"accounts.weekly.failed" = "请求未能确认成功，未自动重试。请刷新额度查看结果。";
+"accounts.weekly.unconfirmed" = "未收到完整的请求成功回执。";
+"accounts.weekly.unavailable" = "该账号暂不支持发送请求，请刷新或重新登录。";
+"accounts.weekly.already" = "本周已有用量，无需重复激活。";
+"accounts.weekly.busy" = "请求正在执行，请稍后查看结果。";

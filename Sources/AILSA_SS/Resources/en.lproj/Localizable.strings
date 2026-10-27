@@ -588,3 +588,17 @@
 "settings.pool.data_status" = "%@ limiting · data %@s old · %@";
 "settings.pool.data_fresh" = "Fresh";
 "settings.pool.data_stale" = "Stale (last confirmed reading)";
+
+// Explicit weekly usage activation
+"accounts.weekly.active" = "Weekly usage active";
+"accounts.weekly.idle" = "Activate weekly usage";
+"accounts.weekly.unknown" = "Check weekly usage";
+"accounts.weekly.activating" = "Activating…";
+"accounts.weekly.help" = "Send one short request using real quota. Weekly resets remain provider-controlled.";
+"accounts.weekly.refresh_first" = "Refresh quota to confirm this week’s status.";
+"accounts.weekly.success" = "Short request succeeded. Weekly usage is active.";
+"accounts.weekly.failed" = "Request success could not be confirmed. No automatic retry was sent. Refresh quota to check.";
+"accounts.weekly.unconfirmed" = "No complete success receipt was received.";
+"accounts.weekly.unavailable" = "Refresh this account or sign in again before sending a request.";
+"accounts.weekly.already" = "This week already has usage.";
+"accounts.weekly.busy" = "A request is in progress. Check its result shortly.";

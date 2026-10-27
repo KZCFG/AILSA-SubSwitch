@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0(v) — 2026-10-27
+
+- Add explicit weekly-usage activation buttons to Codex and Antigravity account cards, with progress, success receipts, reset invalidation, and duplicate-request protection.
+- Price supported Antigravity Pool Claude routes and Thinking variants using Anthropic official API references.
+- Add GPT-6.1 Terra standard, cached-input, long-context, and confirmed Fast API reference pricing.
+
+
 ## 1.0.0(u) — 2026-10-26
 
 Native Antigravity Token usage now joins OpenCodex model totals, charts and share images. Verified metadata timestamps, cache/reasoning accounting and stable response identities protect the combined figures. Share images now hide displayed-zero model rows, support Token/USD model order and use a neutral Grok style. See [release details](docs/RELEASE-1.0.0u.md).

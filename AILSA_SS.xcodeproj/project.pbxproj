@@ -9,6 +9,9 @@
 
 
 /* Begin PBXBuildFile section */
+		0BF6A7C34E99BE8D56FA2477 /* WeeklyUsageActivationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB996D5CCEFC014248F849B4 /* WeeklyUsageActivationTests.swift */; };
+		350D9A4FFCBE33A0881E084A /* AILSA_SS-WeeklyUsageButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A94A550A49600BCD71CB6E4C /* AILSA_SS-WeeklyUsageButton.swift */; };
+		31687D0D5496DB7E251F9B25 /* AILSA_SS-WeeklyUsageActivation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B613FF1630FE9A1AD2C11E0 /* AILSA_SS-WeeklyUsageActivation.swift */; };
 		E8A1E8A1E8A1E8A1E8A1E8A1 /* AntigravityUsageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A1F8A1F8A1F8A1F8A1F8A1 /* AntigravityUsageService.swift */; };
 		D8A1D8A1D8A1D8A1D8A1D8A1 /* AccountsPageModel+Antigravity.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8A1C8A1C8A1C8A1C8A1C8A1 /* AccountsPageModel+Antigravity.swift */; };
 		D8A2D8A2D8A2D8A2D8A2D8A2 /* AntigravityAccountsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8A2C8A2C8A2C8A2C8A2C8A2 /* AntigravityAccountsSection.swift */; };
@@ -232,6 +235,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		DB996D5CCEFC014248F849B4 /* WeeklyUsageActivationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tests/AILSA_SSTests/WeeklyUsageActivationTests.swift"; sourceTree = SOURCE_ROOT; };
+		A94A550A49600BCD71CB6E4C /* AILSA_SS-WeeklyUsageButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/AILSA_SS/Features/Accounts/AILSA_SS-WeeklyUsageButton.swift"; sourceTree = SOURCE_ROOT; };
+		1B613FF1630FE9A1AD2C11E0 /* AILSA_SS-WeeklyUsageActivation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/AILSA_SS/Infrastructure/AILSA_SS-WeeklyUsageActivation.swift"; sourceTree = SOURCE_ROOT; };
 		F8A1F8A1F8A1F8A1F8A1F8A1 /* AntigravityUsageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AntigravityUsageService.swift; sourceTree = "<group>"; };
 		C8A1C8A1C8A1C8A1C8A1C8A1 /* AccountsPageModel+Antigravity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AccountsPageModel+Antigravity.swift"; sourceTree = "<group>"; };
 		C8A2C8A2C8A2C8A2C8A2C8A2 /* AntigravityAccountsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AntigravityAccountsSection.swift; sourceTree = "<group>"; };
@@ -656,6 +662,9 @@
 		62D87CB147F6D0BC723A7DF8 = {
 			isa = PBXGroup;
 			children = (
+				DB996D5CCEFC014248F849B4 /* WeeklyUsageActivationTests.swift */,
+				A94A550A49600BCD71CB6E4C /* AILSA_SS-WeeklyUsageButton.swift */,
+				1B613FF1630FE9A1AD2C11E0 /* AILSA_SS-WeeklyUsageActivation.swift */,
 				61ABB665D8EEFB801496C8E0 /* Sources */,
 				8457A8D504EDC45E06DCA711 /* Tests */,
 				8734C8B1AE58B1A330F554D9 /* Products */,
@@ -938,6 +947,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0BF6A7C34E99BE8D56FA2477 /* WeeklyUsageActivationTests.swift in Sources */,
+
+
 				C06B27227EAEB4268E670C47 /* MenuBarAnchorPlacementTests.swift in Sources */,
 				EF078D3327429DACA99A440B /* UsageCacheReuseTests.swift in Sources */,
 				B806B806B806B806B806B806 /* AntigravityAccountsCoordinatorTests.swift in Sources */,
@@ -988,6 +1000,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+
 				C63E3638C58D5A7C3B4EAC4B /* AILSA_SSWidgets.swift in Sources */,
 				441A3F777207D342E186832D /* AccountsWidgetViews.swift in Sources */,
 				5227C48169EE13F088BBE923 /* AccountsWidgetSnapshot.swift in Sources */,
@@ -1004,6 +1017,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				350D9A4FFCBE33A0881E084A /* AILSA_SS-WeeklyUsageButton.swift in Sources */,
+				31687D0D5496DB7E251F9B25 /* AILSA_SS-WeeklyUsageActivation.swift in Sources */,
 				176FD03E8CE4183C53256164 /* MenuBarAnchorPlacement.swift in Sources */,
 				F4B3240A045C0B29083FAB71 /* ClaudeLocalUsage.swift in Sources */,
 				5CF582B00E835972E1062032 /* AILSA_SS-AntigravityTokenUsage.swift in Sources */,
@@ -1179,7 +1194,7 @@
 				CODE_SIGN_ENTITLEMENTS = AILSA_SS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2026102601;
+				CURRENT_PROJECT_VERSION = 2026102701;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
@@ -1191,7 +1206,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "Sources/AILSA_SS/Info-macOS.plist";
-				ASS_BUILD_LABEL = "1.0.0(u)";
+				ASS_BUILD_LABEL = "1.0.0(v)";
 				INFOPLIST_KEY_CFBundleDisplayName = "AILSA SubSwitch";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1221,7 +1236,7 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = AILSA_SSWidgetsMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026102601;
+				CURRENT_PROJECT_VERSION = 2026102701;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
@@ -1262,7 +1277,7 @@
 				CODE_SIGN_ENTITLEMENTS = AILSA_SS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2026102601;
+				CURRENT_PROJECT_VERSION = 2026102701;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
@@ -1274,7 +1289,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "Sources/AILSA_SS/Info-macOS.plist";
-				ASS_BUILD_LABEL = "1.0.0(u)";
+				ASS_BUILD_LABEL = "1.0.0(v)";
 				INFOPLIST_KEY_CFBundleDisplayName = "AILSA SubSwitch";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1323,7 +1338,7 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = AILSA_SSWidgetsMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026102601;
+				CURRENT_PROJECT_VERSION = 2026102701;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;

@@ -20,6 +20,9 @@ struct AccountsActionBarPresentation: Equatable {
 }
 
 struct AccountCardViewState: Equatable, Identifiable {
+    var weeklyActivation: WeeklyUsageActivationState? = nil
+    var weeklyActivating = false
+    var weeklyActivationAvailable = false
     let account: AccountSummary
     let presentation: AccountCardPresentation
     let isCollapsed: Bool
@@ -36,7 +39,10 @@ struct AccountCardViewState: Equatable, Identifiable {
     }
 
     static func == (lhs: AccountCardViewState, rhs: AccountCardViewState) -> Bool {
-        lhs.presentation.isPoolActive == rhs.presentation.isPoolActive
+        lhs.weeklyActivation == rhs.weeklyActivation
+            && lhs.weeklyActivating == rhs.weeklyActivating
+            && lhs.weeklyActivationAvailable == rhs.weeklyActivationAvailable
+            && lhs.presentation.isPoolActive == rhs.presentation.isPoolActive
             && lhs.isCollapsed == rhs.isCollapsed
             && lhs.switching == rhs.switching
             && lhs.refreshing == rhs.refreshing
@@ -151,6 +157,9 @@ extension AccountsPageModel {
         let isCollapsed = forceCollapsed || isAccountCollapsed(account.id)
         let isUsageRefreshActive = isUsageRefreshActive(forAccountID: account.id)
         return AccountCardViewState(
+            weeklyActivation: account.provider == .cursor ? nil : WeeklyUsageActivationState.resolve(usage:account.usage,receipt:WeeklyUsageActivationStore().read(WeeklyUsageActivationStore.key(provider:account.provider,email:account.email,accountID:account.accountID)),now:Int64(Date().timeIntervalSince1970)),
+            weeklyActivating: weeklyActivatingAccountIDs.contains(account.id),
+            weeklyActivationAvailable: weeklyUsageActivator != nil && switchingAccountID == nil && !isUsageRefreshActive,
             account: account,
             presentation: AccountCardPresentation(
                 account: account,

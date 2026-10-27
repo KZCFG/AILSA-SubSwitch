@@ -11,6 +11,7 @@ struct AccountCardView: View {
     @State private var isCollapsedSwitchOverlayPresented = false
     @State private var isDeleteConfirmationPresented = false
 
+    @Environment(\.weeklyUsageActivationAction) private var activateWeekly
     @EnvironmentObject private var modal: ASModalHost
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -198,6 +199,10 @@ struct AccountCardView: View {
                 showsRefreshButton: card.showsRefreshButton,
                 showsReauthenticateButton: card.showsReauthenticateButton,
                 isRefreshEnabled: card.isRefreshEnabled,
+                weeklyActivation: card.weeklyActivation,
+                weeklyActivating: card.weeklyActivating,
+                weeklyActivationAvailable: card.weeklyActivationAvailable,
+                onActivateWeekly: { activateWeekly?(card.id) },
                 usageError: nil,
                 palette: palette,
                 onSwitch: onSwitch,
@@ -207,6 +212,10 @@ struct AccountCardView: View {
         }
         .animation(reduceMotion ? nil : AccountCardMorphRules.animation, value: card.isCollapsed)
         .animation(reduceMotion ? nil : AccountCardMorphRules.animation, value: card.account.isCurrent)
+    }
+
+    private var weeklyActivationButton: some View {
+        WeeklyUsageActivationButton(state:card.weeklyActivation,busy:card.weeklyActivating,available:card.weeklyActivationAvailable,action:{activateWeekly?(card.id)})
     }
 
     private func dismissCollapsedSwitchOverlay() {

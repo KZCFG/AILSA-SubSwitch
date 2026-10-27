@@ -1149,6 +1149,30 @@ final class AntigravityUsageService: @unchecked Sendable {
         return fresh
     }
 
+    /// User-triggered, one-shot Gemini request. Does not change desktop selection.
+    func sendWeeklyUsageRequest(authJSON: JSONValue, expectedEmail: String) async throws -> WeeklyUsageActivationResult {
+        guard let token=authJSON["access_token"]?.stringValue,
+              let profile=AntigravityOAuthProfile.resolve(from:authJSON),
+              AccountIdentity.normalizedEmail(try await fetchGoogleUserInfoEmail(accessToken:token)) == AccountIdentity.normalizedEmail(expectedEmail) else {
+            throw AppError.unauthorized(L10n.tr("accounts.weekly.unavailable"))
+        }
+        let context=remoteQuotaContext(authJSON:authJSON,profile:profile)
+        let assist=try await loadCodeAssist(accessToken:token,context:context,projectID:context.explicitProjectID)
+        guard let project=Self.cloudCodeProjectID(from:assist) ?? context.explicitProjectID else {throw AppError.invalidData(L10n.tr("accounts.weekly.unavailable"))}
+        let payload=try await requestCloudCode(path:"fetchAvailableModels",accessToken:token,context:context,body:.object(["project":.string(project)]))
+        let roster=Self.decodeModels(payload) ?? [:]
+        let models=roster.keys.filter{$0.hasPrefix("gemini-") && $0.contains("flash") && (roster[$0]?["quotaInfo"]?["remainingFraction"]?.doubleValue ?? 1)>0}.sorted()
+        guard let model=models.first else {throw AppError.network(L10n.tr("accounts.weekly.unavailable"))}
+        try Task.checkCancellation()
+        let result=try await requestCloudCode(path:"generateContent",accessToken:token,context:context,body:.object([
+            "model":.string(model),"project":.string(project),"userAgent":.string("antigravity"),"requestType":.string("agent"),"requestId":.string("agent-"+UUID().uuidString),
+            "request":.object(["sessionId":.string(UUID().uuidString),"contents":.array([.object(["role":.string("user"),"parts":.array([.object(["text":.string("Reply with exactly OK.")])])])]),"generationConfig":.object(["maxOutputTokens":.number(128),"temperature":.number(0)])])]))
+        let response=result["response"] ?? result
+        let texts=(response["candidates"]?.arrayValue ?? []).flatMap{$0["content"]?["parts"]?.arrayValue ?? []}.compactMap{$0["thought"]?.boolValue == true ? nil : $0["text"]?.stringValue}.joined()
+        guard !texts.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty,let input=response["usageMetadata"]?["promptTokenCount"]?.int64Value,input>0 else {throw AppError.network(L10n.tr("accounts.weekly.unconfirmed"))}
+        return .init(model:model,inputTokens:input,outputTokens:response["usageMetadata"]?["candidatesTokenCount"]?.int64Value ?? 0,confirmedAt:dateProvider.unixSecondsNow(),reasoningOutputTokens:response["usageMetadata"]?["thoughtsTokenCount"]?.int64Value,totalTokens:response["usageMetadata"]?["totalTokenCount"]?.int64Value)
+    }
+
     func fetchNativeUsage(expectedEmail: String) async throws -> AntigravityNativeUsageResult {
         try await loadNativeUsage(expectedEmail: expectedEmail)
     }

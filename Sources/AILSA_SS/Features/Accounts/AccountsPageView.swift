@@ -46,6 +46,9 @@ struct AccountsPageView: View {
             onDeleteAccount: deleteAccount
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .environment(\.weeklyUsageActivationAction, { id in
+            Task { await model.activateWeeklyUsage(forAccountID:id) }
+        })
         .fileImporter(
             isPresented: $isImportingAuthFile,
             allowedContentTypes: [.json],

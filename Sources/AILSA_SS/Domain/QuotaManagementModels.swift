@@ -552,6 +552,8 @@ struct QuotaModelKey: Hashable, Sendable {
         }
         if provider == "Claude" { return Self(provider: provider, model: ClaudeLocalPricing.displayName(model)) }
         let name = model.lowercased().replacingOccurrences(of: "_", with: "-")
+        if name == "gpt-6.1-terra" { return Self(provider: provider, model: "GPT-6.1 Terra") }
+        if ClaudeLocalPricing.referenceRate(name) != nil { return Self(provider:provider,model:ClaudeLocalPricing.displayName(name)) }
         if name == "gpt-6.1-sol" { return Self(provider: provider, model: "GPT-6.1 Sol") }
         if name == "kimi-for-coding" { return Self(provider: provider, model: "Kimi K2.8 Preview") }
         if name == "kimi-for-coding-highspeed" { return Self(provider: provider, model: "Kimi K2.7 Code HighSpeed") }

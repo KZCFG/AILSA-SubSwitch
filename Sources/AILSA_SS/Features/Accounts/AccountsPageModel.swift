@@ -40,6 +40,8 @@ final class AccountsPageModel: ObservableObject {
     let onSettingsUpdated: ((AppSettings) -> Void)?
     let poolActiveAccountLoader: (@Sendable () async throws -> String?)?
     @Published var poolActiveEmail: String? = nil
+    let weeklyUsageActivator: (@Sendable (AccountSummary) async throws -> WeeklyUsageActivationResult)?
+    @Published var weeklyActivatingAccountIDs: Set<String> = []
     let runtimePlatform: RuntimePlatform
 
     private let noticeScheduler = NoticeAutoDismissScheduler()
@@ -79,6 +81,7 @@ final class AccountsPageModel: ObservableObject {
 
     init(
         coordinator: AccountsCoordinator,
+        weeklyUsageActivator: (@Sendable (AccountSummary) async throws -> WeeklyUsageActivationResult)? = nil,
         settingsCoordinator: SettingsCoordinator? = nil,
         manualRefreshService: AccountsManualRefreshServiceProtocol? = nil,
         localAccountsMutationSyncService: AccountsLocalMutationSyncServiceProtocol? = nil,
@@ -92,6 +95,7 @@ final class AccountsPageModel: ObservableObject {
         initialAccounts: [AccountSummary]? = nil
     ) {
         self.poolActiveAccountLoader = poolActiveAccountLoader
+        self.weeklyUsageActivator = weeklyUsageActivator
         self.coordinator = coordinator
         self.settingsCoordinator = settingsCoordinator
         self.manualRefreshService = manualRefreshService

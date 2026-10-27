@@ -161,7 +161,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         let grokPriority = leafID == "grok-4.7"
             && input.fastGrantEvidence == .explicitlyGranted
             && ["priority", "fast"].contains(input.confirmedServiceTier ?? "")
-        let gpt61Fast = leafID == "gpt-6.1-sol"
+        let gpt61Fast = ["gpt-6.1-sol", "gpt-6.1-terra"].contains(leafID)
             && input.fastGrantEvidence == .explicitlyGranted
             && ["priority", "fast"].contains(input.confirmedServiceTier ?? "")
         let argonPriority = leafID == "gemini-4-argon"
@@ -384,6 +384,9 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
                                     cacheReadPicoUSDPerToken: peak ? 6_000 : 3_000,
                                     outputPicoUSDPerToken: peak ? 1_200_000 : 600_000), long: nil, threshold: .allContexts)
         }
+        if let rate=ClaudeLocalPricing.referenceRate(id) {
+            return Leaf(short:Rate(inputPicoUSDPerToken:rate.input,cacheReadPicoUSDPerToken:rate.read,outputPicoUSDPerToken:rate.output),long:nil,threshold:.allContexts)
+        }
         return leaves[id]
     }
 
@@ -424,6 +427,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         "openai/gpt-5.6-luna": "gpt-5.6-luna",
         "openai/gpt-6-astra": "gpt-6-astra",
         "openai/gpt-6.1-sol": "gpt-6.1-sol",
+        "openai/gpt-6.1-terra": "gpt-6.1-terra",
         "openai/gpt-6-sol": "gpt-6-sol",
         "openai/gpt-6-luna": "gpt-6-luna",
     ]
@@ -434,6 +438,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
     private static let providersByLeaf: [String: Set<String>] = [
         "gpt-6-astra": ["openai"],
         "gpt-6.1-sol": ["openai"],
+        "gpt-6.1-terra": ["openai"],
         "gpt-6-sol": ["openai"],
         "gpt-6-luna": ["openai"],
         "gpt-5.6-sol": ["openai"],
@@ -490,6 +495,13 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
             long: nil, threshold: .allContexts),
         // https://developers.openai.com/api/docs/models/gpt-6.1-sol
         // Verified 2026-10-01: cached input is 5% of input; Fast is 2x.
+        // https://developers.openai.com/api/docs/models/gpt-6.1-terra, checked 2026-10-27.
+        // Cached input is 5%; >272K doubles input/cache and multiplies output by 1.5.
+        "gpt-6.1-terra": Leaf(
+            short: Rate(inputPicoUSDPerToken:1_000_000,cacheReadPicoUSDPerToken:50_000,outputPicoUSDPerToken:5_000_000),
+            long: Rate(inputPicoUSDPerToken:2_000_000,cacheReadPicoUSDPerToken:100_000,outputPicoUSDPerToken:7_500_000),
+            threshold:.inputTokensGreaterThan(272_000)
+        ),
         "gpt-6.1-sol": Leaf(
             short: Rate(inputPicoUSDPerToken: 2_000_000, cacheReadPicoUSDPerToken: 100_000, outputPicoUSDPerToken: 10_000_000),
             long: Rate(inputPicoUSDPerToken: 4_000_000, cacheReadPicoUSDPerToken: 200_000, outputPicoUSDPerToken: 15_000_000),
@@ -595,6 +607,9 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
 
     private static func leafID(provider: String, resolvedModel: String) -> String? {
         let provider = provider.lowercased(), resolvedModel = resolvedModel.lowercased()
+        if ["anthropic","anthropic2","google-antigravity","antigravity-pool","google-antigravity-pool","combo"].contains(provider),ClaudeLocalPricing.referenceRate(resolvedModel) != nil {
+            return ClaudeLocalPricing.canonical(resolvedModel)
+        }
         if let alias = userReferenceAlias(provider: provider, resolvedModel: resolvedModel) { return alias }
         if crossProviderReferences.contains(resolvedModel) { return resolvedModel }
         if let alias = aliases["\(provider)/\(resolvedModel)"] { return alias }
