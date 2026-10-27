@@ -309,7 +309,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         if provider == "cursor-proxy", ["grok-4.7-256k", "grok-4.7-500k"].contains(model) { model = "grok-4.7" }
         guard let id = leafID(provider: provider, resolvedModel: model),
               let leaf = referenceLeaf(id: id, occurredAt: record.occurredAt) else { return nil }
-        let numerator: Int64 = id == "gemini-4-argon" ? 18 : (["grok-4.7", "gpt-6.1-sol", "gpt-6.1-terra"].contains(id) ? 20 : 10)
+        let numerator: Int64 = id == "gemini-4-argon" ? 18 : (["grok-4.7", "grok-4.6", "grok-4.5", "gpt-6.1-sol", "gpt-6.1-terra", "claude-opus-5-5", "claude-opus-5", "claude-opus-4-8"].contains(id) ? 20 : 10)
         let rate = Rate(inputPicoUSDPerToken: max(leaf.short.inputPicoUSDPerToken, leaf.long?.inputPicoUSDPerToken ?? 0) * numerator / 10,
             cacheReadPicoUSDPerToken: 0,
             outputPicoUSDPerToken: max(leaf.short.outputPicoUSDPerToken, leaf.long?.outputPicoUSDPerToken ?? 0) * numerator / 10)

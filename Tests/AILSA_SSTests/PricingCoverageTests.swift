@@ -34,9 +34,10 @@ final class PricingCoverageTests:XCTestCase {
         XCTAssertNil(value.pricing.picoUSD)
         let bound=try XCTUnwrap(OpenCodexStandardReferenceEstimator.maximumReference(for:value))
         XCTAssertEqual(bound.reason,"reasoning_output_upper_bound")
-        XCTAssertEqual(bound.picoUSD,1_644_000_000)
+        XCTAssertEqual(bound.picoUSD,3_288_000_000)
         let contribution=QuotaDashboardSnapshot.contribution(value).value
         XCTAssertEqual(contribution.tokens.total,216);XCTAssertEqual(contribution.reference.pico,bound.picoUSD)
+        XCTAssertEqual(OpenCodexStandardReferenceEstimator.maximumReference(for:try record("claude-opus-5-5-high",reasoning:59))?.picoUSD,4_376_000_000)
         XCTAssertEqual(contribution.highEstimateRecords,1)
         XCTAssertEqual(contribution.states["reasoning_output_upper_bound"],1)
         let totalConflict=try record("grok-4.5",provider:"xai",reasoning:59,total:999)
