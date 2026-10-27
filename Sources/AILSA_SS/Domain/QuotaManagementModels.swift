@@ -552,6 +552,7 @@ struct QuotaModelKey: Hashable, Sendable {
         }
         if provider == "Claude" { return Self(provider: provider, model: ClaudeLocalPricing.displayName(model)) }
         let name = model.lowercased().replacingOccurrences(of: "_", with: "-")
+        if ["composer-2.5-fast","grok-composer-2.5-fast"].contains(name) {return Self(provider:"",model:"Composer 2.5 Fast")}
         if name == "gpt-6.1-terra" { return Self(provider: provider, model: "GPT-6.1 Terra") }
         if ClaudeLocalPricing.referenceRate(name) != nil { return Self(provider:provider,model:ClaudeLocalPricing.displayName(name)) }
         if name == "gpt-6.1-sol" { return Self(provider: provider, model: "GPT-6.1 Sol") }
@@ -740,10 +741,13 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
                     output: record.tokens.outputTokens ?? 0, reasoningOutput: record.tokens.reasoningOutputTokens ?? 0)
                 if record.standardReferenceEstimate.status == .referenceEstimate {
                     value.reference.add(record.standardReferenceEstimate.picoUSD)
-                    if record.standardReferenceEstimate.estimatePartial { value.highEstimateRecords = 1; value.states["cache_discount_unknown"] = 1 }
+                    if record.standardReferenceEstimate.estimatePartial { value.highEstimateRecords = 1; value.states[record.standardReferenceEstimate.priceBasis == "official_cache_write_upper_bound" ? "cache_write_upper_bound" : "cache_discount_unknown"] = 1 }
+                    if record.standardReferenceEstimate.priceBasis == "official_composer_equivalent_reference" {value.highEstimateRecords=1;value.states["official_model_equivalent_reference"]=1}
                 } else if let maximum {
                     value.reference.add(maximum.picoUSD); value.highEstimateRecords = 1
                     value.states["highest_known_rate_estimate"] = 1
+                    if let reason=maximum.reason {value.states[reason]=1}
+                    if ["composer-2.5-fast","grok-composer-2.5-fast"].contains(record.resolvedModel ?? "") {value.states["official_model_equivalent_reference"]=1}
                 }
                 if record.pricing.valueKind == .exactDerived { value.confirmed.add(record.pricing.picoUSD) }
             }

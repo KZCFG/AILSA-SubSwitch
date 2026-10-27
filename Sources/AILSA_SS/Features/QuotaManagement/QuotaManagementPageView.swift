@@ -931,6 +931,9 @@ private struct QuotaDetails: View {
             "unreported_tokens": ("缺少输入或输出 Token", "Input or output tokens missing"),
             "cache_discount_unknown": ("缓存明细缺失：未计优惠", "Cache breakdown missing: no discount"),
             "native_model_reference_alias": ("Antigravity 模型变体参考价", "Antigravity model-variant reference"),
+            "reasoning_output_upper_bound": ("推理字段冲突：按输出上界估算", "Conflicting reasoning counter: bounded output estimate"),
+            "cache_write_upper_bound": ("缓存写入时长缺失：采用官方最高写入费率", "Cache-write retention missing: highest published write rate"),
+            "official_model_equivalent_reference": ("Composer 2.5 Fast 官方等效参考费率", "Official Composer 2.5 Fast equivalent reference"),
             "highest_known_rate_estimate": ("按最高已知费率估算", "Highest-known-rate estimate"),
             "fast_not_in_standard_reference": ("缺少已确认 Fast 费率", "Confirmed Fast rate unavailable")]
         guard let value = labels[state] else { return state }

@@ -201,7 +201,7 @@ final class Grok47PricingTests: XCTestCase {
         XCTAssertNil(record.standardReferenceEstimate.picoUSD)
     }
 
-    func testBuildFastConflictingReasoningRetainsTokensButDoesNotInventPrice() throws {
+    func testBuildFastConflictingReasoningRetainsTokensAndBoundsReferenceOnly() throws {
         let row = #"{"requestId":"conflicting","timestamp":"2026-09-27T10:00:00Z","provider":"xai","resolvedModel":"grok-4.7-build-fast","usageStatus":"reported","usage":{"inputTokens":100000,"outputTokens":100,"cachedInputTokens":20000,"reasoningOutputTokens":200}}"#
         let record = try XCTUnwrap(AILSA_SSLedgerMeteringReader(pricingCatalog: .empty).read(data: Data(row.utf8)).records.first)
         XCTAssertEqual(record.standardReferenceEstimate.status, .usageSemanticsConflict)
@@ -209,7 +209,11 @@ final class Grok47PricingTests: XCTestCase {
         let contribution = QuotaDashboardSnapshot.contribution(record)
         XCTAssertEqual(contribution.value.tokens.total, 100_100)
         XCTAssertEqual(contribution.value.reported, 1)
-        XCTAssertEqual(contribution.value.reference.count, 0)
+        XCTAssertNil(record.pricing.picoUSD)
+        XCTAssertEqual(contribution.value.reference.count, 1)
+        XCTAssertEqual(contribution.value.reference.pico, 807_200_000_000)
+        XCTAssertEqual(contribution.value.highEstimateRecords, 1)
+        XCTAssertEqual(contribution.value.states["reasoning_output_upper_bound"], 1)
     }
 
     func testNewCatalogEntryDoesNotInvalidateOldAuditDates() throws {

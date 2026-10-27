@@ -86,6 +86,8 @@ struct OpenCodexStandardReferenceInput: Sendable {
     let tokens: OpenCodexUsageTokens
     let tokenSemanticIssue: Bool
     var occurredAt: Date? = nil
+    /// Set only when the native reader constructed input=new+cache-read+cache-write.
+    var cacheCreationIsInputSubset = false
 }
 
 struct OpenCodexStandardReferenceEstimator: Sendable {
@@ -158,7 +160,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         // Grok 4.7's published Priority multiplier is explicitly verified. A
         // requested Fast flag alone is never enough to apply this price.
         // GPT-6.1 Sol's official Fast multiplier is independently verified.
-        let grokPriority = leafID == "grok-4.7"
+        let grokPriority = ["grok-4.7","grok-4.6","grok-4.5"].contains(leafID)
             && input.fastGrantEvidence == .explicitlyGranted
             && ["priority", "fast"].contains(input.confirmedServiceTier ?? "")
         let gpt61Fast = ["gpt-6.1-sol", "gpt-6.1-terra"].contains(leafID)
@@ -167,7 +169,9 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         let argonPriority = leafID == "gemini-4-argon"
             && input.fastGrantEvidence == .explicitlyGranted
             && ["priority", "fast"].contains(input.confirmedServiceTier ?? "")
-        let multiplier = argonPriority ? 18 : (grokPriority || gpt61Fast ? 20 : 10)
+        let claudeFast = ["claude-opus-5-5","claude-opus-5","claude-opus-4-8"].contains(leafID)
+            && input.fastGrantEvidence == .explicitlyGranted && input.confirmedServiceTier == "fast"
+        let multiplier = argonPriority ? 18 : (grokPriority || gpt61Fast || claudeFast ? 20 : 10)
         if input.fastGrantEvidence == .explicitlyGranted && multiplier == 10 {
             let context = contextAssumption(
                 input: input,
@@ -188,7 +192,8 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         }
         // The bridge's v1 contract does not prove cache-creation overlap.
         // Preserve unknown instead of silently charging it at ordinary input rates.
-        guard !input.tokenSemanticIssue, (input.tokens.cacheCreationInputTokens ?? 0) == 0 else {
+        let cacheWriteTokens=input.tokens.cacheCreationInputTokens ?? 0
+        guard !input.tokenSemanticIssue,cacheWriteTokens==0 || input.cacheCreationIsInputSubset else {
             return unavailable(.usageSemanticsConflict, leaf: leafID)
         }
 
@@ -200,7 +205,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         guard inputTokens >= 0,
               outputTokens >= 0,
               cacheReadTokens >= 0,
-              cacheReadTokens <= inputTokens
+              cacheReadTokens <= inputTokens,cacheWriteTokens>=0,cacheWriteTokens<=inputTokens-cacheReadTokens
         else {
             return unavailable(.usageSemanticsConflict, leaf: leafID)
         }
@@ -222,7 +227,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
             cacheReadPicoUSDPerToken: standardRate.cacheReadPicoUSDPerToken * Int64(multiplier) / 10,
             outputPicoUSDPerToken: standardRate.outputPicoUSDPerToken * Int64(multiplier) / 10
         ) : standardRate
-        guard let amount = Self.picoUSD(
+        guard let baseAmount = Self.picoUSD(
             inputTokens: inputTokens,
             cacheReadTokens: cacheReadTokens,
             outputTokens: outputTokens,
@@ -231,16 +236,29 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
             return unavailable(.unknownPrice, leaf: leafID, context: context)
         }
 
+        // Native input has a proven cache-write subset. Claude's unknown TTL
+        // uses the published 1-hour (2x input) upper bound; the input component
+        // was already charged once, so add only the extra 1x. Gemini cache writes
+        // remain ordinary input here; storage is not a token charge.
+        let upperCacheWrite=cacheWriteTokens>0 && ClaudeLocalPricing.referenceRate(leafID) != nil
+        var amount=baseAmount
+        if upperCacheWrite {
+            let extra=Int64(cacheWriteTokens).multipliedReportingOverflow(by:rate.inputPicoUSDPerToken)
+            guard !extra.overflow else{return unavailable(.unknownPrice,leaf:leafID)}
+            let sum=amount.addingReportingOverflow(extra.partialValue)
+            guard !sum.overflow else{return unavailable(.unknownPrice,leaf:leafID)}
+            amount=sum.partialValue
+        }
         return AILSA_SSStandardReferenceEstimate(
             status: .referenceEstimate,
             picoUSD: amount,
-            priceBasis: grokPriority || argonPriority
+            priceBasis: upperCacheWrite ? "official_cache_write_upper_bound" : (leafID == "composer-2.5-fast" && provider == "xai" ? "official_composer_equivalent_reference" : (grokPriority || argonPriority
                 ? (userReferenceAlias == nil ? "official_priority_reference" : "user_mapped_official_priority_reference")
-                : (gpt61Fast ? "official_fast_reference"
-                   : (userReferenceAlias == nil ? Self.priceBasis : "user_mapped_official_standard_reference")),
+                : ((gpt61Fast || claudeFast) ? "official_fast_reference"
+                   : (userReferenceAlias == nil ? Self.priceBasis : "user_mapped_official_standard_reference")))),
             leaf: leafID,
             contextLadder: selected.ladder,
-            estimatePartial: cacheBreakdownMissing,
+            estimatePartial: cacheBreakdownMissing || upperCacheWrite,
             fastGranted: input.fastGrantEvidence.fastGranted,
             confirmedServiceTier: input.confirmedServiceTier,
             identityAssumption: identity,
@@ -253,21 +271,33 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         let provider: String
         let model: String
         let assumedIdentity: Bool
+        var reason: String? = nil
     }
 
     /// Display-only fallback explicitly requested by the user. It does not
     /// mutate the ledger, repair resolved identity or populate confirmed prices.
     /// Use highest known published context/priority rates, without cache
-    /// discounts. Unknown models, invalid/missing counters and semantic conflicts
-    /// remain unavailable: there is no defensible upper bound for those.
+    /// discounts. A precisely identified reasoning/output split can use an
+    /// explicit additive upper bound. Other invalid or conflicting counters
+    /// remain unavailable; no original token or route fields are changed.
     static func maximumReference(for record: OpenCodexLedgerMeteringRecord) -> MaximumReference? {
-        guard !record.streamAborted, !record.tokenSemanticIssue, record.usageStatus == .reported,
-              record.tokenSource == .upstreamReported, record.tokens.hasPrimaryTokens,
-              [.unknownIdentity, .unknownPrice].contains(record.standardReferenceEstimate.status),
-              let provider = record.routeProvider?.lowercased(),
-              let input = record.tokens.inputTokens, let output = record.tokens.outputTokens,
-              input >= 0, output >= 0, (record.tokens.cacheCreationInputTokens ?? 0) == 0,
-              record.pricing.status != .usageSemanticsConflict else { return nil }
+        let reasoningBound=record.tokenSemanticIssueReason == "reasoningOutsideOutput"
+        guard !record.streamAborted,(!record.tokenSemanticIssue || reasoningBound),record.usageStatus == .reported,
+              record.tokenSource == .upstreamReported,record.tokens.hasPrimaryTokens,
+              [.unknownIdentity,.unknownPrice].contains(record.standardReferenceEstimate.status) || (reasoningBound && record.standardReferenceEstimate.status == .usageSemanticsConflict),
+              let provider=record.routeProvider?.lowercased(),
+              let input=record.tokens.inputTokens,let output=record.tokens.outputTokens,
+              input>=0,output>=0,(record.tokens.cacheCreationInputTokens ?? 0)==0,
+              record.pricing.status != .usageSemanticsConflict || reasoningBound else{return nil}
+        // Some proxy records disclose reasoning separately but output excludes
+        // it. Preserve their primary counters; only the USD upper bound includes
+        // both possible components. Other semantic contradictions stay unknown.
+        var boundedOutput=output
+        if reasoningBound {
+            guard let reasoning=record.tokens.reasoningOutputTokens,reasoning>output else{return nil}
+            let sum=output.addingReportingOverflow(reasoning);guard !sum.overflow else{return nil}
+            boundedOutput=sum.partialValue
+        }
         let assumed = record.routeIdentityStatus != .resolved
         guard var model = (assumed ? record.requestedModel : record.resolvedModel)?.lowercased() else { return nil }
         if assumed, model.contains("/") {
@@ -279,12 +309,12 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         if provider == "cursor-proxy", ["grok-4.7-256k", "grok-4.7-500k"].contains(model) { model = "grok-4.7" }
         guard let id = leafID(provider: provider, resolvedModel: model),
               let leaf = referenceLeaf(id: id, occurredAt: record.occurredAt) else { return nil }
-        let numerator: Int64 = id == "gemini-4-argon" ? 18 : (["grok-4.7", "gpt-6.1-sol"].contains(id) ? 20 : 10)
+        let numerator: Int64 = id == "gemini-4-argon" ? 18 : (["grok-4.7", "gpt-6.1-sol", "gpt-6.1-terra"].contains(id) ? 20 : 10)
         let rate = Rate(inputPicoUSDPerToken: max(leaf.short.inputPicoUSDPerToken, leaf.long?.inputPicoUSDPerToken ?? 0) * numerator / 10,
             cacheReadPicoUSDPerToken: 0,
             outputPicoUSDPerToken: max(leaf.short.outputPicoUSDPerToken, leaf.long?.outputPicoUSDPerToken ?? 0) * numerator / 10)
-        guard let amount = picoUSD(inputTokens: input, cacheReadTokens: 0, outputTokens: output, rate: rate) else { return nil }
-        return MaximumReference(picoUSD: amount, provider: provider, model: model, assumedIdentity: assumed)
+        guard let amount = picoUSD(inputTokens: input, cacheReadTokens: 0, outputTokens: boundedOutput, rate: rate) else { return nil }
+        return MaximumReference(picoUSD: amount, provider: provider, model: model, assumedIdentity: assumed,reason:reasoningBound ? "reasoning_output_upper_bound" : nil)
     }
 
     /// Never return a partial amount. A caller that aggregates reference
@@ -385,6 +415,10 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
                                     outputPicoUSDPerToken: peak ? 1_200_000 : 600_000), long: nil, threshold: .allContexts)
         }
         if let rate=ClaudeLocalPricing.referenceRate(id) {
+            if id == "claude-haiku-5-5" {
+                return Leaf(short:Rate(inputPicoUSDPerToken:rate.input,cacheReadPicoUSDPerToken:rate.read,outputPicoUSDPerToken:rate.output),
+                    long:Rate(inputPicoUSDPerToken:rate.input*5,cacheReadPicoUSDPerToken:rate.read*5,outputPicoUSDPerToken:rate.output*5),threshold:.inputTokensGreaterThan(100_000))
+            }
             return Leaf(short:Rate(inputPicoUSDPerToken:rate.input,cacheReadPicoUSDPerToken:rate.read,outputPicoUSDPerToken:rate.output),long:nil,threshold:.allContexts)
         }
         return leaves[id]
@@ -450,6 +484,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         "grok-4.7": ["xai", "cursor-proxy"],
         "grok-4.6": ["xai", "cursor-proxy"],
         "grok-4.5": ["xai", "cursor-proxy"],
+        "composer-2.5-fast": ["cursor","cursor-proxy","xai"],
         "k3": ["kimi-code"],
         "kimi-k3": ["kimi-code"],
         "kimi-k2.7-code": ["kimi-code", "kimi", "moonshot"],
@@ -554,6 +589,10 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
             long: nil,
             threshold: .allContexts
         ),
+        // Cursor official Composer 2.5 Fast reference, verified 2026-10-27.
+        // https://cursor.com/docs/models-and-pricing#cursor-models
+        // The xAI account alias is an equivalent reference, not an xAI invoice.
+        "composer-2.5-fast": Leaf(short:Rate(inputPicoUSDPerToken:3_000_000,cacheReadPicoUSDPerToken:500_000,outputPicoUSDPerToken:15_000_000),long:nil,threshold:.allContexts),
         // https://docs.x.ai/developers/pricing, verified 2026-09-22.
         // The >= 200k ladder applies to all tokens, including cached input.
         "grok-4.7": Leaf(
@@ -607,6 +646,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
 
     private static func leafID(provider: String, resolvedModel: String) -> String? {
         let provider = provider.lowercased(), resolvedModel = resolvedModel.lowercased()
+        if ["xai","cursor","cursor-proxy"].contains(provider),resolvedModel == "grok-composer-2.5-fast" {return "composer-2.5-fast"}
         if ["anthropic","anthropic2","google-antigravity","antigravity-pool","google-antigravity-pool","combo"].contains(provider),ClaudeLocalPricing.referenceRate(resolvedModel) != nil {
             return ClaudeLocalPricing.canonical(resolvedModel)
         }

@@ -189,6 +189,7 @@ struct OpenCodexLedgerMeteringRecord: Equatable, Identifiable, Sendable {
     let standardReferenceEstimate: AILSA_SSStandardReferenceEstimate
     let streamAborted: Bool
     var tokenSemanticIssue = false
+    var tokenSemanticIssueReason: String? = nil
     var upstreamResponseID: String? = nil
 
     var id: String { requestID }
@@ -782,6 +783,7 @@ struct AILSA_SSLedgerMeteringReader: Sendable {
             standardReferenceEstimate: standardReferenceEstimate,
             streamAborted: candidate.streamAborted,
             tokenSemanticIssue: candidate.parsedTokens.semanticIssue != nil,
+            tokenSemanticIssueReason: candidate.parsedTokens.semanticIssue?.rawValue,
             upstreamResponseID: candidate.upstreamResponseID
         )
     }
@@ -1003,7 +1005,7 @@ struct AILSA_SSLedgerMeteringReader: Sendable {
         let tokens: OpenCodexUsageTokens
         let semanticIssue: SemanticIssue?
 
-        enum SemanticIssue: Sendable {
+        enum SemanticIssue: String, Sendable {
             case invalidPrimaryTokens
             case totalMismatch
             case cacheMismatch

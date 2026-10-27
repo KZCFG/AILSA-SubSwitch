@@ -210,13 +210,14 @@ struct AntigravityTokenUsageReader: Sendable {
         let price = OpenCodexStandardReferenceEstimator().estimate(.init(provider:"google-antigravity",resolvedModel:refModel,
             requestedModel:nil,modelEcho:nil,usageStatus:.reported,usageEstimated:false,streamAborted:false,currency:"USD",
             apiEquivalentEligibility:nil,tierOutcomeConfirmation:nil,tierOutcomeCanonical:nil,responseServiceTier:nil,
-            fastOutcome:nil,confirmedServiceTier:nil,fastGrantEvidence:.unknown,tokens:tokens,tokenSemanticIssue:false,occurredAt:date))
+            fastOutcome:nil,confirmedServiceTier:nil,fastGrantEvidence:.unknown,tokens:tokens,tokenSemanticIssue:false,occurredAt:date,cacheCreationIsInputSubset:true))
         var value = QuotaAggregate(); value.requests = 1; value.reported = 1
         value.tokens = UsageTokenBreakdown(input:input,cachedInput:u.cacheRead,cacheWriteInput:event.cacheWrite,
             output:output,reasoningOutput:u.reasoning)
         value.cacheReuse.observe(input:input,cachedInput:u.cacheRead)
         value.reference.add(price.picoUSD)
         value.states[price.status.rawValue] = 1
+        if price.priceBasis == "official_cache_write_upper_bound" {value.highEstimateRecords=1;value.states["cache_write_upper_bound"]=1}
         if let model, refModel != model.lowercased(), price.picoUSD != nil {
             value.highEstimateRecords = 1; value.states["native_model_reference_alias"] = 1
         }

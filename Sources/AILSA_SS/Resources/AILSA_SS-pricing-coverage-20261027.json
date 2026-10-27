@@ -1,0 +1,32 @@
+{
+  "checkedAt": "2026-10-27",
+  "unit": "USD per million tokens",
+  "claude-sonnet-5-5": {
+    "input": 2,
+    "cacheRead": 0.1,
+    "output": 10,
+    "source": "https://claude.com/pricing"
+  },
+  "claude-opus-5-5": {
+    "input": 4,
+    "cacheRead": 0.2,
+    "output": 20,
+    "source": "https://claude.com/pricing"
+  },
+  "grok-4.5": {
+    "input": 2,
+    "cacheRead": 0.3,
+    "output": 6,
+    "longContextThreshold": 200000,
+    "longContextMultiplier": 2,
+    "source": "https://docs.x.ai/developers/models/grok-4.5"
+  },
+  "composer-2.5-fast": {
+    "input": 3,
+    "cacheRead": 0.5,
+    "output": 15,
+    "source": "https://cursor.com/docs/models-and-pricing#cursor-models",
+    "xaiAlias": "grok-composer-2.5-fast",
+    "aliasBasis": "Official same-name Composer equivalent reference; not a separately published xAI price."
+  }
+}

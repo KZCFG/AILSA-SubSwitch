@@ -57,8 +57,12 @@ enum ClaudeLocalPricing {
         "claude-haiku-4-5": Rate(input: 1_000_000, output: 5_000_000, read: 100_000)
     ]
     static func canonical(_ model: String) -> String {
-        let raw = model.lowercased()
-        let name = raw.hasSuffix("-thinking") ? String(raw.dropLast(9)) : raw
+        // Antigravity exports effort options as suffixes of a known model.
+        // Remove only documented option names, never a fuzzy model prefix.
+        var parts=model.lowercased().split(separator:"-").map(String.init)
+        let options:Set<String>=["none","low","medium","high","xhigh","max","ultra","thinking"]
+        while let last=parts.last,options.contains(last) {parts.removeLast()}
+        let name=parts.joined(separator:"-")
         if rates[name] != nil { return name }
         // Only an exact model followed by an eight-digit dated version.
         if let dash = name.lastIndex(of: "-") {

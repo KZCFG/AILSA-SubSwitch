@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0(w) — 2026-10-27
+
+- Complete the 30-day pricing audit for native Antigravity and OpenCodex usage, including Claude Sonnet 5.5 and Opus 5.5 effort variants.
+- Add Composer 2.5 Fast official API-equivalent reference pricing and preserve the original route identity.
+- Recover Grok 4.5 and other supported reasoning-counter conflicts with an explicitly marked USD upper-bound estimate; keep original Token counters unchanged.
+- Price native cache-write input only when its accounting relationship is proven, with a labeled upper bound when Claude cache retention is unavailable.
+
 ## 1.0.0(v) — 2026-10-27
 
 - Add explicit weekly-usage activation buttons to Codex and Antigravity account cards, with progress, success receipts, reset invalidation, and duplicate-request protection.
