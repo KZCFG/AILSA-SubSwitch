@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0(x) — 2026-10-30
+
+- Import DeepSeek Harness desktop session usage locally, including compressed v4 logs, completed retries and verified cache-token buckets.
+- Include native DeepSeek consumption in model totals, Token/USD charts, custom-range reports and share images; de-duplicate overlapping OpenCodex response identities.
+- Apply DeepSeek Flash 1017 and V4 Pro USD reference rates at each request's actual peak/off-peak time, including cache hits, weekends and supported public holidays.
+- Read metadata without starting Harness agents, loading credentials, sending requests or polling online quota. Incomplete writes and unreadable sources are explicitly marked.
+
 ## 1.0.0(w) — 2026-10-27
 
 - Complete the 30-day pricing audit for native Antigravity and OpenCodex usage, including Claude Sonnet 5.5 and Opus 5.5 effort variants.

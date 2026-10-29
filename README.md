@@ -4,7 +4,7 @@
 
 <h1 align="center">AILSA SubSwitch</h1>
 <p align="center"><strong>Weekly usage at a glance. Switch accounts in a click.</strong></p>
-<p align="center">A native macOS menu bar app for Codex, Antigravity, and Cursor, with offline Claude Code usage analytics.</p>
+<p align="center">A native macOS menu bar app for Codex, Antigravity, and Cursor, with offline Claude Code and DeepSeek Harness usage analytics.</p>
 <p align="center">
   <img alt="macOS 14 or later" src="https://img.shields.io/badge/macOS-14%2B-111111">
   <img alt="Apple Silicon" src="https://img.shields.io/badge/Apple_Silicon-arm64-6554FF">
@@ -50,6 +50,7 @@ preserved in this repository.
   or the OpenCodex ledger, including supported non-OpenAI routes. Keep API
   reference estimates separate from provider-reported amounts and billing.
 - **Include native Antigravity usage.** Read local App/CLI generation metadata and combine matching Gemini model versions with OpenCodex usage, including charts and share images. No CLI process or model request is started for Token statistics.
+- **Read DeepSeek Harness usage locally.** Include native desktop session Tokens in combined model totals, charts and share images, with request-time DeepSeek Flash / V4 Pro USD reference prices and cache-aware accounting. No credential import or online quota polling is required.
 - **Read Claude usage locally.** Inspect Claude Desktop Code Token and API-equivalent USD usage from local logs. No Claude quota polling or account credentials are required.
 - **Share a longer view.** Export daily, 7-day, 30-day, 60-day and 90-day usage images, or select a custom start and end date. Add your own share title, such as “A wonderful weekend”; missing history is never reconstructed.
 - **Make it yours.** Choose M/B token units, visible usage windows, restart
@@ -64,7 +65,7 @@ preserved in this repository.
 | --- | --- | --- | --- |
 | Local account import and switching | Yes | Yes | Yes |
 | Usage and reset times | Provider-reported | Native usage families | Provider-reported |
-| Token / USD details | Local sessions or OpenCodex records | Not exposed by the supported usage source | Usage events reported by Cursor |
+| Token / USD details | Local sessions or OpenCodex records | Native generation metadata and OpenCodex records | Usage events reported by Cursor |
 | History | Recorded usage | Locally captured usage snapshots | Reported usage events |
 | Smart switching | Supported | Available when native credential access permits | Manual switching |
 
@@ -73,7 +74,7 @@ subscription bill, credit balance, or a promise of what a provider will charge.*
 Antigravity usage percentages are not converted into invented token totals.
 
 We expect to add Grok and Kimi usage monitoring in **1.0.1**, followed by
-Alibaba and DeepSeek usage monitoring in **1.0.2**.
+Alibaba and DeepSeek online quota monitoring in **1.0.2**. Offline DeepSeek Harness Token / USD accounting is available in **1.0.0(x)**; it does not poll online quota.
 
 **1.0.0(j)** speeds up native Codex history scanning and corrects Antigravity
 paid-plan labels, adapting the relevant changes from CodexBar 0.77.0. Measured

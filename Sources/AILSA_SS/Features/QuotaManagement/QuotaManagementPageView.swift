@@ -317,6 +317,10 @@ struct QuotaDashboard: View {
                     Text(native.unavailable ? qtext("Antigravity 本机记录暂不可读；当前未计入这部分。", "Antigravity local records unavailable; this part is not included.") : native.partial ? qtext("含 Antigravity 本机 Token；部分记录无法核验，仅计入可确认用量。", "Includes Antigravity local tokens; some records could not be verified.") : qtext("含 Antigravity 本机 Token，按实际模型合并。", "Includes Antigravity local tokens, grouped by recorded model."))
                         .font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal:false,vertical:true)
                 }
+                if provider == .codex, let harness=data.deepSeekHarnessUsage {
+                    Text(harness.unavailable ? qtext("DeepSeek Harness 本机记录暂不可读；当前未计入这部分。", "DeepSeek Harness local records unavailable; this part is not included.") : (harness.partial || harness.invalid>0) ? qtext("含 DeepSeek Harness 本机 Token；仅计入可核验记录，未完成写入会在刷新时重读。", "Includes verified DeepSeek Harness local tokens; incomplete writes are retried on refresh.") : qtext("含 DeepSeek Harness 本机 Token；缓存计入输入，按请求时间换算美元参考金额。", "Includes DeepSeek Harness local tokens; input includes cache, with USD reference rates at request time."))
+                        .font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal:false,vertical:true)
+                }
                 if provider == .claude {
                     Text(qtext("仅统计本机 Claude App 的 Code 日志；不查询在线额度。等效 API 金额不是订阅账单。", "Local Claude App Code logs only; no online quota queries. API equivalence is not your subscription bill."))
                         .font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -932,6 +936,7 @@ private struct QuotaDetails: View {
             "cache_discount_unknown": ("缓存明细缺失：未计优惠", "Cache breakdown missing: no discount"),
             "native_model_reference_alias": ("Antigravity 模型变体参考价", "Antigravity model-variant reference"),
             "reasoning_output_upper_bound": ("推理字段冲突：按输出上界估算", "Conflicting reasoning counter: bounded output estimate"),
+            "harness_time_reference_estimate": ("缺少请求起始时间：按结算时间估算费率", "Request start missing: rate estimated at settlement time"),
             "cache_write_upper_bound": ("缓存写入时长缺失：采用官方最高写入费率", "Cache-write retention missing: highest published write rate"),
             "official_model_equivalent_reference": ("Composer 2.5 Fast 官方等效参考费率", "Official Composer 2.5 Fast equivalent reference"),
             "highest_known_rate_estimate": ("按最高已知费率估算", "Highest-known-rate estimate"),

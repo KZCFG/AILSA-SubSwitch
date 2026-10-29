@@ -85,3 +85,7 @@ This reader does not launch the Antigravity CLI, refresh OAuth, query quota or
 send inference requests. Stable response identities are hashed for cross-source
 deduplication. File caches are in memory and invalidated when main/WAL evidence
 changes. Unverifiable or conflicting evidence stays excluded with partial coverage.
+
+### DeepSeek Harness local usage
+
+The desktop integration reads v4 session artifacts under `~/.dsh/sessions`. A bundled metadata-only script runs in the installed Harness Node runtime to decode JSONL / Zstandard logs and return model identities, timestamps, response identifiers and numeric Token counters. It does not load Harness plugins, account files or credentials, start an agent, send model requests, or poll online quota. Conversation text is not returned by the helper, retained by the usage reader, or included in share images. Incomplete writes are retried on refresh and unsupported records remain explicitly unavailable. USD values are published API-equivalent reference estimates rather than subscription invoices.

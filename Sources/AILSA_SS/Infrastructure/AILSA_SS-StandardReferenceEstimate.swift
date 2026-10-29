@@ -384,7 +384,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         return userReferenceAliases[resolvedModel]
     }
     private static let crossProviderReferences: Set<String> = [
-        "grok-4.7", "grok-4.6", "grok-4.5", "gemini-3.8-flash", "gemini-4-argon", "deepseek-flash",
+        "grok-4.7", "grok-4.6", "grok-4.5", "gemini-3.8-flash", "gemini-4-argon", "deepseek-flash", "deepseek-v4-pro",
         "claude-fable-5-1", "k3", "kimi-k3"
     ]
     private static func referenceLeaf(id: String, occurredAt: Date?) -> Leaf? {
@@ -405,14 +405,15 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
                                     cacheReadPicoUSDPerToken: fullPrice ? 150_000 : 75_000,
                                     outputPicoUSDPerToken: fullPrice ? 7_500_000 : 3_750_000), long: nil, threshold: .allContexts)
         }
-        if id == "deepseek-flash" {
+        if ["deepseek-flash","deepseek-v4-pro"].contains(id) {
             // DeepSeek-V4.1-Flash is served as deepseek-flash. USD per 1M,
             // rechecked 2026-10-20: peak 0.30 / 0.006 / 1.20; off-peak is half.
             // https://api-docs.deepseek.com/quick_start/pricing
             guard let occurredAt, let peak = deepSeekPeakHours(at: occurredAt) else { return nil }
-            return Leaf(short: Rate(inputPicoUSDPerToken: peak ? 300_000 : 150_000,
-                                    cacheReadPicoUSDPerToken: peak ? 6_000 : 3_000,
-                                    outputPicoUSDPerToken: peak ? 1_200_000 : 600_000), long: nil, threshold: .allContexts)
+            let pro = id == "deepseek-v4-pro"
+            return Leaf(short: Rate(inputPicoUSDPerToken: pro ? (peak ? 1_320_000 : 660_000) : (peak ? 300_000 : 150_000),
+                                    cacheReadPicoUSDPerToken: pro ? (peak ? 44_000 : 22_000) : (peak ? 6_000 : 3_000),
+                                    outputPicoUSDPerToken: pro ? (peak ? 3_960_000 : 1_980_000) : (peak ? 1_200_000 : 600_000)), long: nil, threshold: .allContexts)
         }
         if let rate=ClaudeLocalPricing.referenceRate(id) {
             if id == "claude-haiku-5-5" {

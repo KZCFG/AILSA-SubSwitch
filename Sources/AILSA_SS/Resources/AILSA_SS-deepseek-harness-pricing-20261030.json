@@ -1,0 +1,45 @@
+{
+  "checkedAt": "2026-10-30",
+  "source": "https://api-docs.deepseek.com/quick_start/pricing",
+  "unit": "USD per million tokens",
+  "deepseek-flash": {
+    "version": "DeepSeek-V4.1-Flash-1017",
+    "peak": {
+      "input": 0.3,
+      "cacheRead": 0.006,
+      "output": 1.2
+    },
+    "offPeak": {
+      "input": 0.15,
+      "cacheRead": 0.003,
+      "output": 0.6
+    }
+  },
+  "deepseek-v4-pro": {
+    "version": "DeepSeek-V4-Pro-0813",
+    "peak": {
+      "input": 1.32,
+      "cacheRead": 0.044,
+      "output": 3.96
+    },
+    "offPeak": {
+      "input": 0.66,
+      "cacheRead": 0.022,
+      "output": 1.98
+    }
+  },
+  "peakHoursUTC": [
+    [
+      1,
+      4
+    ],
+    [
+      6,
+      10
+    ]
+  ],
+  "weekdaysOnly": true,
+  "chinesePublicHolidays": "off peak; bundled 2026 calendar",
+  "toolFees": "Not inferred from token counts",
+  "harnessUsageContract": "inputTokens, cacheReadTokens, cacheWriteTokens and outputTokens are disjoint; reasoning is not added to output"
+}

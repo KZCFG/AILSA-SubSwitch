@@ -37,6 +37,9 @@ struct QuotaManagementDataPaths: Equatable, Sendable {
     var claudeProjectsDirectory: URL? = nil
     var antigravityConversationDirectories: [URL] = []
     var antigravityTokenCacheDirectory: URL? = nil
+    var deepSeekHarnessSessionsDirectory: URL? = nil
+    var deepSeekHarnessRuntimeURL: URL? = nil
+    var deepSeekHarnessHelperURL: URL? = nil
 
     static func live(fileManager: FileManager = .default) -> QuotaManagementDataPaths {
         let homeDirectory = fileManager.homeDirectoryForCurrentUser
@@ -68,7 +71,10 @@ struct QuotaManagementDataPaths: Equatable, Sendable {
             claudeDesktopSessionsDirectory: homeDirectory.appendingPathComponent("Library/Application Support/Claude/claude-code-sessions"),
             claudeProjectsDirectory: homeDirectory.appendingPathComponent(".claude/projects"),
             antigravityConversationDirectories: [".gemini/antigravity", ".gemini/antigravity/conversations", ".gemini/antigravity-cli/conversations"].map { homeDirectory.appendingPathComponent($0) },
-            antigravityTokenCacheDirectory: homeDirectory.appendingPathComponent(".config/tokscale/antigravity-cache/sessions")
+            antigravityTokenCacheDirectory: homeDirectory.appendingPathComponent(".config/tokscale/antigravity-cache/sessions"),
+            deepSeekHarnessSessionsDirectory: homeDirectory.appendingPathComponent(".dsh/sessions"),
+            deepSeekHarnessRuntimeURL: DeepSeekHarnessUsageReader.runtime(fileManager:fileManager),
+            deepSeekHarnessHelperURL: Bundle.main.url(forResource:"AILSA_SS-DeepSeekHarnessUsage",withExtension:"mjs")
         )
     }
 }
@@ -82,6 +88,7 @@ actor LocalQuotaManagementUsageService: QuotaManagementUsageServiceProtocol {
     private var incrementalLedger = OpenCodexIncrementalLedger()
     private var claudeUsageReader = ClaudeLocalUsageReader()
     private var antigravityTokenReader = AntigravityTokenUsageReader()
+    private var deepSeekHarnessReader = DeepSeekHarnessUsageReader()
 
     init(paths: QuotaManagementDataPaths = .live()) {
         self.paths = paths
@@ -109,6 +116,20 @@ actor LocalQuotaManagementUsageService: QuotaManagementUsageServiceProtocol {
     }
 
     private func mergeNativeUsage(into dashboard: QuotaDashboardSnapshot, now: Date, historyDays: Int) throws -> QuotaDashboardSnapshot {
+        let native=try mergeAntigravityUsage(into:dashboard,now:now,historyDays:historyDays)
+        do {
+            let usage=try deepSeekHarnessReader.read(root:paths.deepSeekHarnessSessionsDirectory,
+                runtime:paths.deepSeekHarnessRuntimeURL,helper:paths.deepSeekHarnessHelperURL)
+            return usage.merging(into:native,now:now,historyDays:historyDays)
+        } catch is CancellationError { throw CancellationError() }
+        catch {
+            var result=native
+            result.deepSeekHarnessUsage=DeepSeekHarnessDiagnostics(partial:true,unavailable:true)
+            return result
+        }
+    }
+
+    private func mergeAntigravityUsage(into dashboard: QuotaDashboardSnapshot, now: Date, historyDays: Int) throws -> QuotaDashboardSnapshot {
         do {
             let native = try antigravityTokenReader.read(roots: paths.antigravityConversationDirectories, cacheRoot: paths.antigravityTokenCacheDirectory)
             return native.merging(into: dashboard, now: now, historyDays: historyDays)

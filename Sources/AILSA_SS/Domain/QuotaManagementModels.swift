@@ -552,6 +552,7 @@ struct QuotaModelKey: Hashable, Sendable {
         }
         if provider == "Claude" { return Self(provider: provider, model: ClaudeLocalPricing.displayName(model)) }
         let name = model.lowercased().replacingOccurrences(of: "_", with: "-")
+        if name == "deepseek-v4-pro" { return Self(provider:"",model:"DeepSeek V4 Pro") }
         if ["composer-2.5-fast","grok-composer-2.5-fast"].contains(name) {return Self(provider:"",model:"Composer 2.5 Fast")}
         if name == "gpt-6.1-terra" { return Self(provider: provider, model: "GPT-6.1 Terra") }
         if ClaudeLocalPricing.referenceRate(name) != nil { return Self(provider:provider,model:ClaudeLocalPricing.displayName(name)) }
@@ -624,6 +625,7 @@ struct QuotaDashboardSnapshot: Equatable, Sendable {
     var pricingProvenance: [QuotaPricingProvenance] = []
     var providerResponseKeys: Set<String> = []
     var antigravityTokenUsage: AntigravityTokenDiagnostics? = nil
+    var deepSeekHarnessUsage: DeepSeekHarnessDiagnostics? = nil
 
     static func build(_ data: QuotaManagementData, now: Date, calendar: Calendar = .current, historyDays: Int = 30) -> Self {
         let started = Date()
