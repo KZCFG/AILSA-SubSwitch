@@ -68,4 +68,53 @@ final class PricingCoverageTests:XCTestCase {
         input.cacheCreationIsInputSubset=false
         XCTAssertNil(OpenCodexStandardReferenceEstimator().estimate(input).picoUSD)
     }
+    func testCodeBuddyGLMRoutesUseDistinctOfficialRatesWithoutChangingTokens() throws {
+        for (model,amount) in [("glm-5.3",Int64(1_612_000_000)),("glm-5.3-flash",176_000_000),("glm-5.3-flashx",436_000_000)] {
+            let r=try record(model,provider:"codebuddy-cn",input:1000,output:100,cache:200)
+            XCTAssertEqual(r.standardReferenceEstimate.picoUSD,amount)
+            XCTAssertEqual(r.tokens.totalTokens,1100)
+            XCTAssertNil(r.pricing.picoUSD)
+            XCTAssertEqual(r.resolvedModel,model)
+        }
+        XCTAssertNotEqual(QuotaModelKey(provider:"codebuddy-cn",model:"glm-5.3-flashx").familyKey,
+                          QuotaModelKey(provider:"codebuddy-cn",model:"glm-5.3").familyKey)
+        XCTAssertEqual(QuotaModelKey(provider:"codebuddy-cn",model:"glm-5.3-flashx").familyKey.model,"GLM 5.3 FlashX")
+        XCTAssertNil(try record("glm-5.3-flashx-unreleased",provider:"codebuddy-cn").standardReferenceEstimate.picoUSD)
+    }
+
+    func testHY3GatewayRouteUsesCachedInputOfficialPrice() throws {
+        XCTAssertEqual(try record("hy3",provider:"codebuddy-cn",input:1000,output:100,cache:200).standardReferenceEstimate.picoUSD,165_000_000)
+    }
+    func testHY4AliasesMergeForDisplayButKeepOriginalIDsAndTokens() throws {
+        for model in ["hy4std","hy4free","hy4"] {
+            var row:[String:Any]=["requestId":model,"timestamp":"2026-11-05T00:00:00Z","provider":"codebuddy-cn","resolvedModel":model,"usageStatus":"reported","usage":["inputTokens":1000,"outputTokens":100,"cachedInputTokens":200]]
+            let r=try XCTUnwrap(AILSA_SSLedgerMeteringReader(pricingCatalog:.empty).read(data:JSONSerialization.data(withJSONObject:row)).records.first)
+            XCTAssertEqual(r.standardReferenceEstimate.picoUSD,462_850_000)
+            XCTAssertEqual(r.resolvedModel,model);XCTAssertEqual(r.tokens.totalTokens,1100)
+            XCTAssertEqual(QuotaDashboardSnapshot.contribution(r).key.familyKey.model,"HY4")
+            XCTAssertNil(r.pricing.picoUSD)
+            row["timestamp"]="2026-12-31T16:00:00Z"
+            let expired=try XCTUnwrap(AILSA_SSLedgerMeteringReader(pricingCatalog:.empty).read(data:JSONSerialization.data(withJSONObject:row)).records.first)
+            XCTAssertEqual(expired.standardReferenceEstimate.picoUSD,925_700_000)
+            row["timestamp"]="2026-12-31T15:59:59Z"
+            let before=try XCTUnwrap(AILSA_SSLedgerMeteringReader(pricingCatalog:.empty).read(data:JSONSerialization.data(withJSONObject:row)).records.first)
+            XCTAssertEqual(before.standardReferenceEstimate.picoUSD,462_850_000)
+        }
+        XCTAssertNil(try record("hy4-unreleased",provider:"codebuddy-cn").standardReferenceEstimate.picoUSD)
+        XCTAssertNotEqual(QuotaModelKey(provider:"codebuddy-cn",model:"hy4free").familyKey,
+                          QuotaModelKey(provider:"codebuddy-cn",model:"hy3").familyKey)
+    }
+    func testKimi31HighspeedDoublesInputAndOutputButNotCacheHitPrice() throws {
+        let standard=try record("kimi-k3.1-pro",provider:"codebuddy-cn",input:1000,output:100,cache:200)
+        let highspeed=try record("kimi-k3.1-pro-highspeed",provider:"codebuddy-cn",input:1000,output:100,cache:200)
+        XCTAssertEqual(standard.standardReferenceEstimate.picoUSD,2_640_000_000)
+        XCTAssertEqual(highspeed.standardReferenceEstimate.picoUSD,5_240_000_000)
+        XCTAssertNotEqual(highspeed.standardReferenceEstimate.picoUSD,standard.standardReferenceEstimate.picoUSD.map{$0*2})
+        XCTAssertEqual(try record("kimi-k3.1-pro-highspeed",provider:"codebuddy-cn",input:1000,output:100,cache:200,tier:"fast").standardReferenceEstimate.picoUSD,5_240_000_000)
+        XCTAssertEqual(highspeed.tokens.totalTokens,1100)
+        XCTAssertEqual(QuotaModelKey(provider:"codebuddy-cn",model:"kimi-k3.1-pro-highspeed").familyKey.model,"Kimi K3.1 Pro HighSpeed")
+        XCTAssertNotEqual(QuotaModelKey(provider:"codebuddy-cn",model:"kimi-k3.1-pro").familyKey,
+                          QuotaModelKey(provider:"codebuddy-cn",model:"kimi-k3.1-pro-highspeed").familyKey)
+    }
+
 }

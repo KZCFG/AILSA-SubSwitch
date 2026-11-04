@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0(y) — 2026-11-05
+
+- Merge HY4 STD/Free display aliases and add official request-time promotional USD pricing.
+- Add Kimi K3.1 Pro and HighSpeed references, preserving their identical cache-hit rate.
+- Repair CodeBuddy CN price mappings for HY3 and GLM 5.3 / Flash / FlashX.
+- Keep FlashX separate from GLM 5.3; retain all original route identities and Token counts.
+
 ## 1.0.0(x) — 2026-10-30
 
 - Import DeepSeek Harness desktop session usage locally, including compressed v4 logs, completed retries and verified cache-token buckets.

@@ -172,7 +172,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         let claudeFast = ["claude-opus-5-5","claude-opus-5","claude-opus-4-8"].contains(leafID)
             && input.fastGrantEvidence == .explicitlyGranted && input.confirmedServiceTier == "fast"
         let multiplier = argonPriority ? 18 : (grokPriority || gpt61Fast || claudeFast ? 20 : 10)
-        if input.fastGrantEvidence == .explicitlyGranted && multiplier == 10 {
+        if input.fastGrantEvidence == .explicitlyGranted && multiplier == 10 && leafID != "kimi-k3.1-pro-highspeed" {
             let context = contextAssumption(
                 input: input,
                 fastGranted: true,
@@ -236,11 +236,11 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
             return unavailable(.unknownPrice, leaf: leafID, context: context)
         }
 
-        // Native input has a proven cache-write subset. Claude's unknown TTL
+        // Native input has a proven cache-write subset. Claude/Kimi unknown TTL
         // uses the published 1-hour (2x input) upper bound; the input component
         // was already charged once, so add only the extra 1x. Gemini cache writes
         // remain ordinary input here; storage is not a token charge.
-        let upperCacheWrite=cacheWriteTokens>0 && ClaudeLocalPricing.referenceRate(leafID) != nil
+        let upperCacheWrite=cacheWriteTokens>0 && (ClaudeLocalPricing.referenceRate(leafID) != nil || ["kimi-k3.1-pro","kimi-k3.1-pro-highspeed"].contains(leafID))
         var amount=baseAmount
         if upperCacheWrite {
             let extra=Int64(cacheWriteTokens).multipliedReportingOverflow(by:rate.inputPicoUSDPerToken)
@@ -388,6 +388,15 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         "claude-fable-5-1", "k3", "kimi-k3"
     ]
     private static func referenceLeaf(id: String, occurredAt: Date?) -> Leaf? {
+        if id == "hy4" {
+            // Tencent official USD Singapore table + notice dated 2026-11-04.
+            // Discount applies through 2026-12-31 Beijing time, then list price.
+            // https://www.tencentcloud.com/document/product/1300/78937
+            guard let occurredAt, occurredAt >= Date(timeIntervalSince1970:1_793_721_600) else {return nil}
+            let divisor:Int64 = occurredAt < Date(timeIntervalSince1970:1_798_732_800) ? 2 : 1
+            return Leaf(short:Rate(inputPicoUSDPerToken:834_000/divisor,cacheReadPicoUSDPerToken:42_000/divisor,
+                                   outputPicoUSDPerToken:2_501_000/divisor),long:nil,threshold:.allContexts)
+        }
         if id == "gemini-4-argon" {
             // Google Standard USD per 1M, verified 2026-10-25. Promotion
             // ends at 2026-12-01 00:00 UTC; output includes thinking tokens.
@@ -492,6 +501,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         "kimi-k2.7-code-highspeed": ["kimi-code", "kimi", "moonshot"],
         "glm-5.3": ["glm", "zai", "zhipu", "z.ai"],
         "glm-5.3-flash": ["glm", "zai", "zhipu", "z.ai"],
+        "glm-5.3-flashx": ["glm", "zai", "zhipu", "z.ai"],
         "hy3": ["tencent", "tencentcloud", "hunyuan", "workbuddy", "workbuddy-ai"],
         "step-5-preview": ["stepfun", "stepfun-ai", "workbuddy", "workbuddy-ai"],
     ]
@@ -499,13 +509,24 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
     // Amounts are USD per 1M converted to pico-USD per token. For example,
     // $2 / 1M becomes 2_000_000 pico-USD per token.
     private static let leaves: [String: Leaf] = [
-        // USD per 1M, checked 2026-10-20 against Tencent's official USD table.
+        // Kimi official global USD table, verified 2026-11-05:
+        // https://platform.kimi.ai/docs/pricing/chat
+        // HighSpeed doubles ordinary input/output, NOT cache-hit input.
+        "kimi-k3.1-pro": Leaf(short:Rate(inputPicoUSDPerToken:2_000_000,
+            cacheReadPicoUSDPerToken:200_000,outputPicoUSDPerToken:10_000_000),long:nil,threshold:.allContexts),
+        "kimi-k3.1-pro-highspeed": Leaf(short:Rate(inputPicoUSDPerToken:4_000_000,
+            cacheReadPicoUSDPerToken:200_000,outputPicoUSDPerToken:20_000_000),long:nil,threshold:.allContexts),
+        // USD per 1M, rechecked 2026-11-05 against Tencent's official USD table.
         // https://www.tencentcloud.com/document/product/1300/78937
         // Z.AI official USD/1M, verified 2026-10-25:
         // https://docs.z.ai/guides/overview/pricing
         "glm-5.3": Leaf(
             short: Rate(inputPicoUSDPerToken: 1_400_000, cacheReadPicoUSDPerToken: 260_000, outputPicoUSDPerToken: 4_400_000),
             long: nil, threshold: .allContexts),
+        // Distinct FlashX rate; it must not fall through to GLM 5.3.
+        "glm-5.3-flashx": Leaf(
+            short: Rate(inputPicoUSDPerToken:370_000,cacheReadPicoUSDPerToken:75_000,outputPicoUSDPerToken:1_250_000),
+            long:nil,threshold:.allContexts),
         "glm-5.3-flash": Leaf(
             short: Rate(inputPicoUSDPerToken: 150_000, cacheReadPicoUSDPerToken: 30_000, outputPicoUSDPerToken: 500_000),
             long: nil, threshold: .allContexts),
@@ -645,8 +666,24 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         )
     }
 
+    /// Exact public gateway IDs only. Do not infer a new model from a prefix.
+    private static let codeBuddyModelReferences: [String:String] = [
+        "hy3":"hy3", "hy4":"hy4", "hy4std":"hy4", "hy4free":"hy4",
+        "kimi-k3.1-pro":"kimi-k3.1-pro",
+        "kimi-k3.1-pro-highspeed":"kimi-k3.1-pro-highspeed",
+        "glm-5.3":"glm-5.3", "glm-5.3-flash":"glm-5.3-flash",
+        "glm-5.3-flashx":"glm-5.3-flashx",
+    ]
+
     private static func leafID(provider: String, resolvedModel: String) -> String? {
         let provider = provider.lowercased(), resolvedModel = resolvedModel.lowercased()
+        if provider == "codebuddy-cn", let reference=codeBuddyModelReferences[resolvedModel] {return reference}
+        if ["tencent","tencentcloud","hunyuan","workbuddy","workbuddy-ai"].contains(provider),
+           ["hy4","hy4std","hy4free"].contains(resolvedModel) {return "hy4"}
+        if ["kimi-code","kimi","moonshot"].contains(provider),
+           let reference=["k3.1-pro":"kimi-k3.1-pro","kimi-k3.1-pro":"kimi-k3.1-pro",
+                          "k3.1-pro-highspeed":"kimi-k3.1-pro-highspeed","kimi-k3.1-pro-highspeed":"kimi-k3.1-pro-highspeed"][resolvedModel] {return reference}
+
         if ["xai","cursor","cursor-proxy"].contains(provider),resolvedModel == "grok-composer-2.5-fast" {return "composer-2.5-fast"}
         if ["anthropic","anthropic2","google-antigravity","antigravity-pool","google-antigravity-pool","combo"].contains(provider),ClaudeLocalPricing.referenceRate(resolvedModel) != nil {
             return ClaudeLocalPricing.canonical(resolvedModel)

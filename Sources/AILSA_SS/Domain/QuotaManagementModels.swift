@@ -554,6 +554,9 @@ struct QuotaModelKey: Hashable, Sendable {
         let name = model.lowercased().replacingOccurrences(of: "_", with: "-")
         if name == "deepseek-v4-pro" { return Self(provider:"",model:"DeepSeek V4 Pro") }
         if ["composer-2.5-fast","grok-composer-2.5-fast"].contains(name) {return Self(provider:"",model:"Composer 2.5 Fast")}
+        if ["hy4","hy4std","hy4free"].contains(name) {return Self(provider:"",model:"HY4")}
+        if ["kimi-k3.1-pro","k3.1-pro"].contains(name) {return Self(provider:"",model:"Kimi K3.1 Pro")}
+        if ["kimi-k3.1-pro-highspeed","k3.1-pro-highspeed"].contains(name) {return Self(provider:"",model:"Kimi K3.1 Pro HighSpeed")}
         if name == "gpt-6.1-terra" { return Self(provider: provider, model: "GPT-6.1 Terra") }
         if ClaudeLocalPricing.referenceRate(name) != nil { return Self(provider:provider,model:ClaudeLocalPricing.displayName(name)) }
         if name == "gpt-6.1-sol" { return Self(provider: provider, model: "GPT-6.1 Sol") }
@@ -564,7 +567,7 @@ struct QuotaModelKey: Hashable, Sendable {
             ("grok-4.7", "Grok 4.7"),
             ("grok-4.6", "Grok 4.6"), ("grok-4.5", "Grok 4.5"),
             ("gemini-3.8-flash", "Gemini 3.8 Flash"), ("gemini-4-argon", "Gemini 4 Argon"),
-            ("glm-5.3-flash", "GLM 5.3 Flash"), ("glm-5.3", "GLM 5.3"),
+            ("glm-5.3-flashx", "GLM 5.3 FlashX"), ("glm-5.3-flash", "GLM 5.3 Flash"), ("glm-5.3", "GLM 5.3"),
             ("hy3", "Hy3"), ("step-5-preview", "Step 5 Preview"),
             ("deepseek-v4.1-flash", "DeepSeek V4.1 Flash"),
             ("deepseek-v4-flash", "DeepSeek Flash"), ("deepseek-flash", "DeepSeek Flash"),

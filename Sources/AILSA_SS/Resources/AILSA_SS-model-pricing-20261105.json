@@ -1,0 +1,65 @@
+{
+  "verifiedAt": "2026-11-05",
+  "currency": "USD",
+  "unit": "per million tokens",
+  "sources": {
+    "tencent": "https://www.tencentcloud.com/document/product/1300/78937",
+    "kimi": "https://platform.kimi.ai/docs/pricing/chat",
+    "zai": "https://docs.z.ai/guides/overview/pricing"
+  },
+  "models": {
+    "hy4": {
+      "list": {
+        "input": 0.834,
+        "cacheRead": 0.042,
+        "output": 2.501
+      },
+      "promotion": {
+        "startBeijing": "2026-11-04T00:00:00+08:00",
+        "endExclusiveBeijing": "2027-01-01T00:00:00+08:00",
+        "multiplier": 0.5
+      },
+      "aliases": [
+        "hy4std",
+        "hy4free"
+      ],
+      "display": "HY4"
+    },
+    "hy3": {
+      "input": 0.132,
+      "cacheRead": 0.033,
+      "output": 0.528
+    },
+    "kimi-k3.1-pro": {
+      "input": 2,
+      "cacheRead": 0.2,
+      "output": 10,
+      "cacheWrite5m": 2,
+      "cacheWrite1h": 4
+    },
+    "kimi-k3.1-pro-highspeed": {
+      "input": 4,
+      "cacheRead": 0.2,
+      "output": 20,
+      "cacheWrite5m": 4,
+      "cacheWrite1h": 8
+    },
+    "glm-5.3": {
+      "input": 1.4,
+      "cacheRead": 0.26,
+      "output": 4.4
+    },
+    "glm-5.3-flash": {
+      "input": 0.15,
+      "cacheRead": 0.03,
+      "output": 0.5
+    },
+    "glm-5.3-flashx": {
+      "input": 0.37,
+      "cacheRead": 0.075,
+      "output": 1.25
+    }
+  },
+  "scope": "Exact CodeBuddy CN IDs and supported official routes; API-equivalent references, not gateway invoices.",
+  "cacheWriteUnknownTTL": "Marked 1h upper bound only for proven native input subsets; unknown ledger overlap remains unpriced."
+}
