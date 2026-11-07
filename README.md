@@ -41,6 +41,7 @@ preserved in this repository.
 - **Switch accounts.** Save local sign-ins for Codex / ChatGPT, Antigravity and
   Cursor, see the active account, and switch from an account card. More service
   providers are planned for future releases.
+- **Keep local Codex projects.** Preserve this computer’s project navigation when switching saved accounts, using a normal quit and private state backups. Existing target-account edits take priority; cloud/remote projects and account identities remain separate. [Details](docs/CODEX-LOCAL-PROJECT-CONTINUITY.md).
 - **Read the actual limits.** View provider-reported usage windows and reset
   times, with Codex reset-credit counts and expirations when reported.
 - **Follow usage over time.** Explore Today, 7-day and 30-day views, model

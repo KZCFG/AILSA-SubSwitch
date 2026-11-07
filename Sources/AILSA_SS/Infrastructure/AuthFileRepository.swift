@@ -5,16 +5,21 @@ final class AuthFileRepository: AuthRepository, @unchecked Sendable {
     private let paths: FileSystemPaths
     private let fileManager: FileManager
     private let session: URLSession
+    private let projectContinuity: CodexProjectContinuityService
     private let logger = Logger(subsystem: "AILSA_SS", category: "AuthRepository")
 
     init(
         paths: FileSystemPaths,
         fileManager: FileManager = .default,
-        session: URLSession = .shared
+        session: URLSession = .shared,
+        projectContinuity: CodexProjectContinuityService? = nil
     ) {
         self.paths = paths
         self.fileManager = fileManager
         self.session = session
+        self.projectContinuity = projectContinuity ?? CodexProjectContinuityService(
+            home: paths.codexAuthPath.deletingLastPathComponent(), fileManager: fileManager
+        )
     }
 
     func readCurrentAuth() throws -> JSONValue {
@@ -36,6 +41,14 @@ final class AuthFileRepository: AuthRepository, @unchecked Sendable {
     }
 
     func writeCurrentAuth(_ auth: JSONValue) throws {
+        try persistCurrentAuth(auth, accountSwitch: false)
+    }
+
+    func writeCurrentAuthForAccountSwitch(_ auth: JSONValue) throws {
+        try persistCurrentAuth(auth, accountSwitch: true)
+    }
+
+    private func persistCurrentAuth(_ auth: JSONValue, accountSwitch: Bool) throws {
         let normalizedAuth = try CodexCurrentAuthNormalizer.normalize(
             auth,
             fallbackLastRefresh: Self.makeLastRefreshTimestamp
@@ -49,10 +62,25 @@ final class AuthFileRepository: AuthRepository, @unchecked Sendable {
         }
 
         let data = try JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys])
-        try data.write(to: paths.codexAuthPath, options: .atomic)
-        #if canImport(Darwin)
-        _ = chmod(paths.codexAuthPath.path, S_IRUSR | S_IWUSR)
-        #endif
+        let write = {
+            try data.write(to: self.paths.codexAuthPath, options: .atomic)
+            #if canImport(Darwin)
+            _ = chmod(self.paths.codexAuthPath.path, S_IRUSR | S_IWUSR)
+            #endif
+        }
+        if accountSwitch {
+            try projectContinuity.writeAuthPreservingProjects(current: try readCurrentAuthOptional(), next: normalizedAuth, writeAuth: write)
+        } else {
+            // Background maintenance may renew a grant, but must never turn a
+            // stale saved credential into an implicit desktop account switch.
+            let state = parentDirectory.appendingPathComponent(".codex-global-state.json")
+            if fileManager.fileExists(atPath: state.path),
+               let currentOwner = CodexLocalProjectContinuity.owner(from: try readCurrentAuthOptional()),
+               let nextOwner = CodexLocalProjectContinuity.owner(from: normalizedAuth), currentOwner != nextOwner {
+                throw CodexLocalProjectContinuity.failure("explicit_switch_required")
+            }
+            try write()
+        }
     }
 
     func removeCurrentAuth() throws {

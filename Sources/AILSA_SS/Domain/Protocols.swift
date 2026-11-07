@@ -25,6 +25,7 @@ protocol AuthRepository: Sendable {
     func readCurrentAuthOptional() throws -> JSONValue?
     func readAuth(from url: URL) throws -> JSONValue
     func writeCurrentAuth(_ auth: JSONValue) throws
+    func writeCurrentAuthForAccountSwitch(_ auth: JSONValue) throws
     func removeCurrentAuth() throws
     func makeChatGPTAuth(from tokens: ChatGPTOAuthTokens) throws -> JSONValue
     func exchangeAuth(email: String, refreshToken: String) async throws -> JSONValue
@@ -52,6 +53,10 @@ extension DateProviding {
 }
 
 extension AuthRepository {
+    func writeCurrentAuthForAccountSwitch(_ auth: JSONValue) throws {
+        try writeCurrentAuth(auth)
+    }
+
     func exchangeAuth(email: String, refreshToken: String) async throws -> JSONValue {
         _ = email
         _ = refreshToken

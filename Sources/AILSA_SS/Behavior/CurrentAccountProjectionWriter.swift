@@ -23,6 +23,7 @@ struct CurrentAccountProjectionWriter {
         account: StoredAccount,
         writeAuth: Bool
     ) throws -> AccountsStore {
+        let previousStore = try storeRepository.loadStore()
         let latestStore = try storeRepository.mutateStore { store in
             guard store.accounts.contains(where: { $0.id == account.id }) else {
                 throw AppError.invalidData(L10n.tr("error.accounts.account_not_found_for_switch"))
@@ -31,7 +32,18 @@ struct CurrentAccountProjectionWriter {
             store.currentAccountID = account.id
         }
         if writeAuth {
-            try authRepository.writeCurrentAuth(account.authJSON)
+            do {
+                try authRepository.writeCurrentAuthForAccountSwitch(account.authJSON)
+            } catch {
+                // A cancelled Codex quit or failed project preservation must
+                // not leave the selected card claiming the switch succeeded.
+                _ = try storeRepository.mutateStore { store in
+                    guard store.currentSelection == selection, store.currentAccountID == account.id else { return }
+                    store.currentSelection = previousStore.currentSelection
+                    store.currentAccountID = previousStore.currentAccountID
+                }
+                throw error
+            }
         }
         return latestStore
     }

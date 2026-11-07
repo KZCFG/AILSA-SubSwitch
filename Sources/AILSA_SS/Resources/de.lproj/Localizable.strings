@@ -582,3 +582,6 @@
 "settings.quota_reset_time.countdown" = "Countdown";
 "settings.quota_reset_time.date" = "Datum und Uhrzeit";
 "settings.quota_reset_time.detail" = "Kontokarten zeigen die verbleibende Zeit oder das Datum und die Uhrzeit der Zurücksetzung in der Zeitzone dieses Mac.";
+
+"error.codex_projects.quit_cancelled" = "Codex wurde nicht vollständig beendet. Der Kontowechsel wurde abgebrochen. Speichern Sie Ihre Arbeit oder bestätigen Sie das Beenden und versuchen Sie es erneut. Die App wird nicht zwangsweise beendet.";
+"error.codex_projects.preservation_failed_format" = "Lokale Codex-Projekte konnten nicht sicher erhalten werden. Der Kontowechsel wurde abgebrochen (%@). Die Anmeldedaten wurden nicht geändert.";

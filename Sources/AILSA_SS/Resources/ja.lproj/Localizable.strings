@@ -600,3 +600,6 @@
 "settings.quota_reset_time.countdown" = "カウントダウン";
 "settings.quota_reset_time.date" = "日時";
 "settings.quota_reset_time.detail" = "アカウントカードに残り時間またはリセット日時を表示します。日時はこの Mac のタイムゾーンに従います。";
+
+"error.codex_projects.quit_cancelled" = "Codex の終了が完了していないため、アカウントの切り替えを中止しました。作業を保存するか終了を確認してから、再試行してください。アプリは強制終了しません。";
+"error.codex_projects.preservation_failed_format" = "Codex のローカルプロジェクトを安全に保持できないため、切り替えを中止しました（%@）。ログイン情報は変更していません。";

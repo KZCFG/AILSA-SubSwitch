@@ -582,3 +582,6 @@
 "settings.quota_reset_time.countdown" = "Conto alla rovescia";
 "settings.quota_reset_time.date" = "Data e ora";
 "settings.quota_reset_time.detail" = "Mostra il tempo rimanente o la data e l’ora del ripristino nelle schede account, nel fuso orario di questo Mac.";
+
+"error.codex_projects.quit_cancelled" = "Codex non ha completato la chiusura. Il cambio di account è stato annullato. Salva il lavoro o conferma la chiusura e riprova. L’app non verrà terminata forzatamente.";
+"error.codex_projects.preservation_failed_format" = "Impossibile conservare in sicurezza i progetti locali di Codex. Cambio di account annullato (%@). Le credenziali non sono state modificate.";

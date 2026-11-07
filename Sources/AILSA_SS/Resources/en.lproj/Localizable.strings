@@ -608,3 +608,6 @@
 "settings.quota_reset_time.countdown" = "Countdown";
 "settings.quota_reset_time.date" = "Date and time";
 "settings.quota_reset_time.detail" = "Show a countdown or the reset date and time on account cards. Dates use this Mac’s time zone.";
+
+"error.codex_projects.quit_cancelled" = "Codex did not finish quitting. Account switching was cancelled. Save your work or complete the quit confirmation, then retry; the app will not be force-killed.";
+"error.codex_projects.preservation_failed_format" = "Could not safely preserve Codex local projects; account switching was cancelled (%@). Login credentials were not changed.";

@@ -4,7 +4,7 @@ import Foundation
 final class CodexCLIService: CodexCLIServiceProtocol, @unchecked Sendable {
     /// Returns `true` when it falls back to `codex app`.
     func launchApp(workspacePath: String?) throws -> Bool {
-        forceStopRunningCodex()
+        try CodexDesktopLifecycle.quitGracefully()
 
         var appLaunchError: String?
         if let appPath = findCodexAppPath() {
@@ -33,13 +33,6 @@ final class CodexCLIService: CodexCLIServiceProtocol, @unchecked Sendable {
         }
 
         return true
-    }
-
-    private func forceStopRunningCodex() {
-        _ = try? CommandRunner.run("/usr/bin/pkill", arguments: ["-9", "-x", "Codex"])
-        _ = try? CommandRunner.run("/usr/bin/pkill", arguments: ["-9", "-x", "Codex Desktop"])
-        _ = try? CommandRunner.run("/usr/bin/pkill", arguments: ["-9", "-x", "ChatGPT"])
-        Thread.sleep(forTimeInterval: 0.22)
     }
 
     private func findCodexCLIPath() throws -> String {
@@ -127,7 +120,7 @@ final class CodexCLIService: CodexCLIServiceProtocol, @unchecked Sendable {
     }
 
     private func launchCodexBundleApp(at appPath: URL, workspacePath: String?) throws {
-        var arguments = ["-na", appPath.path]
+        var arguments = ["-a", appPath.path]
         if let workspacePath, !workspacePath.isEmpty {
             arguments.append(workspacePath)
         }

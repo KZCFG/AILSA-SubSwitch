@@ -608,3 +608,6 @@
 "settings.quota_reset_time.countdown" = "倒计时";
 "settings.quota_reset_time.date" = "重置日期";
 "settings.quota_reset_time.detail" = "账号卡片可显示倒计时或具体重置日期与时间；日期按本机时区显示。";
+
+"error.codex_projects.quit_cancelled" = "Codex 尚未正常退出，切换已取消。请完成保存或关闭确认后重试；不会强制结束进程。";
+"error.codex_projects.preservation_failed_format" = "无法安全保留 Codex 本地项目，已取消切换（%@）。登录凭据未更改。";

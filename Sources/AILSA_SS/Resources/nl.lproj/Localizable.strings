@@ -582,3 +582,6 @@
 "settings.quota_reset_time.countdown" = "Aftellen";
 "settings.quota_reset_time.date" = "Datum en tijd";
 "settings.quota_reset_time.detail" = "Toon de resterende tijd of de resetdatum en -tijd op accountkaarten, in de tijdzone van deze Mac.";
+
+"error.codex_projects.quit_cancelled" = "Codex is nog niet volledig afgesloten. De accountwissel is geannuleerd. Sla uw werk op of bevestig het afsluiten en probeer het opnieuw. De app wordt niet geforceerd gestopt.";
+"error.codex_projects.preservation_failed_format" = "Lokale Codex-projecten konden niet veilig worden behouden. Accountwissel geannuleerd (%@). De aanmeldgegevens zijn niet gewijzigd.";

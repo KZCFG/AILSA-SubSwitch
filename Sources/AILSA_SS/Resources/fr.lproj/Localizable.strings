@@ -582,3 +582,6 @@
 "settings.quota_reset_time.countdown" = "Compte à rebours";
 "settings.quota_reset_time.date" = "Date et heure";
 "settings.quota_reset_time.detail" = "Affichez le temps restant ou la date et l’heure de réinitialisation sur les fiches de compte, dans le fuseau horaire de ce Mac.";
+
+"error.codex_projects.quit_cancelled" = "Codex ne s’est pas complètement fermé. Le changement de compte a été annulé. Enregistrez votre travail ou confirmez la fermeture, puis réessayez. L’application ne sera pas arrêtée de force.";
+"error.codex_projects.preservation_failed_format" = "Impossible de conserver les projets Codex locaux en toute sécurité. Le changement de compte a été annulé (%@). Les identifiants n’ont pas été modifiés.";

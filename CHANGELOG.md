@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0(aa) — 2026-11-08
+
+- Preserve local Codex project navigation and supported local chat memberships across account switches while retaining target-account edits.
+- Replace forced Codex termination with a bounded normal quit before credentials change.
+- Back up local project state, cancel unsafe transitions, restore the selected card on failure and leave same-account token renewal uninterrupted.
+
 ## 1.0.0(z) — 2026-11-07
 
 - Add Settings → General → Quota reset display, choosing live countdowns or localized reset dates and times.

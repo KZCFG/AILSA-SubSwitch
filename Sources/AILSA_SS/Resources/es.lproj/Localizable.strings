@@ -582,3 +582,6 @@
 "settings.quota_reset_time.countdown" = "Cuenta atrás";
 "settings.quota_reset_time.date" = "Fecha y hora";
 "settings.quota_reset_time.detail" = "Muestra el tiempo restante o la fecha y hora de reinicio en las tarjetas de cuenta, usando la zona horaria de este Mac.";
+
+"error.codex_projects.quit_cancelled" = "Codex no terminó de cerrarse. Se canceló el cambio de cuenta. Guarda tu trabajo o confirma el cierre y vuelve a intentarlo. La aplicación no se cerrará por la fuerza.";
+"error.codex_projects.preservation_failed_format" = "No se pudieron conservar de forma segura los proyectos locales de Codex. Se canceló el cambio de cuenta (%@). Las credenciales no se modificaron.";
