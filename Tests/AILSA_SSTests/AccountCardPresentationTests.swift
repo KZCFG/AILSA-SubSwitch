@@ -614,4 +614,75 @@ final class AccountCardCustomizationTests: XCTestCase {
             XCTAssertEqual(UsageProgressSkin.resolve(style, rawValue: "future"), style)
         }
     }
+    func testQuotaResetDisplayDefaultsAndUnknownPreferencesKeepCountdown() {
+        XCTAssertEqual(QuotaResetTimeDisplay.resolve("countdown"),.countdown)
+        XCTAssertEqual(QuotaResetTimeDisplay.resolve("date"),.date)
+        XCTAssertEqual(QuotaResetTimeDisplay.resolve(""),.countdown)
+        XCTAssertEqual(QuotaResetTimeDisplay.resolve("unrecognized"),.countdown)
+        XCTAssertNotEqual(QuotaResetTimeDisplay.defaultsKey,ResetCreditTimeDisplay.defaultsKey)
+    }
+
+    func testQuotaResetDateUsesAppLocaleAndSelectedTimeZoneWithYearAndTime() throws {
+        let previous=L10n.currentLocale.identifier
+        defer {L10n.setLocale(identifier:previous)}
+        L10n.setLocale(identifier:"zh-Hans")
+        let date=try XCTUnwrap(ISO8601DateFormatter().date(from:"2027-01-02T10:30:00Z"))
+        let now=date.addingTimeInterval(-86400)
+        func label(_ zone:TimeZone)->String {
+            AccountResetTimePresentation.label(date:date,fallback:"unknown",now:now,mode:.date,
+                units:.abbreviated,locale:Locale(identifier:"zh-Hans"),timeZone:zone)
+        }
+        let local=label(try XCTUnwrap(TimeZone(identifier:"Asia/Singapore")))
+        let utc=label(try XCTUnwrap(TimeZone(secondsFromGMT:0)))
+        XCTAssertTrue(local.contains("2027"));XCTAssertTrue(local.contains("18:30"))
+        XCTAssertTrue(utc.contains("10:30"));XCTAssertNotEqual(local,utc)
+        XCTAssertTrue(local.hasPrefix("重置时间"))
+        L10n.setLocale(identifier:"en")
+        let english=AccountResetTimePresentation.label(date:date,fallback:"unknown",now:now,mode:.date,
+            units:.chinese,locale:Locale(identifier:"en_US"),timeZone:TimeZone(secondsFromGMT:0)!)
+        XCTAssertTrue(english.hasPrefix("Reset at:"));XCTAssertTrue(english.contains("2027"))
+        XCTAssertFalse(english.contains("重置"))
+    }
+
+    func testQuotaResetDateStaysFixedWhileCountdownKeepsUpdating() {
+        let previous=L10n.currentLocale.identifier
+        defer {L10n.setLocale(identifier:previous)}
+        L10n.setLocale(identifier:"en")
+        let now=Date(timeIntervalSince1970:1800000000), date=Date(timeIntervalSince1970:1800090000)
+        func label(_ mode:QuotaResetTimeDisplay,_ at:Date)->String {
+            AccountResetTimePresentation.label(date:date,fallback:"unknown",now:at,mode:mode,
+                units:.abbreviated,locale:Locale(identifier:"en_US"),timeZone:TimeZone(secondsFromGMT:0)!)
+        }
+        XCTAssertEqual(label(.date,now),label(.date,now.addingTimeInterval(60)))
+        XCTAssertNotEqual(label(.countdown,now),label(.countdown,now.addingTimeInterval(60)))
+        XCTAssertEqual(label(.countdown,now),"Resets in 1d 1h 0m 0s")
+    }
+
+    func testQuotaResetUnknownAndWaitingStatesArePreservedInBothModes() {
+        let previous=L10n.currentLocale.identifier
+        defer {L10n.setLocale(identifier:previous)}
+        L10n.setLocale(identifier:"en")
+        for mode in QuotaResetTimeDisplay.allCases {
+            for fallback in ["Waiting for first request","Reset time unavailable","—"] {
+                XCTAssertEqual(AccountResetTimePresentation.label(date:nil,fallback:fallback,now:Date(),mode:mode,
+                    units:.abbreviated,locale:Locale(identifier:"en")),fallback)
+            }
+            let date=Date(timeIntervalSince1970:1800000000)
+            XCTAssertEqual(AccountResetTimePresentation.label(date:date,fallback:"unknown",now:date,mode:mode,
+                units:.abbreviated,locale:Locale(identifier:"en")),L10n.tr("accounts.window.reset_imminent"))
+        }
+    }
+
+    func testQuotaResetPreferencePersistsWithoutChangingCreditDisplayOrQuotaData() throws {
+        let suite="ailsa-reset-display-tests-"+UUID().uuidString
+        let defaults=try XCTUnwrap(UserDefaults(suiteName:suite))
+        defer {defaults.removePersistentDomain(forName:suite)}
+        defaults.set("expiry",forKey:ResetCreditTimeDisplay.defaultsKey)
+        defaults.set(QuotaResetTimeDisplay.date.rawValue,forKey:QuotaResetTimeDisplay.defaultsKey)
+        let reread=try XCTUnwrap(UserDefaults(suiteName:suite))
+        XCTAssertEqual(QuotaResetTimeDisplay.resolve(reread.string(forKey:QuotaResetTimeDisplay.defaultsKey) ?? ""),.date)
+        XCTAssertEqual(reread.string(forKey:ResetCreditTimeDisplay.defaultsKey),"expiry")
+        XCTAssertNil(reread.object(forKey:CountdownUnits.defaultsKey))
+    }
+
 }

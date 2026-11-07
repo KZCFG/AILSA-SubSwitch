@@ -594,3 +594,9 @@
 "accounts.weekly.unavailable" = "Refresh this account or sign in again before sending a request.";
 "accounts.weekly.already" = "This week already has usage.";
 "accounts.weekly.busy" = "A request is in progress. Check its result shortly.";
+
+/* Account quota reset presentation */
+"settings.quota_reset_time.title" = "한도 초기화 표시";
+"settings.quota_reset_time.countdown" = "남은 시간";
+"settings.quota_reset_time.date" = "날짜 및 시간";
+"settings.quota_reset_time.detail" = "계정 카드에 남은 시간 또는 초기화 날짜와 시간을 표시합니다. 날짜는 이 Mac의 시간대를 따릅니다.";

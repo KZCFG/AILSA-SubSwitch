@@ -576,3 +576,9 @@
 "accounts.weekly.unavailable" = "Refresh this account or sign in again before sending a request.";
 "accounts.weekly.already" = "This week already has usage.";
 "accounts.weekly.busy" = "A request is in progress. Check its result shortly.";
+
+/* Account quota reset presentation */
+"settings.quota_reset_time.title" = "Affichage de réinitialisation";
+"settings.quota_reset_time.countdown" = "Compte à rebours";
+"settings.quota_reset_time.date" = "Date et heure";
+"settings.quota_reset_time.detail" = "Affichez le temps restant ou la date et l’heure de réinitialisation sur les fiches de compte, dans le fuseau horaire de ce Mac.";

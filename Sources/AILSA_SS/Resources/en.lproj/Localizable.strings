@@ -602,3 +602,9 @@
 "accounts.weekly.unavailable" = "Refresh this account or sign in again before sending a request.";
 "accounts.weekly.already" = "This week already has usage.";
 "accounts.weekly.busy" = "A request is in progress. Check its result shortly.";
+
+/* Account quota reset presentation */
+"settings.quota_reset_time.title" = "Quota reset display";
+"settings.quota_reset_time.countdown" = "Countdown";
+"settings.quota_reset_time.date" = "Date and time";
+"settings.quota_reset_time.detail" = "Show a countdown or the reset date and time on account cards. Dates use this Mac’s time zone.";

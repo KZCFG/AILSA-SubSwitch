@@ -109,6 +109,7 @@ private struct SettingsGeneralSection: View {
                     onSelect: model.updateUsageProgressDisplayMode
                 )
             }
+            SettingsQuotaResetTimeDisplayPicker()
             Picker(L10n.tr("settings.reset_credits.title"), selection: $resetTimeDisplay) {
                 ForEach(ResetCreditTimeDisplay.allCases, id: \.rawValue) { mode in
                     Text(mode.title).tag(mode.rawValue)
@@ -546,6 +547,25 @@ private struct SettingsLanguageSection: View {
                 descriptor: model.languageSectionPresentation.picker,
                 onSelect: model.updateLocale
             )
+        }
+    }
+}
+
+
+// Shared with native offscreen previews; isolated defaults keep user settings untouched.
+struct SettingsQuotaResetTimeDisplayPicker: View {
+    @AppStorage(QuotaResetTimeDisplay.defaultsKey) private var resetTimeDisplay = QuotaResetTimeDisplay.countdown.rawValue
+    var body: some View {
+        VStack(alignment:.leading,spacing:6) {
+            Picker(L10n.tr("settings.quota_reset_time.title"),selection:$resetTimeDisplay) {
+                ForEach(QuotaResetTimeDisplay.allCases,id:\.rawValue) { mode in
+                    Text(mode.title).tag(mode.rawValue)
+                }
+            }
+            .pickerStyle(.menu)
+            .font(.system(size:13,weight:.medium))
+            Text(L10n.tr("settings.quota_reset_time.detail"))
+                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal:false,vertical:true)
         }
     }
 }

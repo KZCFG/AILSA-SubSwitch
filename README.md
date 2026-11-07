@@ -54,7 +54,7 @@ preserved in this repository.
 - **Read Claude usage locally.** Inspect Claude Desktop Code Token and API-equivalent USD usage from local logs. No Claude quota polling or account credentials are required.
 - **Share a longer view.** Export daily, 7-day, 30-day, 60-day and 90-day usage images, or select a custom start and end date. Add your own share title, such as “A wonderful weekend”; missing history is never reconstructed.
 - **Make it yours.** Choose M/B token units, visible usage windows, restart
-  behavior after switching, and the interface language. Open usage in its own
+  behavior after switching, countdown or date/time reset labels, and the interface language. Open usage in its own
   window when you need more room.
 
 **1.0.0(t)** combines GLM 5.3 usage in one model row while retaining estimate details. See the [release notes](docs/RELEASE-1.0.0t.md).

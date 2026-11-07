@@ -657,6 +657,7 @@ struct AccountResetCountdownLabel: View {
     let date: Date?
     var fallback: String = "—"
     @AppStorage(CountdownUnits.defaultsKey) private var countdownUnits = "abbreviated"
+    @AppStorage(QuotaResetTimeDisplay.defaultsKey) private var resetTimeDisplay = QuotaResetTimeDisplay.countdown.rawValue
     var body: some View {
         TimelineView(.periodic(from: .now, by: date == nil ? 3600 : 1)) { context in
             Text(label(now: context.date)).font(.caption2).monospacedDigit().foregroundStyle(.secondary)
@@ -664,9 +665,8 @@ struct AccountResetCountdownLabel: View {
         }
     }
     private func label(now: Date) -> String {
-        guard let date else { return fallback }
-        guard date > now else { return L10n.tr("accounts.window.reset_imminent") }
-        return L10n.tr("accounts.countdown.reset", AccountCountdown.duration(until: date, now: now,
-            units: CountdownUnits(rawValue: countdownUnits) ?? .abbreviated))
+        AccountResetTimePresentation.label(date:date,fallback:fallback,now:now,
+            mode:QuotaResetTimeDisplay.resolve(resetTimeDisplay),
+            units:CountdownUnits(rawValue:countdownUnits) ?? .abbreviated,locale:L10n.currentLocale)
     }
 }

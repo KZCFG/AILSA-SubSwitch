@@ -829,6 +829,40 @@ struct CompactRingPreferences: Codable, Equatable {
     }
 }
 
+/// Presentation only: never changes provider reset epochs or request evidence.
+enum QuotaResetTimeDisplay: String, CaseIterable {
+    case countdown, date
+    static let defaultsKey = "ass.quotaResetTimeDisplay"
+    static func resolve(_ raw: String) -> Self {Self(rawValue:raw) ?? .countdown}
+    var title: String {
+        switch self {
+        case .countdown: return L10n.tr("settings.quota_reset_time.countdown")
+        case .date: return L10n.tr("settings.quota_reset_time.date")
+        }
+    }
+}
+
+enum AccountResetTimePresentation {
+    static func label(date: Date?, fallback: String, now: Date, mode: QuotaResetTimeDisplay,
+                      units: CountdownUnits, locale: Locale, timeZone: TimeZone = .current) -> String {
+        // A missing effective date may mean a request-activated window is still
+        // waiting. Never expose an unverified reset epoch to fill this label.
+        guard let date else {return fallback}
+        guard date > now else {return L10n.tr("accounts.window.reset_imminent")}
+        switch mode {
+        case .countdown:
+            return L10n.tr("accounts.countdown.reset",AccountCountdown.duration(until:date,now:now,units:units))
+        case .date:
+            let formatter=DateFormatter()
+            formatter.locale=locale
+            formatter.calendar=Calendar(identifier:.gregorian)
+            formatter.timeZone=timeZone
+            formatter.setLocalizedDateFormatFromTemplate("yMMMdjm")
+            return L10n.tr("accounts.window.reset_at_format",formatter.string(from:date))
+        }
+    }
+}
+
 enum ResetCreditTimeDisplay: String, CaseIterable {
     case remaining, expiry
     static let defaultsKey = "ass.resetCreditTimeDisplay"

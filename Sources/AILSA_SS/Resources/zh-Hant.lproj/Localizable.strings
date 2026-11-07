@@ -576,3 +576,9 @@
 "accounts.weekly.unavailable" = "该账号暂不支持发送请求，请刷新或重新登录。";
 "accounts.weekly.already" = "本周已有用量，无需重复激活。";
 "accounts.weekly.busy" = "请求正在执行，请稍后查看结果。";
+
+/* Account quota reset presentation */
+"settings.quota_reset_time.title" = "額度重置時間";
+"settings.quota_reset_time.countdown" = "倒計時";
+"settings.quota_reset_time.date" = "重置日期";
+"settings.quota_reset_time.detail" = "帳號卡片可顯示倒計時或具體重置日期與時間；日期依本機時區顯示。";

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0(z) — 2026-11-07
+
+- Add Settings → General → Quota reset display, choosing live countdowns or localized reset dates and times.
+- Apply the preference immediately across Codex, Antigravity and Cursor account-card quota windows, with countdowns as the default.
+- Preserve request-activation evidence, unknown/imminent states, reset-credit preferences and underlying provider timestamps.
+
 ## 1.0.0(y) — 2026-11-05
 
 - Merge HY4 STD/Free display aliases and add official request-time promotional USD pricing.
