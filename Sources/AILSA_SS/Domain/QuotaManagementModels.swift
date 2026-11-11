@@ -404,7 +404,13 @@ struct AntigravityQuotaObservation: Equatable, Identifiable, Sendable {
 
     var displayName: String {
         let names = ["gemini-5h": "Gemini · 5h", "gemini-weekly": "Gemini · 7d", "3p-5h": "Claude / GPT · 5h", "3p-weekly": "Claude / GPT · 7d", "session": "5h", "weekly": "7d"]
-        return names[windowName] ?? windowName
+        // Some summaries identify a model-specific bucket; generic Gemini buckets stay shared.
+        switch windowName.lowercased() {
+        case "gemini-4-carbon": return "Gemini 4 Carbon"
+        case "gemini-4-carbon-5h": return "Gemini 4 Carbon · 5h"
+        case "gemini-4-carbon-weekly": return "Gemini 4 Carbon · 7d"
+        default: return names[windowName] ?? windowName
+        }
     }
 
     var day: Date {
@@ -552,6 +558,7 @@ struct QuotaModelKey: Hashable, Sendable {
         }
         if provider == "Claude" { return Self(provider: provider, model: ClaudeLocalPricing.displayName(model)) }
         let name = model.lowercased().replacingOccurrences(of: "_", with: "-")
+        if name == "gemini-4-carbon" { return Self(provider: "", model: "Gemini 4 Carbon") }
         if name == "deepseek-v4-pro" { return Self(provider:"",model:"DeepSeek V4 Pro") }
         if ["composer-2.5-fast","grok-composer-2.5-fast"].contains(name) {return Self(provider:"",model:"Composer 2.5 Fast")}
         if ["hy4","hy4std","hy4free"].contains(name) {return Self(provider:"",model:"HY4")}

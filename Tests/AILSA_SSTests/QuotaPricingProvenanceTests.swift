@@ -629,6 +629,25 @@ final class ArgonAndHighReferenceTests: XCTestCase {
         let data = try JSONSerialization.data(withJSONObject: row)
         return try XCTUnwrap(AILSA_SSLedgerMeteringReader(pricingCatalog: .empty).read(data:data).records.first)
     }
+    func testCarbonLedgerUsesDecemberListRatesEvenBeforeDecember() throws {
+        for provider in ["google-antigravity", "antigravity-pool"] {
+            let november = try record(provider: provider, model: "gemini-4-carbon", at: "2026-11-30T23:59:59Z")
+            XCTAssertEqual(november.standardReferenceEstimate.picoUSD, 648_000_000_000)
+            XCTAssertEqual(november.standardReferenceEstimate.priceBasis, "dec_2026_list_standard_reference")
+            XCTAssertNil(november.pricing.picoUSD)
+            let row = QuotaDashboardSnapshot.contribution(november)
+            XCTAssertEqual(row.key.familyKey.model, "Gemini 4 Carbon")
+            XCTAssertEqual(row.value.tokens.total, 120_000)
+            XCTAssertEqual(try record(provider: provider, model: "gemini-4-carbon", at: "2026-12-01T00:00:00Z").standardReferenceEstimate.picoUSD, 648_000_000_000)
+            XCTAssertEqual(try record(provider: provider, model: "gemini-4-carbon", at: "2026-11-11T00:00:00Z", tier: "priority").standardReferenceEstimate.picoUSD, 1_166_400_000_000)
+        }
+        let requested = try record(model: nil, requested: "google-antigravity/gemini-4-carbon", at: "2026-11-11T00:00:00Z")
+        XCTAssertNil(requested.standardReferenceEstimate.picoUSD)
+        XCTAssertEqual(OpenCodexStandardReferenceEstimator.maximumReference(for: requested)?.picoUSD, 1_440_000_000_000)
+        XCTAssertNil(try record(model: "gemini-4-carbon-unknown").standardReferenceEstimate.picoUSD)
+        XCTAssertNil(try record(provider: "unverified", model: "gemini-4-carbon").standardReferenceEstimate.picoUSD)
+    }
+
     func testArgonOfficialPromotionDecemberBoundaryPriorityAndNoDoubleThinking() throws {
         let promo = try record(at: "2026-11-30T23:59:59Z")
         XCTAssertEqual(promo.standardReferenceEstimate.picoUSD,324_000_000_000)

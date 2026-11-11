@@ -219,6 +219,35 @@ final class AntigravityNativeUsageTests: XCTestCase {
         let r=try root();try db(r,"one",blobs:[F.blob(response:"same"),F.blob(response:"different")]);try db(r,"two",blobs:[F.blob(response:"same")])
         let result=try read(r);XCTAssertEqual(result.entries.count,2);XCTAssertEqual(result.diagnostics.duplicates,1)
     }
+    func testCarbonNativeUsageDedupAndQuotaWindows() throws {
+        let r = try root()
+        let stamp: UInt64 = 1_796_083_199
+        try db(r, blobs: [F.blob(model: "gemini-4-carbon", response: "shared", seconds: stamp),
+                          F.blob(model: "gemini-4-carbon", response: "native", seconds: stamp)])
+        let now = Date(timeIntervalSince1970: Double(stamp))
+        var base = empty(now)
+        base.providerResponseKeys.insert(try XCTUnwrap(AntigravityTokenUsage.responseKey(model: "gemini-4-carbon", responseID: "shared")))
+        let merged = try read(r).merging(into: base, now: now, historyDays: 30)
+        XCTAssertEqual(merged.antigravityTokenUsage?.overlaps, 1)
+        XCTAssertEqual(merged.all.tokens.total, 187)
+        XCTAssertEqual(merged.all.reference.pico, 1_150_000_000)
+        let key = try XCTUnwrap(merged.days.values.first?.models.keys.first)
+        XCTAssertEqual(key.familyKey.model, "Gemini 4 Carbon")
+
+        // Keep the server's actual scope and cadence; a shared Gemini pool is not a second Carbon pool.
+        for (id, label) in [("gemini-5h", "Gemini · 5h"), ("gemini-4-carbon-5h", "Gemini 4 Carbon · 5h")] {
+            let payload: JSONValue = .object(["groups": .array([.object(["displayName": .string("Gemini Models"),
+                "buckets": .array([.object(["bucketId": .string(id), "remainingFraction": .number(0.75)])])])])])
+            let usage = try AntigravityNativeUsageService.usageSnapshot(fromQuotaSummary: payload, fetchedAt: 1,
+                planType: nil, source: .antigravityNativeSummary, sourceAccountMatched: true)
+            let bucket = try XCTUnwrap(usage.quotaFamilies?.first?.buckets.first)
+            XCTAssertEqual(bucket.usedPercent, 25); XCTAssertEqual(bucket.windowSeconds, 18_000)
+            XCTAssertNil(usage.oneWeek)
+            let observation = AntigravityQuotaObservation(id: id, capturedAt: now, resetAt: nil, windowName: id, windowMinutes: 300, usedPercent: 25)
+            XCTAssertEqual(observation.familyKey, "gemini"); XCTAssertEqual(observation.displayName, label)
+        }
+    }
+
     func testNativeLedgerOverlapUsesExactResponseAndGeminiFamily() throws {
         let r=try root();try db(r,blobs:[F.blob(model:"gemini-3.8-flash-n",response:"shared"),F.blob(model:"gemini-3.8-flash",response:"distinct")])
         let native=try read(r), now=Date(timeIntervalSince1970:Double(stamp))

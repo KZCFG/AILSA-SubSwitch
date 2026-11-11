@@ -166,12 +166,12 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         let gpt61Fast = ["gpt-6.1-sol", "gpt-6.1-terra"].contains(leafID)
             && input.fastGrantEvidence == .explicitlyGranted
             && ["priority", "fast"].contains(input.confirmedServiceTier ?? "")
-        let argonPriority = leafID == "gemini-4-argon"
+        let geminiPriority = Self.gemini4ReferenceIDs.contains(leafID)
             && input.fastGrantEvidence == .explicitlyGranted
             && ["priority", "fast"].contains(input.confirmedServiceTier ?? "")
         let claudeFast = ["claude-opus-5-5","claude-opus-5","claude-opus-4-8"].contains(leafID)
             && input.fastGrantEvidence == .explicitlyGranted && input.confirmedServiceTier == "fast"
-        let multiplier = argonPriority ? 18 : (grokPriority || gpt61Fast || claudeFast ? 20 : 10)
+        let multiplier = geminiPriority ? 18 : (grokPriority || gpt61Fast || claudeFast ? 20 : 10)
         if input.fastGrantEvidence == .explicitlyGranted && multiplier == 10 && leafID != "kimi-k3.1-pro-highspeed" {
             let context = contextAssumption(
                 input: input,
@@ -252,7 +252,9 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         return AILSA_SSStandardReferenceEstimate(
             status: .referenceEstimate,
             picoUSD: amount,
-            priceBasis: upperCacheWrite ? "official_cache_write_upper_bound" : (leafID == "composer-2.5-fast" && provider == "xai" ? "official_composer_equivalent_reference" : (grokPriority || argonPriority
+            priceBasis: leafID == "gemini-4-carbon"
+                ? (geminiPriority ? "dec_2026_list_priority_reference" : "dec_2026_list_standard_reference")
+                : upperCacheWrite ? "official_cache_write_upper_bound" : (leafID == "composer-2.5-fast" && provider == "xai" ? "official_composer_equivalent_reference" : (grokPriority || geminiPriority
                 ? (userReferenceAlias == nil ? "official_priority_reference" : "user_mapped_official_priority_reference")
                 : ((gpt61Fast || claudeFast) ? "official_fast_reference"
                    : (userReferenceAlias == nil ? Self.priceBasis : "user_mapped_official_standard_reference")))),
@@ -309,7 +311,7 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         if provider == "cursor-proxy", ["grok-4.7-256k", "grok-4.7-500k"].contains(model) { model = "grok-4.7" }
         guard let id = leafID(provider: provider, resolvedModel: model),
               let leaf = referenceLeaf(id: id, occurredAt: record.occurredAt) else { return nil }
-        let numerator: Int64 = id == "gemini-4-argon" ? 18 : (["grok-4.7", "grok-4.6", "grok-4.5", "gpt-6.1-sol", "gpt-6.1-terra", "claude-opus-5-5", "claude-opus-5", "claude-opus-4-8"].contains(id) ? 20 : 10)
+        let numerator: Int64 = gemini4ReferenceIDs.contains(id) ? 18 : (["grok-4.7", "grok-4.6", "grok-4.5", "gpt-6.1-sol", "gpt-6.1-terra", "claude-opus-5-5", "claude-opus-5", "claude-opus-4-8"].contains(id) ? 20 : 10)
         let rate = Rate(inputPicoUSDPerToken: max(leaf.short.inputPicoUSDPerToken, leaf.long?.inputPicoUSDPerToken ?? 0) * numerator / 10,
             cacheReadPicoUSDPerToken: 0,
             outputPicoUSDPerToken: max(leaf.short.outputPicoUSDPerToken, leaf.long?.outputPicoUSDPerToken ?? 0) * numerator / 10)
@@ -387,6 +389,9 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
         "grok-4.7", "grok-4.6", "grok-4.5", "gemini-3.8-flash", "gemini-4-argon", "deepseek-flash", "deepseek-v4-pro",
         "claude-fable-5-1", "k3", "kimi-k3"
     ]
+    // Both models publish a 1.8× Priority multiplier. Their reference-date policies differ.
+    private static let gemini4ReferenceIDs: Set<String> = ["gemini-4-argon", "gemini-4-carbon"]
+
     private static func referenceLeaf(id: String, occurredAt: Date?) -> Leaf? {
         if id == "hy4" {
             // Tencent official USD Singapore table + notice dated 2026-11-04.
@@ -397,8 +402,16 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
             return Leaf(short:Rate(inputPicoUSDPerToken:834_000/divisor,cacheReadPicoUSDPerToken:42_000/divisor,
                                    outputPicoUSDPerToken:2_501_000/divisor),long:nil,threshold:.allContexts)
         }
+        if id == "gemini-4-carbon" {
+            // Normalize all Carbon usage, including earlier history, to the Dec 1, 2026 list price.
+            // An API-equivalent reference, not the promotional price paid on the request date.
+            // https://aistudio.google.com/docs/pricing#gemini-4-carbon (verified 2026-11-11)
+            return Leaf(short: Rate(inputPicoUSDPerToken: 4_000_000,
+                cacheReadPicoUSDPerToken: 200_000, outputPicoUSDPerToken: 20_000_000),
+                long: nil, threshold: .allContexts)
+        }
         if id == "gemini-4-argon" {
-            // Google Standard USD per 1M, verified 2026-10-25. Promotion
+            // Google Standard USD per 1M. Promotion
             // ends at 2026-12-01 00:00 UTC; output includes thinking tokens.
             // https://ai.google.dev/gemini-api/docs/pricing#gemini-4-argon
             guard let occurredAt else { return nil }
@@ -689,6 +702,10 @@ struct OpenCodexStandardReferenceEstimator: Sendable {
             return ClaudeLocalPricing.canonical(resolvedModel)
         }
         if let alias = userReferenceAlias(provider: provider, resolvedModel: resolvedModel) { return alias }
+        if resolvedModel == "gemini-4-carbon",
+           ["google", "gemini", "google-antigravity", "antigravity-pool", "google-antigravity-pool", "combo"].contains(provider) {
+            return resolvedModel
+        }
         if crossProviderReferences.contains(resolvedModel) { return resolvedModel }
         if let alias = aliases["\(provider)/\(resolvedModel)"] { return alias }
         guard leaves[resolvedModel] != nil,
